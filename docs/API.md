@@ -20,6 +20,7 @@ Same-origin `/api`. JSON request/response. Every business endpoint requires `?or
 | POST | /invoices/{id}/collect | amount, reference; locks invoice, posts cash/receivable, prevents overpayment |
 | POST | /expenses/{id}/decide | decision=approved/rejected; different manager required |
 | GET | /trial_balance | Posted-only debit/credit grouped by account |
+| POST | /notifications/{id}/read | Acknowledges only the current recipient's notification |
 
 Entities: properties, units, parties, leases, ownerships, accounts, technicians, assets, tickets, announcements, invoices, expenses. Read-only: receipts, journals, journal_lines, notifications, audit_logs, trial_balance. No hard-delete endpoint. The initial release has a 500-row read limit; cursor pagination remains to implement before large portfolios.
 
