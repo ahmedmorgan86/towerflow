@@ -113,7 +113,8 @@ class MainActivity : Activity() {
             if (records.length() == 0) label(text("لا توجد سجلات بعد", "No records yet"))
             for (i in 0 until records.length()) {
                 val row = records.getJSONObject(i)
-                label(row.optString("name", row.optString("title", row.optString("number", row.optString("description", row.optString("message", row.optString("entity", "Record"))))))), 19)
+                val heading = listOf("name", "title", "number", "description", "message", "entity").map { row.optString(it) }.firstOrNull { it.isNotEmpty() } ?: "Record"
+                label(heading, 19)
                 val details = listOf("status", "amount", "due_date", "priority", "phone", "address", "body", "debit", "credit", "action").filter { row.has(it) && !row.isNull(it) }.joinToString(" · ") { "$it: ${row.optString(it)}" }
                 label(details)
                 if (entity == "invoices" && role in listOf("admin", "manager", "accountant")) {
