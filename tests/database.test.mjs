@@ -12,10 +12,10 @@ const insert=async(s,p)=>(await q(s,p)).rows[0];
 async function user(u,fn){return db.transaction(async tx=>{await tx.query("select set_config('app.user_id',$1,true)",[u]);await tx.query('set local role towerflow_client');return fn({query:(s,p)=>tx.query(s,p)});});}
 async function owner(u,fn){return db.transaction(async tx=>{await tx.query("select set_config('app.user_id',$1,true)",[u]);return fn({query:(s,p)=>tx.query(s,p)});});}
 before(async()=>{
- db=new PGlite();await db.waitReady;await db.exec(await readFile(new URL('../db/schema.sql',import.meta.url),'utf8'));await db.exec(await readFile(new URL('../db/002_workflows.sql',import.meta.url),'utf8'));
- for(const k of ['alice','bob','resident','manager','viewer','accountant'])ids[k]=(await insert('insert into private.users(email,password_hash,name) values($1,$2,$3) returning id',[k+'@example.test','unused',k])).id;
+ db=new PGlite();await db.waitReady;for(const f of ['schema.sql','002_workflows.sql','003_read_permissions.sql'])await db.exec(await readFile(new URL('../db/'+f,import.meta.url),'utf8'));
+ for(const k of ['alice','bob','resident','manager','viewer','accountant','technician'])ids[k]=(await insert('insert into private.users(email,password_hash,name) values($1,$2,$3) returning id',[k+'@example.test','unused',k])).id;
  for(const k of ['A','B']){ids[k]=(await insert('insert into organizations(name) values($1) returning id',[k])).id;await q("insert into private.memberships values($1,$2,'admin')",[ids[k],ids[k==='A'?'alice':'bob']]);}
- for(const k of ['resident','manager','viewer','accountant'])await q('insert into private.memberships values($1,$2,$3)',[ids.A,ids[k],k]);
+ for(const k of ['resident','manager','viewer','accountant','technician'])await q('insert into private.memberships values($1,$2,$3)',[ids.A,ids[k],k]);
  ids.property=(await insert("insert into properties(org_id,name) values($1,'Tower A') returning id",[ids.A])).id;
  ids.unit=(await insert("insert into units(org_id,property_id,name) values($1,$2,'101') returning id",[ids.A,ids.property])).id;
  ids.party=(await insert("insert into parties(org_id,name,kind,user_id) values($1,'Resident','tenant',$2) returning id",[ids.A,ids.resident])).id;
@@ -52,3 +52,4 @@ test('password hashes use unique salts and verify',async()=>{const a=await passw
 test('active lease updates occupancy',async()=>{assert.equal((await q('select status from units where id=$1',[ids.unit])).rows[0].status,'occupied');});
 test('ownership share sum cannot exceed 100 percent',async()=>{const p=(await insert("insert into parties(org_id,name,kind) values($1,'Owner','owner') returning id",[ids.A])).id;await q('insert into ownerships(org_id,unit_id,party_id,share) values($1,$2,$3,60)',[ids.A,ids.unit,p]);await assert.rejects(q('insert into ownerships(org_id,unit_id,party_id,share) values($1,$2,$3,50)',[ids.A,ids.unit,ids.party]),/exceed 100/);});
 test('notifications are visible only to their recipient',async()=>{const r=await user(ids.alice,c=>c.query('select * from notifications'));assert.ok(r.rows.length>0);assert.ok(r.rows.every(x=>x.user_id===ids.alice));});
+test('technician cannot read tenant contact data or accounting',async()=>{for(const table of ['parties','invoices','journal_lines','audit_logs'])assert.equal((await user(ids.technician,c=>c.query('select * from '+table))).rows.length,0);assert.ok((await user(ids.technician,c=>c.query('select * from units'))).rows.length>0);});

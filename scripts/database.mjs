@@ -8,6 +8,8 @@ try {
  if(!initial.rows[0].installed) await client.query(await readFile(new URL('../db/schema.sql',import.meta.url),'utf8'));
  const workflow = await client.query("select to_regprocedure('private.sync_occupancy()') is not null as installed");
  if(!workflow.rows[0].installed) await client.query(await readFile(new URL('../db/002_workflows.sql',import.meta.url),'utf8'));
+ const permissions = await client.query("select to_regprocedure('private.can_read(uuid,text)') is not null as installed");
+ if(!permissions.rows[0].installed) await client.query(await readFile(new URL('../db/003_read_permissions.sql',import.meta.url),'utf8'));
  console.log('Schema and workflow migration verified');
 }
 finally {await client.end();}
