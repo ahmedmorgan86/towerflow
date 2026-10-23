@@ -1,0 +1,12 @@
+import {PGlite} from '@electric-sql/pglite';
+import {readFile,mkdir} from 'node:fs/promises';
+await mkdir('local-data',{recursive:true});
+const db = new PGlite('local-data/postgres');
+await db.waitReady;
+const exists = await db.query("select to_regclass('public.organizations') is not null as installed");
+if(!exists.rows[0].installed) await db.exec(await readFile(new URL('../db/schema.sql',import.meta.url),'utf8'));
+const workflow = await db.query("select to_regprocedure('private.sync_occupancy()') is not null as installed");
+if(!workflow.rows[0].installed) await db.exec(await readFile(new URL('../db/002_workflows.sql',import.meta.url),'utf8'));
+globalThis.towerflowLocalDB={transaction:fn=>db.transaction(tx=>fn({query:(sql,params)=>tx.query(sql,params)}))};
+console.log('Local persistent PostgreSQL ready; visit http://localhost:3000 and create an account.');
+await import('../server.mjs');

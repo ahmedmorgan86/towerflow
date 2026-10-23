@@ -1,0 +1,15 @@
+node_modules/
+.env*
+!.env.example
+.vercel/
+dist/
+local-data/
+android/.gradle/
+android/local.properties
+android/**/build/
+*.jks
+*.keystore
+test-results/
+
+.vercel
+.env*

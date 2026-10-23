@@ -1,0 +1,54 @@
+import {test,before,after} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {PGlite} from '@electric-sql/pglite';
+import {journal,issue,collect,approve} from '../lib/finance.mjs';
+import {cents,clean} from '../lib/catalog.mjs';
+import {passwordHash,passwordMatches} from '../lib/auth.mjs';
+let db,ids={};
+const q=(s,p)=>db.query(s,p);
+const c={query:q};
+const insert=async(s,p)=>(await q(s,p)).rows[0];
+async function user(u,fn){return db.transaction(async tx=>{await tx.query("select set_config('app.user_id',$1,true)",[u]);await tx.query('set local role towerflow_client');return fn({query:(s,p)=>tx.query(s,p)});});}
+async function owner(u,fn){return db.transaction(async tx=>{await tx.query("select set_config('app.user_id',$1,true)",[u]);return fn({query:(s,p)=>tx.query(s,p)});});}
+before(async()=>{
+ db=new PGlite();await db.waitReady;await db.exec(await readFile(new URL('../db/schema.sql',import.meta.url),'utf8'));await db.exec(await readFile(new URL('../db/002_workflows.sql',import.meta.url),'utf8'));
+ for(const k of ['alice','bob','resident','manager','viewer','accountant'])ids[k]=(await insert('insert into private.users(email,password_hash,name) values($1,$2,$3) returning id',[k+'@example.test','unused',k])).id;
+ for(const k of ['A','B']){ids[k]=(await insert('insert into organizations(name) values($1) returning id',[k])).id;await q("insert into private.memberships values($1,$2,'admin')",[ids[k],ids[k==='A'?'alice':'bob']]);}
+ for(const k of ['resident','manager','viewer','accountant'])await q('insert into private.memberships values($1,$2,$3)',[ids.A,ids[k],k]);
+ ids.property=(await insert("insert into properties(org_id,name) values($1,'Tower A') returning id",[ids.A])).id;
+ ids.unit=(await insert("insert into units(org_id,property_id,name) values($1,$2,'101') returning id",[ids.A,ids.property])).id;
+ ids.party=(await insert("insert into parties(org_id,name,kind,user_id) values($1,'Resident','tenant',$2) returning id",[ids.A,ids.resident])).id;
+ await q("insert into leases(org_id,unit_id,party_id,start_date,end_date,rent) values($1,$2,$3,'2026-01-01','2027-01-01',1000)",[ids.A,ids.unit,ids.party]);
+ for(const [code,kind] of [['1100','asset'],['1200','asset'],['4000','income'],['5000','expense']])ids[code]=(await insert('insert into accounts(org_id,code,name,kind) values($1,$2,$2,$3) returning id',[ids.A,code,kind])).id;
+ ids.invoice=(await insert("insert into invoices(org_id,party_id,number,description,amount,due_date) values($1,$2,'INV-1','Rent',1000,'2026-11-01') returning id",[ids.A,ids.party])).id;
+});
+after(async()=>await db.close());
+test('schema enables RLS on all business tables',async()=>{assert.equal((await q("select count(*)::int n from pg_tables where schemaname='public' and not rowsecurity")).rows[0].n,0);});
+test('tenant cannot read another organization',async()=>{const r=await user(ids.bob,c=>c.query('select * from properties'));assert.equal(r.rows.length,0);});
+test('tenant cannot forge organization on insert',async()=>{await assert.rejects(user(ids.bob,c=>c.query("insert into properties(org_id,name) values($1,'Forged')",[ids.A])),/row-level security/);});
+test('tenant cannot move records across organizations',async()=>{await assert.rejects(user(ids.alice,c=>c.query('update properties set org_id=$1 where id=$2',[ids.B,ids.property])),/row-level security|foreign key/);});
+test('viewer cannot write',async()=>{await assert.rejects(user(ids.viewer,c=>c.query("insert into properties(org_id,name) values($1,'Forbidden')",[ids.A])),/row-level security/);});
+test('unauthenticated DB identity sees no records',async()=>{const r=await user('',c=>c.query('select * from properties'));assert.equal(r.rows.length,0);});
+test('cross-tenant unit foreign key is blocked even for database owner',async()=>{await assert.rejects(q("insert into units(org_id,property_id,name) values($1,$2,'Invalid')",[ids.B,ids.property]),/foreign key/);});
+test('resident sees their own lease, invoice and unit',async()=>{for(const t of ['leases','invoices','units'])assert.equal((await user(ids.resident,c=>c.query('select * from '+t))).rows.length,1);});
+test('resident cannot alter invoices',async()=>{await assert.rejects(user(ids.resident,c=>c.query("update invoices set amount=1 where id=$1",[ids.invoice])),/permission denied/);});
+test('resident can create own maintenance ticket',async()=>{const r=await user(ids.resident,c=>c.query("insert into tickets(org_id,unit_id,title) values($1,$2,'Leaking tap') returning id",[ids.A,ids.unit]));assert.ok(r.rows[0].id);});
+test('resident cannot create unrelated tickets or assign technician',async()=>{await assert.rejects(user(ids.resident,c=>c.query("insert into tickets(org_id,title,status) values($1,'Forged','closed')",[ids.A])),/row-level security/);});
+test('audits cannot be written by client role',async()=>{await assert.rejects(user(ids.alice,c=>c.query("insert into audit_logs(org_id,entity,action) values($1,'fake','fake')",[ids.A])),/permission denied/);});
+test('unbalanced journal is rejected',async()=>{await assert.rejects(owner(ids.alice,c=>journal(c,ids.A,ids.alice,'Bad',[{account_id:ids['1100'],debit:10},{account_id:ids['4000'],credit:9}])),/does not balance/);});
+test('database refuses bypassing journal balance service',async()=>{const j=await insert("insert into journals(org_id,description,created_by) values($1,'Bad',$2) returning id",[ids.A,ids.alice]);await assert.rejects(q("update journals set status='posted' where id=$1",[j.id]),/must balance/);});
+test('database refuses new posted header',async()=>{await assert.rejects(q("insert into journals(org_id,description,created_by,status) values($1,'Bad',$2,'posted')",[ids.A,ids.alice]),/must be draft/);});
+test('issue invoice posts balanced ledger and is idempotently protected',async()=>{await owner(ids.alice,c=>issue(c,ids.A,ids.alice,ids.invoice));assert.equal((await q('select status from invoices where id=$1',[ids.invoice])).rows[0].status,'issued');await assert.rejects(owner(ids.alice,c=>issue(c,ids.A,ids.alice,ids.invoice)),/must be draft/);});
+test('partial receipt then final receipt settles invoice exactly',async()=>{await owner(ids.alice,c=>collect(c,ids.A,ids.alice,ids.invoice,'250.10','RC-1'));assert.equal((await q('select status from invoices where id=$1',[ids.invoice])).rows[0].status,'issued');await assert.rejects(owner(ids.alice,c=>collect(c,ids.A,ids.alice,ids.invoice,800,'RC-X')),/exceeds/);await owner(ids.alice,c=>collect(c,ids.A,ids.alice,ids.invoice,'749.90','RC-2'));assert.equal((await q('select status from invoices where id=$1',[ids.invoice])).rows[0].status,'paid');});
+test('duplicate receipt does not change ledger',async()=>{const before=(await q('select count(*) n from journals')).rows[0].n;await assert.rejects(owner(ids.alice,c=>collect(c,ids.A,ids.alice,ids.invoice,1,'RC-1')));assert.equal((await q('select count(*) n from journals')).rows[0].n,before);});
+test('posted journal lines and headers are immutable',async()=>{const j=(await q("select id from journals where status='posted' limit 1")).rows[0].id;await assert.rejects(q('update journal_lines set debit=debit+1 where journal_id=$1 and debit>0',[j]),/immutable/);await assert.rejects(q("update journals set description='Tampered' where id=$1",[j]),/immutable/);await assert.rejects(q('delete from journal_lines where journal_id=$1',[j]),/immutable/);});
+test('expense cannot be approved by its requester',async()=>{ids.expense=(await insert("insert into expenses(org_id,description,amount,requested_by) values($1,'Service',50,$2) returning id",[ids.A,ids.alice])).id;await assert.rejects(owner(ids.alice,c=>approve(c,ids.A,ids.alice,ids.expense,'approved')),/Another manager/);});
+test('different manager approves once and posts expense',async()=>{await owner(ids.manager,c=>approve(c,ids.A,ids.manager,ids.expense,'approved'));await assert.rejects(owner(ids.manager,c=>approve(c,ids.A,ids.manager,ids.expense,'approved')),/pending/);});
+test('trial balance totals agree and is tenant isolated',async()=>{const a=await user(ids.alice,c=>c.query('select * from trial_balance'));assert.equal(a.rows.reduce((s,r)=>s+Number(r.debit),0),a.rows.reduce((s,r)=>s+Number(r.credit),0));assert.equal((await user(ids.bob,c=>c.query('select * from trial_balance'))).rows.length,0);});
+test('money parsing rejects negative, zero, fractional cents and overflow',()=>{assert.equal(cents('250.10'),25010);for(const v of ['0','-1','0.001','NaN','999999999999999'])assert.throws(()=>cents(v));});
+test('mass assignment cannot grant identity or change organization',()=>{assert.deepEqual(clean('tickets',{title:'Test',created_by:ids.bob,org_id:ids.B}),{title:'Test'});});
+test('password hashes use unique salts and verify',async()=>{const a=await passwordHash('long-password-123'),b=await passwordHash('long-password-123');assert.notEqual(a,b);assert.equal(await passwordMatches('long-password-123',a),true);assert.equal(await passwordMatches('wrong-password-123',a),false);});
+test('active lease updates occupancy',async()=>{assert.equal((await q('select status from units where id=$1',[ids.unit])).rows[0].status,'occupied');});
+test('ownership share sum cannot exceed 100 percent',async()=>{const p=(await insert("insert into parties(org_id,name,kind) values($1,'Owner','owner') returning id",[ids.A])).id;await q('insert into ownerships(org_id,unit_id,party_id,share) values($1,$2,$3,60)',[ids.A,ids.unit,p]);await assert.rejects(q('insert into ownerships(org_id,unit_id,party_id,share) values($1,$2,$3,50)',[ids.A,ids.unit,ids.party]),/exceed 100/);});
+test('notifications are visible only to their recipient',async()=>{const r=await user(ids.alice,c=>c.query('select * from notifications'));assert.ok(r.rows.length>0);assert.ok(r.rows.every(x=>x.user_id===ids.alice));});
