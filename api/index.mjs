@@ -53,6 +53,7 @@ export default async function handler(req,res){
  }
  if(route==='organizations'&&method==='POST'){const b=await body(req);if(!String(b.name||'').trim())throw fail('Name required');return send(await context(user,async c=>{const o=(await c.query('insert into organizations(name) values($1) returning *',[String(b.name).slice(0,160)])).rows[0];await c.query("insert into private.memberships values($1,$2,'admin')",[o.id,user.id]);for(const a of [['1100','Cash','asset'],['1200','Receivables','asset'],['4000','Rental income','income'],['5000','Operating expenses','expense']])await c.query('insert into accounts(org_id,code,name,kind) values($1,$2,$3,$4)',[o.id,...a]);return o;}),201);}
  const [entity,id,action]=route.split('/');
+ if(entity==='notifications'&&id&&action==='read'&&method==='POST')return send(await context(user,async c=>{const r=await c.query('update notifications set read_at=now() where id=$1 and org_id=$2 and user_id=$3 returning id',[id,org,user.id]);if(!r.rows.length)throw fail('Notification not found',404);return {ok:true};}));
  if(entity==='journals'&&method==='POST')return send(await context(user,async c=>{await permission(c,org,'finance');const b=await body(req);return {id:await journal(c,org,user.id,String(b.description||'Journal').slice(0,4000),b.lines)};}),201);
  if(entity==='invoices'&&id&&action&&method==='POST'){const b=await body(req);return send(await context(user,c=>action==='issue'?issue(c,org,user.id,id):action==='collect'?collect(c,org,user.id,id,b.amount,b.reference):Promise.reject(fail('Unknown action',404))));}
  if(entity==='expenses'&&id&&action==='decide'&&method==='POST'){const b=await body(req);return send(await context(user,c=>approve(c,org,user.id,id,b.decision)));}
@@ -63,6 +64,13 @@ export default async function handler(req,res){
  if(data.amount)cents(data.amount);
  const work=async c=>{
  if(['invoices','expenses'].includes(entity))await permission(c,org,'finance');
+ if(entity==='tickets'&&id&&data.status){
+ const previous=(await c.query('select status from tickets where org_id=$1 and id=$2 for update',[org,id])).rows[0];
+ if(!previous)throw fail('Ticket not found',404);
+ const next={open:['assigned','in_progress'],assigned:['in_progress','open'],in_progress:['resolved','assigned'],resolved:['closed','in_progress'],closed:[]};
+ if(data.status!==previous.status&&!next[previous.status].includes(data.status))throw fail('Invalid ticket status transition',409);
+ if(data.status==='closed')await permission(c,org,'manage');
+ }
  const r=id?await c.query(`update public.${entity} set ${keys.map((k,i)=>`${k}=$${i+3}`).join(',')} where org_id=$1 and id=$2 returning *`,[org,id,...Object.values(data)]):await c.query(`insert into public.${entity}(org_id,${keys.join(',')}) values($1,${keys.map((_,i)=>'$'+(i+2)).join(',')}) returning *`,[org,...Object.values(data)]);
  if(!r.rows.length)throw fail('Record not found or permission denied',404);return r.rows[0];};
  return send(await (['invoices','expenses'].includes(entity)?context(user,work):asUser(user.id,work)),id?200:201);
