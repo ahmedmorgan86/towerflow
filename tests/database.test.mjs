@@ -12,7 +12,7 @@ const insert=async(s,p)=>(await q(s,p)).rows[0];
 async function user(u,fn){return db.transaction(async tx=>{await tx.query("select set_config('app.user_id',$1,true)",[u]);await tx.query('set local role towerflow_client');return fn({query:(s,p)=>tx.query(s,p)});});}
 async function owner(u,fn){return db.transaction(async tx=>{await tx.query("select set_config('app.user_id',$1,true)",[u]);return fn({query:(s,p)=>tx.query(s,p)});});}
 before(async()=>{
- db=new PGlite();await db.waitReady;for(const f of ['schema.sql','002_workflows.sql','003_read_permissions.sql'])await db.exec(await readFile(new URL('../db/'+f,import.meta.url),'utf8'));
+ db=new PGlite();await db.waitReady;for(const f of ['schema.sql','002_workflows.sql','003_read_permissions.sql','004_platform.sql','005_identity.sql'])await db.exec(await readFile(new URL('../db/'+f,import.meta.url),'utf8'));
  for(const k of ['alice','bob','resident','manager','viewer','accountant','technician'])ids[k]=(await insert('insert into private.users(email,password_hash,name) values($1,$2,$3) returning id',[k+'@example.test','unused',k])).id;
  for(const k of ['A','B']){ids[k]=(await insert('insert into organizations(name) values($1) returning id',[k])).id;await q("insert into private.memberships values($1,$2,'admin')",[ids[k],ids[k==='A'?'alice':'bob']]);}
  for(const k of ['resident','manager','viewer','accountant','technician'])await q('insert into private.memberships values($1,$2,$3)',[ids.A,ids[k],k]);

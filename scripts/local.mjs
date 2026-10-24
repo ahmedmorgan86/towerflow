@@ -1,14 +1,4 @@
-import {PGlite} from '@electric-sql/pglite';
-import {readFile,mkdir} from 'node:fs/promises';
-await mkdir('local-data',{recursive:true});
-const db = new PGlite('local-data/postgres');
-await db.waitReady;
-const exists = await db.query("select to_regclass('public.organizations') is not null as installed");
-if(!exists.rows[0].installed) await db.exec(await readFile(new URL('../db/schema.sql',import.meta.url),'utf8'));
-const workflow = await db.query("select to_regprocedure('private.sync_occupancy()') is not null as installed");
-if(!workflow.rows[0].installed) await db.exec(await readFile(new URL('../db/002_workflows.sql',import.meta.url),'utf8'));
-const permissions = await db.query("select to_regprocedure('private.can_read(uuid,text)') is not null as installed");
-if(!permissions.rows[0].installed) await db.exec(await readFile(new URL('../db/003_read_permissions.sql',import.meta.url),'utf8'));
+import {PGlite} from '@electric-sql/pglite';import {mkdir} from 'node:fs/promises';import {migrate} from '../lib/migrations.mjs';
+await mkdir('local-data',{recursive:true});const db=new PGlite('local-data/postgres');await db.waitReady;await migrate(db);
 globalThis.towerflowLocalDB={transaction:fn=>db.transaction(tx=>fn({query:(sql,params)=>tx.query(sql,params)}))};
-console.log('Local persistent PostgreSQL ready; visit http://localhost:3000 and create an account.');
-await import('../server.mjs');
+console.log('Local PostgreSQL ready at port '+(process.env.PORT||3000));await import('../server.mjs');

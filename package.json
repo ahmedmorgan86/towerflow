@@ -1,7 +1,24 @@
 {
-  "name": "towerflow", "version": "0.1.0", "private": true, "type": "module",
-  "engines": {"node": ">=22"},
-  "scripts": {"dev": "node --env-file-if-exists=.env.local server.mjs", "build": "node scripts/build.mjs", "test": "node --test --test-isolation=none tests/*.test.mjs", "db:setup": "node --env-file-if-exists=.env.local scripts/database.mjs", "local": "node scripts/local.mjs"},
-  "dependencies": {"pg": "8.16.3"},
-  "devDependencies": {"@electric-sql/pglite": "0.5.11"}
+  "name": "towerflow",
+  "version": "0.3.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env.local server.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "db:setup": "node --env-file-if-exists=.env.local scripts/database.mjs",
+    "local": "node scripts/local.mjs"
+  },
+  "dependencies": {
+    "google-auth-library": "^10.3.0",
+    "pg": "8.16.3",
+    "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.11"
+  }
 }
