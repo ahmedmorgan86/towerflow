@@ -29,3 +29,8 @@ Mobile uses `X-TowerFlow-Client: android` on login to receive a random opaque se
 Errors use `{error,code}` with 400 validation, 401 auth, 403 authorization, 404 missing route/record, 409 duplicate/invalid state, 429 throttling, 503 unconfigured dependency. Unexpected server errors hide internals.
 
 Database schema: organizations → memberships (private) → role authorization; properties → units → leases/ownerships → parties; invoices → receipts; journals → journal_lines → accounts; assets/technicians → tickets; notifications and append-only audit logs. All business relationships include org_id in foreign keys. Secrets and auth tables are in a private schema. Authentication is server mediated; the database is never exposed directly to the browser.
+
+
+## 0.4 additions
+
+Member profile and avatar, Google OAuth/Android handoff, verified platform owner, detailed reports, resident broadcast preview/send/history, push device registration/removal and delivery status/process endpoints are implemented in api/index.mjs. Broadcasts require management permission, a building in the active organization, and linked residents with current active leases. A selected-unit request is validated against that building. Delivery status records FCM acceptance, not proof of device display. Report CSV exports up to 20,000 rows; print/PDF prints the displayed page.

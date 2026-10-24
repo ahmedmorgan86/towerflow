@@ -9,6 +9,9 @@ import android.util.Base64
 import java.io.ByteArrayOutputStream
 import java.security.MessageDigest
 import java.security.SecureRandom
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import com.google.firebase.messaging.FirebaseMessaging
 import android.app.Activity
 import android.app.AlertDialog
 import android.os.Bundle
@@ -29,6 +32,7 @@ class MainActivity : Activity() {
     private var token = "" // Memory only. Signing out or process death clears the credential.
     private var base = "https://towerflow.vercel.app"
     private var member = JSONObject()
+    private var pendingNotifications = false
     private var avatar: String? = null
     private var org = ""
     private var role = ""
@@ -50,7 +54,7 @@ class MainActivity : Activity() {
     private fun text(ar: String, en: String) = if (arabic) ar else en
     private fun title(k: String) = names[k]?.let { if (arabic) it.first else it.second } ?: k
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
-    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); login(); handleAuth(intent) }
+    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); login(); handleAuth(intent); pendingNotifications = intent?.extras?.getBoolean("open_notifications", false) == true || intent?.hasExtra("notification_id") == true; getSystemService(NotificationManager::class.java).createNotificationChannel(NotificationChannel("towerflow_residents", "TowerFlow · رسائل السكان", NotificationManager.IMPORTANCE_HIGH)) }
     private fun scaffold(heading: String) {
         val scroll = ScrollView(this)
         screen = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(22), dp(36), dp(22), dp(24)); layoutDirection = if (arabic) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR; setBackgroundColor(Color.parseColor(if (dark) "#102331" else "#F4F7F9")) }
@@ -102,7 +106,7 @@ class MainActivity : Activity() {
         button(text("المتابعة باستخدام Google", "Continue with Google")) { googleLogin() }
         button(text(if (register) "لدي حساب" else "إنشاء حساب ومؤسسة", if (register) "I have an account" else "Create account & workspace")) { login(!register) }
     }
-    private fun loadMe() { call("me") { raw -> member = JSONObject(raw).getJSONObject("user"); organizations = JSONObject(raw).getJSONArray("organizations"); if (organizations.length() > 0) { val o = organizations.getJSONObject(0); org = o.getString("id"); role = o.getString("role") }; home() } }
+    private fun loadMe() { call("me") { raw -> member = JSONObject(raw).getJSONObject("user"); organizations = JSONObject(raw).getJSONArray("organizations"); if (organizations.length() > 0) { val o = organizations.getJSONObject(0); org = o.getString("id"); role = o.getString("role") }; registerPush(); if (pendingNotifications) { pendingNotifications = false; listing("notifications") } else home() } }
     private fun home() {
         scaffold(text("إدارة عقاراتك بوضوح", "Your properties. In perspective."))
         if (organizations.length() > 0) {
@@ -113,9 +117,10 @@ class MainActivity : Activity() {
             screen.addView(spinner)
         }
         button(text("ملفي الشخصي", "My profile")) { profile() }
+        button(text("تفعيل إشعارات الموبايل", "Enable phone notifications")) { enablePush() }
         label(text("بيانات حقيقية من مؤسستك. تُطبق الصلاحيات على الخادم.", "Live workspace data. Permissions are enforced on the server."))
         names.keys.filter { role != "resident" || it in listOf("units", "leases", "invoices", "tickets", "announcements", "notifications") }.forEach { key -> button(title(key)) { listing(key) } }
-        button(text("تسجيل الخروج", "Sign out")) { call("auth/logout", "POST", JSONObject()) { token = ""; org = ""; login() } }
+        button(text("تسجيل الخروج", "Sign out")) { disablePushAndLogout() }
     }
     private fun listing(entity: String) {
         scaffold(title(entity)); button(text("الرئيسية", "Home")) { home() }
@@ -158,7 +163,7 @@ class MainActivity : Activity() {
         getPreferences(0).edit().putString("oauth_verifier", verifier).apply()
         try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(base + "/api/auth/google/start?client=android&challenge=" + proof))) } catch (e: Exception) { error(e) }
     }
-    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); handleAuth(intent) }
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); handleAuth(intent); if ((intent.hasExtra("open_notifications") || intent.hasExtra("notification_id")) && token.isNotEmpty()) listing("notifications") }
     private fun handleAuth(intent: Intent?) {
         val uri = intent?.data ?: return
         if (uri.scheme != "towerflow" || uri.host != "auth") return
@@ -232,5 +237,18 @@ class MainActivity : Activity() {
         }; addField(0)
     }
 
+    private fun enablePush() {
+        if (android.os.Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) { requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 301) } else registerPush(true)
+    }
+    private fun registerPush(showResult: Boolean = false) {
+        FirebaseMessaging.getInstance().token.addOnSuccessListener { device -> getSharedPreferences("push_device", MODE_PRIVATE).edit().putString("token", device).apply(); if (token.isNotEmpty()) call("push/devices", "POST", JSONObject().put("token", device)) { if (showResult) Toast.makeText(this, text("تم تسجيل الهاتف للإشعارات. تأكد من السماح بالإشعارات في إعدادات الهاتف.", "Phone registered. Ensure notifications are allowed in phone settings."), Toast.LENGTH_LONG).show() } }.addOnFailureListener { if (showResult) error(IllegalStateException(text("تعذر تسجيل الهاتف. تحقق من الإنترنت وخدمات Google Play.", "Could not register phone. Check connectivity and Google Play services."))) }
+    }
+    @Deprecated("Platform permission callback compatibility")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) { super.onRequestPermissionsResult(requestCode, permissions, grantResults); if (requestCode == 301 && grantResults.firstOrNull() == android.content.pm.PackageManager.PERMISSION_GRANTED) registerPush(true) }
+    private fun disablePushAndLogout() {
+        val device = getSharedPreferences("push_device", MODE_PRIVATE).getString("token", null)
+        fun finishLogout() { call("auth/logout", "POST", JSONObject()) { token = ""; org = ""; getSystemService(NotificationManager::class.java).cancelAll(); login() } }
+        if (device != null) call("push/devices/remove", "POST", JSONObject().put("token", device)) { finishLogout() } else finishLogout()
+    }
     override fun onDestroy() { super.onDestroy(); worker.shutdownNow() }
 }

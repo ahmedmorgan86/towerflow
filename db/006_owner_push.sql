@@ -1,0 +1,10 @@
+begin;
+create table private.platform_owners(user_id uuid primary key references private.users(id),email text not null,google_subject text not null unique,created_at timestamptz not null default now());
+create function private.enroll_platform_owners() returns trigger language plpgsql security definer set search_path='' as $$begin insert into private.memberships(org_id,user_id,role) select new.id,o.user_id,'admin' from private.platform_owners o on conflict(org_id,user_id) do update set role='admin';return new;end $$;
+revoke all on function private.enroll_platform_owners() from public;
+create trigger platform_owners after insert on organizations for each row execute function private.enroll_platform_owners();
+create table private.push_devices(id uuid primary key default gen_random_uuid(),user_id uuid not null references private.users(id),token_hash text not null unique,token text not null,platform text not null default 'android' check(platform='android'),enabled boolean not null default true,updated_at timestamptz not null default now());
+create index push_device_owner on private.push_devices(user_id) where enabled;
+create table private.push_outbox(id uuid primary key default gen_random_uuid(),org_id uuid not null references organizations(id),notification_id uuid not null references notifications(id),device_id uuid not null references private.push_devices(id),status text not null default 'pending' check(status in ('pending','processing','sent','failed','cancelled')),attempts int not null default 0,available_at timestamptz not null default now(),lease_until timestamptz,delivered_at timestamptz,last_error text,unique(notification_id,device_id));
+create index push_queue_due on private.push_outbox(status,available_at);
+commit;

@@ -15,3 +15,8 @@
 Phase 1: implemented foundational vertical slices in this release. Phase 2: complete user lifecycle, configurable permissions, pagination/search at server, billing periods and tax/accounting rules. Phase 3: recurring maintenance, attachments, push/email, resident workflows and property-specific access. Phase 4: comprehensive reports, bank reconciliation, export formats, backup/restore exercises, performance/concurrency tests and independent security review. Phase 5: Android feature parity, device tests, accessibility/localization pass and signed Play release.
 
 No legal/compliance, production capacity or full ERP completeness claim is made by passing this initial suite. Two-sided authorization checks run in PostgreSQL; production provider tests and concurrent worker tests remain separately necessary.
+
+
+## 0.4 verification update
+
+68 automated tests pass. Additional cases cover Google verified-owner enrollment and spoof prevention, future-organization enrollment, owner role protection, detailed report isolation, selected-unit broadcast recipients and replay protection, device registration ownership, concurrent outbox processing and invalid-token cleanup. Android signed release compilation and lint pass; physical-device notification delivery and full native feature parity remain unverified.

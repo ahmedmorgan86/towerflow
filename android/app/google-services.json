@@ -1,0 +1,22 @@
+{
+  "project_info": {
+    "project_number": "288846225261",
+    "project_id": "heroic-psyche-512522-v8"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:288846225261:android:b98339a160a527d0e14464",
+        "android_client_info": {
+          "package_name": "com.ad.towerflow"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "AIzaSyD50Gd8kWyfWYfS8W7HFiqXoNvg9GMpnDs"
+        }
+      ]
+    }
+  ],
+  "configuration_version": "1"
+}
