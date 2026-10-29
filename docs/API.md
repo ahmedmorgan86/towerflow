@@ -34,3 +34,16 @@ Database schema: organizations → memberships (private) → role authorization;
 ## 0.4 additions
 
 Member profile and avatar, Google OAuth/Android handoff, verified platform owner, detailed reports, resident broadcast preview/send/history, push device registration/removal and delivery status/process endpoints are implemented in api/index.mjs. Broadcasts require management permission, a building in the active organization, and linked residents with current active leases. A selected-unit request is validated against that building. Delivery status records FCM acceptance, not proof of device display. Report CSV exports up to 20,000 rows; print/PDF prints the displayed page.
+
+## Master phase 1 — review branch, migration 007 required
+
+- `POST /api/buildings`: authenticated user; name, country, currency, optional address and floors `[{floor:1,units:["101","102"]}]`. Returns organization, property, units_created. Each call creates a distinct ledger; duplicate unit identifiers reject the entire transaction. No opening journal is generated.
+- `PATCH /api/building/config?org=...`: management permission. Accept either `{archived:true|false}` or `{name,country,currency}`. Currency is locked after posting. Archive/reactivation is audited.
+- `GET /api/treasury?org=...`: finance and account-read permission. Treasury accounts with calculated posted balances.
+- `POST /api/treasury?org=...`: finance and account-create permission. Name, treasury_kind cash/bank/wallet, optional unique 11xx code (automatically allocated otherwise). Initial balance is always zero.
+- `POST /api/treasury/transfers?org=...`: finance and journal-create permission. source_id, target_id, positive amount, reference and optional transferred_on. Accounts must both be in this building. Reject insufficient balance. An exact retry returns the same transfer with repeated=true; changing the payload under the same reference returns 409.
+- `POST /api/expenses/:id/pay?org=...`: finance and expense-update permission. account_id, amount, reference, optional paid_on. Expense must be approved; payment may be partial and cannot exceed unpaid amount or treasury balance. Same idempotency contract as transfers. Returns payment, not another approval.
+- `GET /api/financial-summary?org=...`: finance and account/expense read permissions. Cumulative available_cash, approved_expenses, paid_expenses, unpaid_expenses, pending_approvals and accounts for this ledger only. Values are not combined across buildings/currencies.
+- `GET /api/expense_payments` and `GET /api/treasury_transfers`: authenticated RLS-scoped list routes with existing pagination conventions.
+
+`POST /api/expenses/:id/decide` now posts an accrued payable when approved. It must be released together with migration 007. See MIGRATION_007.md; do not mix old and new expense approval API versions. Closed-period or archive errors roll back the entire financial transaction.

@@ -1,4 +1,6 @@
 import {waitUntil} from '@vercel/functions';
+import {createBuilding,configureBuilding} from '../lib/buildings.mjs';
+import {treasury,createTreasury,payExpense,transfer,financialSummary} from '../lib/treasury.mjs';
 import {detailedKinds,detailedReport} from '../lib/detail-reports.mjs';
 import {recipients,broadcast} from '../lib/resident-messages.mjs';
 import {registerDevice,pushStatus,processPush,pushReady} from '../lib/push.mjs';
@@ -57,7 +59,13 @@ export default async function handler(req,res){
  if(route==='me/profile'&&method==='PATCH')return send({user:await updateProfile(user,await body(req))});
  if(route==='me/security'&&method==='GET')return send(await database().transaction(async c=>({googleLinked:!!(await c.query("select 1 from private.oauth_accounts where provider='google' and user_id=$1",[user.id])).rows.length,passwordEnabled:!!(await c.query('select 1 from private.users where id=$1 and password_hash is not null',[user.id])).rows.length,googleAvailable:googleReady()})));
  if(route==='me'&&method==='GET'){const orgs=await database().transaction(c=>c.query('select o.*,m.role from organizations o join private.memberships m on m.org_id=o.id where m.user_id=$1 order by o.created_at',[user.id]));return send({user,organizations:orgs.rows});}
+ if(route==='buildings'&&method==='POST')return send(await context(user,async c=>createBuilding(c,user.id,await body(req))),201);
  const org=u.searchParams.get('org');if(!/^[a-f0-9-]{36}$/.test(org||''))throw fail('Organization required');
+ if(route==='building/config'&&method==='PATCH')return send(await context(user,async c=>configureBuilding(c,org,await body(req))));
+ if(route==='treasury'&&method==='GET')return send(await context(user,c=>treasury(c,org)));
+ if(route==='financial-summary'&&method==='GET')return send(await context(user,c=>financialSummary(c,org)));
+ if(route==='treasury'&&method==='POST')return send(await context(user,async c=>createTreasury(c,org,await body(req))),201);
+ if(route==='treasury/transfers'&&method==='POST')return send(await context(user,async c=>transfer(c,org,user.id,await body(req))),201);
  if(route==='reports'&&method==='GET'&&detailedKinds.includes(u.searchParams.get('kind'))){const from=isoDate(u.searchParams.get('from')||'0001-01-01'),to=isoDate(u.searchParams.get('to')||new Date().toISOString().slice(0,10));if(from>to)throw fail('Invalid date range');return send(await asUser(user.id,c=>detailedReport(c,org,u.searchParams.get('kind'),from,to,u.searchParams.get('property_id'),Number(u.searchParams.get('limit')||500),Number(u.searchParams.get('offset')||0))));}
  if(route==='broadcasts/recipients'&&method==='GET'){const unitIds=u.searchParams.get('scope')==='units'?(u.searchParams.get('unit_ids')||'').split(',').filter(Boolean):null;const r=await context(user,c=>recipients(c,org,u.searchParams.get('property_id'),unitIds));return send({registered:r.registered,unlinked:r.unlinked,pushConfigured:pushReady()});}
  if(route==='broadcasts'&&method==='POST'){const b=await body(req);const result=await context(user,c=>broadcast(c,org,user.id,b));if(process.env.VERCEL&&pushReady())waitUntil(processPush(org).catch(()=>{}));return send({...result,pushConfigured:pushReady()});}
@@ -81,6 +89,7 @@ export default async function handler(req,res){
  }
  if(route==='organizations'&&method==='POST'){const b=await body(req);if(!String(b.name||'').trim())throw fail('Name required');return send(await context(user,async c=>{const o=(await c.query('insert into organizations(name) values($1) returning *',[String(b.name).slice(0,160)])).rows[0];await c.query("insert into private.memberships values($1,$2,'admin')",[o.id,user.id]);for(const a of [['1100','Cash','asset'],['1200','Receivables','asset'],['4000','Rental income','income'],['5000','Operating expenses','expense']])await c.query('insert into accounts(org_id,code,name,kind) values($1,$2,$3,$4)',[o.id,...a]);return o;}),201);}
  const [entity,id,action]=route.split('/');
+ if(entity==='expenses'&&id&&action==='pay'&&method==='POST')return send(await context(user,async c=>payExpense(c,org,user.id,id,await body(req))),201);
  if(entity==='accounting_periods'&&id&&action==='close'&&method==='POST')return send(await context(user,c=>closePeriod(c,org,user.id,id)));
  if(entity==='journals'&&id&&action==='reverse'&&method==='POST'){const b=await body(req);return send(await context(user,c=>reverse(c,org,user.id,id,b)));}
  if(entity==='tickets'&&id&&action==='comments'&&method==='POST'){const b=await body(req);if(!String(b.body||'').trim()||String(b.body).length>4000)throw fail('Comment required');const visible=await asUser(user.id,c=>c.query('select id from tickets where id=$1 and org_id=$2',[id,org]));if(!visible.rows.length)throw fail('Ticket not found',404);return send(await context(user,async c=>(await c.query('insert into ticket_comments(org_id,ticket_id,body,created_by) values($1,$2,$3,$4) returning *',[org,id,b.body,user.id])).rows[0]),201);}

@@ -35,5 +35,10 @@
         }
       ]
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "development/master-implementation": false
+    }
+  }
 }

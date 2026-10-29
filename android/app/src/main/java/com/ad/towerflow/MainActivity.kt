@@ -116,6 +116,7 @@ class MainActivity : Activity() {
             spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener { override fun onNothingSelected(parent: AdapterView<*>?) {} ; override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) { val o = organizations.getJSONObject(position); org = o.getString("id"); role = o.getString("role") } }
             screen.addView(spinner)
         }
+        if (role in listOf("admin", "manager", "accountant")) { button(text("الخزائن والحسابات", "Treasury")) { treasuryScreen() }; button(text("إنشاء برج مستقل", "Create independent building")) { independentBuildingForm() } }
         button(text("ملفي الشخصي", "My profile")) { profile() }
         button(text("تفعيل إشعارات الموبايل", "Enable phone notifications")) { enablePush() }
         label(text("بيانات حقيقية من مؤسستك. تُطبق الصلاحيات على الخادم.", "Live workspace data. Permissions are enforced on the server."))
@@ -133,12 +134,13 @@ class MainActivity : Activity() {
                 val row = records.getJSONObject(i)
                 val heading = listOf("name", "title", "number", "description", "message", "entity").map { row.optString(it) }.firstOrNull { it.isNotEmpty() } ?: "Record"
                 label(heading, 19)
-                val details = listOf("status", "amount", "due_date", "priority", "phone", "address", "body", "debit", "credit", "action").filter { row.has(it) && !row.isNull(it) }.joinToString(" · ") { "$it: ${row.optString(it)}" }
+                val details = listOf("status", "amount", "due_date", "priority", "phone", "address", "body", "debit", "credit", "paid_amount", "action").filter { row.has(it) && !row.isNull(it) }.joinToString(" · ") { "$it: ${row.optString(it)}" }
                 label(details)
                 if (entity in forms.keys && entity !in listOf("invoices", "expenses") && role in listOf("admin", "manager", "accountant", "technician")) button(text("تعديل", "Edit")) { recordForm(entity, row) }
                 if (entity == "expenses" && row.optString("status") == "pending" && role in listOf("admin", "manager")) {
                     listOf("approved", "rejected").forEach { decision -> button(text(if (decision == "approved") "اعتماد" else "رفض", decision)) { call("expenses/" + row.getString("id") + "/decide", "POST", JSONObject().put("decision", decision)) { listing(entity) } } }
                 }
+                if (entity == "expenses" && row.optString("status") == "approved" && row.optDouble("paid_amount") < row.optDouble("amount") && role in listOf("admin", "manager", "accountant")) button(text("تسجيل دفع المصروف", "Pay expense")) { expensePaymentForm(row.getString("id")) }
                 if (entity == "notifications" && row.isNull("read_at")) button(text("تمت القراءة", "Mark as read")) { call("notifications/" + row.getString("id") + "/read", "POST", JSONObject()) { listing(entity) } }
                 if (entity == "invoices" && role in listOf("admin", "manager", "accountant")) {
                     val id = row.getString("id")
@@ -146,6 +148,38 @@ class MainActivity : Activity() {
                     if (row.optString("status") == "issued") button(text("تحصيل", "Collect")) { collectForm(id) }
                 }
             }
+        }
+    }
+    private fun independentBuildingForm() {
+        scaffold(text("إنشاء برج مستقل", "Create independent building"))
+        label(text("حسابات وصلاحيات مستقلة ورصيد يبدأ من صفر", "Independent permissions and accounts starting at zero"))
+        val name = input(text("اسم البرج", "Building name")); val address = input(text("العنوان", "Address"))
+        val country = input(text("رمز الدولة مثل EG أو GB", "Country code e.g. EG or GB")); val currency = input(text("العملة مثل EGP أو GBP", "Currency e.g. EGP or GBP"))
+        val layout = input(text("اختياري، كل سطر: الدور: الشقق بفواصل", "Optional, each line: floor: comma-separated units"))
+        button(text("إنشاء", "Create")) { try {
+            val floors = JSONArray(); layout.text.toString().lines().filter { it.isNotBlank() }.forEach { line -> val parts = line.split(":", limit = 2); require(parts.size == 2); floors.put(JSONObject().put("floor", parts[0].trim().toInt()).put("units", JSONArray(parts[1].split(",").map { it.trim() }))) }
+            call("buildings", "POST", JSONObject().put("name", name.text.toString()).put("address", address.text.toString()).put("country", country.text.toString()).put("currency", currency.text.toString()).put("floors", floors)) { raw -> val selected = JSONObject(raw).getJSONObject("organization").getString("id"); call("me") { meRaw -> val me = JSONObject(meRaw); member = me.getJSONObject("user"); organizations = me.getJSONArray("organizations"); org = selected; role = "admin"; home() } }
+        } catch (e: Exception) { error(e) } }
+        button(text("إلغاء", "Cancel")) { home() }
+    }
+    private fun treasuryScreen() {
+        scaffold(text("الخزائن والحسابات", "Treasury")); button(text("الرئيسية", "Home")) { home() }
+        call("treasury") { raw -> val accounts = JSONArray(raw); for (i in 0 until accounts.length()) { val a = accounts.getJSONObject(i); label(a.getString("name") + " · " + a.getString("balance"), 20) }
+            button(text("إضافة حساب برصيد صفر", "Add account with zero balance")) { treasuryAccountForm() }
+            if (accounts.length() > 1) button(text("تحويل بين حسابات البرج", "Transfer within building")) { treasuryTransferForm(accounts) }
+        }
+    }
+    private fun accountPicker(accounts: JSONArray): Spinner { val spinner = Spinner(this); spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until accounts.length()).map { val a = accounts.getJSONObject(it); a.getString("name") + " · " + a.getString("balance") }); screen.addView(spinner); return spinner }
+    private fun treasuryAccountForm() { scaffold(text("إضافة خزنة أو بنك أو محفظة", "Add treasury account")); val name = input(text("الاسم", "Name")); val code = input(text("كود فريد يبدأ بـ11", "Unique code starting with 11")); val kind = Spinner(this); kind.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("cash", "bank", "wallet")); screen.addView(kind); button(text("حفظ", "Save")) { call("treasury", "POST", JSONObject().put("name", name.text.toString()).put("code", code.text.toString()).put("treasury_kind", kind.selectedItem.toString())) { treasuryScreen() } } }
+    private fun treasuryTransferForm(accounts: JSONArray) {
+        scaffold(text("تحويل داخل البرج فقط", "Transfer within this building only")); label(text("من الحساب", "From account")); val source = accountPicker(accounts); label(text("إلى الحساب", "To account")); val target = accountPicker(accounts); val amount = input(text("المبلغ", "Amount")); val date = input(text("التاريخ YYYY-MM-DD", "Date YYYY-MM-DD")).apply { setText(java.time.LocalDate.now().toString()) }; val reference = java.util.UUID.randomUUID().toString()
+        label(text("التحويل لا يسجل إيرادًا أو مصروفًا جديدًا", "Transfer does not recognize income or expense"))
+        button(text("تأكيد التحويل", "Confirm transfer")) { call("treasury/transfers", "POST", JSONObject().put("source_id", accounts.getJSONObject(source.selectedItemPosition).getString("id")).put("target_id", accounts.getJSONObject(target.selectedItemPosition).getString("id")).put("amount", amount.text.toString()).put("transferred_on", date.text.toString()).put("reference", reference)) { treasuryScreen() } }
+    }
+    private fun expensePaymentForm(id: String) {
+        scaffold(text("دفع المصروف المعتمد", "Pay approved expense")); label(text("الدفع يخفض النقدية والمتبقي. الاعتماد وحده لا يخفض النقدية.", "Payment reduces cash and unpaid expense. Approval alone does not reduce cash."))
+        call("treasury") { raw -> val accounts = JSONArray(raw); if (accounts.length() == 0) { label(text("لا يوجد حساب مالي متاح", "No available treasury account")); return@call }; val selected = accountPicker(accounts); val amount = input(text("المبلغ", "Amount")); val date = input(text("التاريخ YYYY-MM-DD", "Date YYYY-MM-DD")).apply { setText(java.time.LocalDate.now().toString()) }; val reference = java.util.UUID.randomUUID().toString()
+            button(text("تأكيد الدفع", "Confirm payment")) { call("expenses/$id/pay", "POST", JSONObject().put("account_id", accounts.getJSONObject(selected.selectedItemPosition).getString("id")).put("amount", amount.text.toString()).put("paid_on", date.text.toString()).put("reference", reference)) { listing("expenses") } }
         }
     }
     private fun propertyForm() { scaffold(text("عقار جديد", "New property")); val name = input(text("الاسم", "Name")); val address = input(text("العنوان", "Address")); button(text("حفظ", "Save")) { call("properties", "POST", JSONObject().put("name", name.text.toString()).put("address", address.text.toString())) { listing("properties") } }; button(text("إلغاء", "Cancel")) { listing("properties") } }
