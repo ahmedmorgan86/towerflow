@@ -7,8 +7,28 @@ android {
     defaultConfig { applicationId = "com.ad.towerflow"; minSdk = 26; targetSdk = 35; versionCode = 7; versionName = "0.5.1" }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
-    signingConfigs { if (signingProps.isNotEmpty()) create("production") { storeFile = file(signingProps.getProperty("storeFile")); storePassword = signingProps.getProperty("storePassword"); keyAlias = signingProps.getProperty("keyAlias"); keyPassword = signingProps.getProperty("keyPassword") } }
-    buildTypes { release { isMinifyEnabled = false; if (signingProps.isNotEmpty()) signingConfig = signingConfigs.getByName("production") } }
+        signingConfigs {
+        create("production") {
+            val ks = if (signingProps.isNotEmpty() && signingProps.getProperty("storeFile") != null) file(signingProps.getProperty("storeFile")) else rootProject.file("towerflow-release.jks")
+            if (ks.exists()) {
+                storeFile = ks
+                storePassword = signingProps.getProperty("storePassword", "towerflow2026")
+                keyAlias = signingProps.getProperty("keyAlias", "towerflow")
+                keyPassword = signingProps.getProperty("keyPassword", "towerflow2026")
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("production")
+        }
+    }
 }
 
 dependencies { implementation(platform("com.google.firebase:firebase-bom:35.1.0")); implementation("com.google.firebase:firebase-messaging") }

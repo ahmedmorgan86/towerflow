@@ -9,7 +9,13 @@ http.createServer(async(req,res)=>{
  const path=resolve(root,'.'+decodeURIComponent(new URL(req.url,'http://localhost').pathname));
  if(path!==root&&!path.startsWith(root+sep)){res.writeHead(403);return res.end();}
  const file=path===root?resolve(root,'index.html'):path;
- res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.apk':'application/vnd.android.package-archive'})[extname(file)]||'application/octet-stream');
+ if(file.endsWith('.apk')){
+  res.setHeader('Content-Type','application/vnd.android.package-archive');
+  res.setHeader('Content-Disposition','attachment; filename="TowerFlow-v0.5.1.apk"');
+  res.setHeader('Cache-Control','public, max-age=3600');
+ }else{
+  res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'})[extname(file)]||'application/octet-stream');
+ }
  res.setHeader('X-Content-Type-Options','nosniff');res.end(await readFile(file));
  }catch{res.writeHead(404);res.end('Not found');}
 }).listen(Number(process.env.PORT||3000),'127.0.0.1');
