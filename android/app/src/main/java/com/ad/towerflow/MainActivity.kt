@@ -198,8 +198,8 @@ class MainActivity : Activity() {
 
         val logoView = ImageView(this).apply {
             setImageResource(R.drawable.towerflow_logo)
-            layoutParams = LinearLayout.LayoutParams(dp(40), dp(40)).apply {
-                if (arabic) marginStart = dp(6) else marginEnd = dp(8)
+            layoutParams = LinearLayout.LayoutParams(dp(38), dp(38)).apply {
+                marginEnd = dp(10)
             }
         }
 
@@ -433,7 +433,7 @@ class MainActivity : Activity() {
         val iconBox = LinearLayout(this).apply {
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(dp(38), dp(38)).apply {
-                if (arabic) marginStart = dp(2) else marginEnd = dp(10)
+                marginEnd = dp(12)
             }
             background = roundedDrawable(
                 if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"),
@@ -799,7 +799,7 @@ class MainActivity : Activity() {
             val avatarBox = LinearLayout(this@MainActivity).apply {
                 gravity = Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(dp(44), dp(44)).apply {
-                    if (arabic) marginStart = dp(2) else marginEnd = dp(10)
+                    marginEnd = dp(12)
                 }
                 background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 14f)
                 addView(TextView(this@MainActivity).apply {
@@ -849,78 +849,92 @@ class MainActivity : Activity() {
             addView(heroRow)
         }
 
-        // Live KPI Grid for Managers
+        // Live KPI Container (Positioned permanently at the TOP directly below Hero greeting)
+        val kpiContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(6)
+                bottomMargin = dp(4)
+            }
+        }
+        screen.addView(kpiContainer)
+
         if (role != "resident") {
-            call("dashboard", onError = { /* non-critical dashboard kpi metrics; ignore background error */ }) { raw ->
+            fun renderKpis(dash: JSONObject) {
+                kpiContainer.removeAllViews()
+                val unitsObj = dash.optJSONObject("units") ?: JSONObject()
+                val totalUnits = unitsObj.optInt("total", 0)
+                val occupiedUnits = unitsObj.optInt("occupied", 0)
+                val vacantUnits = unitsObj.optInt("vacant", 0)
+                val ownedUnits = unitsObj.optInt("owned", 0)
+                val rentedUnits = unitsObj.optInt("rented", occupiedUnits)
+                val maintUnits = unitsObj.optInt("maintenance", 0)
+                val pct = if (totalUnits > 0) ((rentedUnits + ownedUnits) * 100 / totalUnits) else 0
+
+                fun makeKpi(kpiTitle: String, kpiValue: String, kpiSub: String, isFirst: Boolean): LinearLayout {
+                    return LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPadding(dp(12), dp(10), dp(12), dp(10))
+                        background = roundedDrawable(
+                            if (dark) Color.parseColor("#11131A") else Color.WHITE,
+                            14f,
+                            if (dark) Color.parseColor("#1E2330") else Color.parseColor("#E2E8F0")
+                        )
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                            if (isFirst) marginEnd = dp(4) else marginStart = dp(4)
+                        }
+                        addView(TextView(this@MainActivity).apply {
+                            text = kpiTitle
+                            textSize = 11f
+                            maxLines = 1
+                            ellipsize = TextUtils.TruncateAt.END
+                            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+                            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                        })
+                        addView(TextView(this@MainActivity).apply {
+                            text = kpiValue
+                            textSize = 19f
+                            setTextColor(Color.parseColor("#4F46E5"))
+                            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                            setPadding(0, dp(2), 0, dp(2))
+                        })
+                        addView(TextView(this@MainActivity).apply {
+                            text = kpiSub
+                            textSize = 9.5f
+                            maxLines = 1
+                            ellipsize = TextUtils.TruncateAt.END
+                            typeface = cairoFont
+                            setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+                        })
+                    }
+                }
+
+                val kpiRow = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                    weightSum = 2f
+                }
+                kpiRow.addView(makeKpi(text("إجمالي الشقق", "Total Units"), totalUnits.toString(), text("$rentedUnits مؤجرة · $ownedUnits ملك", "$rentedUnits rent · $ownedUnits own"), true))
+                kpiRow.addView(makeKpi(text("نسبة الإشغال", "Occupancy"), "$pct%", text("$vacantUnits شاغرة · $maintUnits صيانة", "$vacantUnits vacant"), false))
+                kpiContainer.addView(kpiRow)
+
+                val kpiRow2 = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                        topMargin = dp(6)
+                    }
+                    weightSum = 2f
+                }
+                kpiRow2.addView(makeKpi(text("وحدات تمليك (ملك)", "Owned Units"), ownedUnits.toString(), text("ملاك مقيمين", "Owner units"), true))
+                kpiRow2.addView(makeKpi(text("وحدات مؤجرة", "Rented Units"), rentedUnits.toString(), text("عقود إيجار نشطة", "Active leases"), false))
+                kpiContainer.addView(kpiRow2)
+            }
+
+            renderKpis(JSONObject())
+
+            call("dashboard", onError = { /* non-critical dashboard kpi metrics */ }) { raw ->
                 try {
-                    val dash = JSONObject(raw)
-                    val unitsObj = dash.optJSONObject("units") ?: JSONObject()
-                    val totalUnits = unitsObj.optInt("total", 0)
-                    val occupiedUnits = unitsObj.optInt("occupied", 0)
-                    val vacantUnits = unitsObj.optInt("vacant", 0)
-
-                    val kpiRow = LinearLayout(this).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-                        weightSum = 2f
-                    }
-
-                    fun makeKpi(kpiTitle: String, kpiValue: String, kpiSub: String, isFirst: Boolean): LinearLayout {
-                        return LinearLayout(this@MainActivity).apply {
-                            orientation = LinearLayout.VERTICAL
-                            setPadding(dp(10), dp(10), dp(10), dp(10))
-                            background = roundedDrawable(
-                                if (dark) Color.parseColor("#11131A") else Color.WHITE,
-                                12f,
-                                if (dark) Color.parseColor("#1E2330") else Color.parseColor("#E2E8F0")
-                            )
-                            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                                if (isFirst) marginEnd = dp(3) else marginStart = dp(3)
-                            }
-                            addView(TextView(this@MainActivity).apply {
-                                text = kpiTitle
-                                textSize = 10.5f
-                                maxLines = 1
-                                ellipsize = TextUtils.TruncateAt.END
-                                setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
-                                typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                            })
-                            addView(TextView(this@MainActivity).apply {
-                                text = kpiValue
-                                textSize = 18f
-                                setTextColor(Color.parseColor("#4F46E5"))
-                                typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                                setPadding(0, dp(1), 0, dp(1))
-                            })
-                            addView(TextView(this@MainActivity).apply {
-                                text = kpiSub
-                                textSize = 9.5f
-                                maxLines = 1
-                                ellipsize = TextUtils.TruncateAt.END
-                                typeface = cairoFont
-                                setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
-                            })
-                        }
-                    }
-
-                    val ownedUnits = unitsObj.optInt("owned", 0)
-                    val rentedUnits = unitsObj.optInt("rented", occupiedUnits)
-                    val maintUnits = unitsObj.optInt("maintenance", 0)
-                    val pct = if (totalUnits > 0) ((rentedUnits + ownedUnits) * 100 / totalUnits) else 0
-                    kpiRow.addView(makeKpi(text("إجمالي الشقق", "Total Units"), totalUnits.toString(), text("$rentedUnits مؤجرة · $ownedUnits ملك", "$rentedUnits rent · $ownedUnits own"), true))
-                    kpiRow.addView(makeKpi(text("نسبة الإشغال", "Occupancy"), "$pct%", text("$vacantUnits شاغرة · $maintUnits صيانة", "$vacantUnits vacant"), false))
-                    screen.addView(kpiRow)
-
-                    val kpiRow2 = LinearLayout(this).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                            topMargin = dp(6)
-                        }
-                        weightSum = 2f
-                    }
-                    kpiRow2.addView(makeKpi(text("وحدات تمليك (ملك)", "Owned Units"), ownedUnits.toString(), text("ملاك مقيمين", "Owner units"), true))
-                    kpiRow2.addView(makeKpi(text("وحدات مؤجرة", "Rented Units"), rentedUnits.toString(), text("عقود إيجار نشطة", "Active leases"), false))
-                    screen.addView(kpiRow2)
+                    renderKpis(JSONObject(raw))
                 } catch (_: Exception) {}
             }
         }
