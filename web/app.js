@@ -411,8 +411,8 @@ async function listing(entity){
      document.querySelectorAll(`[data-${attr}]`).forEach(b=>b.onclick=()=>perform(()=>api(`expenses/${b.dataset[attr]}/decide`,{method:'POST',body:JSON.stringify({decision})})));
    }
    document.querySelectorAll('[data-approve-proof]').forEach(b=>b.onclick=()=>perform(()=>api(`payment_proofs/${b.dataset.approveProof}/review`,{method:'POST',body:JSON.stringify({decision:'approved'})})));
-   document.querySelectorAll('[data-reject-proof]').forEach(b=>b.onclick=()=>modal(t('reject'),field('reason','',{optional:false}),res=>api(`payment_proofs/${b.dataset.rejectProof}/review`,{method:'POST',body:JSON.stringify({decision:'rejected',rejection_reason:res.reason}))));
-   document.querySelectorAll('[data-exempt-fine]').forEach(b=>b.onclick=()=>modal(t('exempt_btn'),field('reason','',{optional:false}),res=>api(`fines/${b.dataset.exemptFine}/exempt`,{method:'POST',body:JSON.stringify({reason:res.reason}))));
+   document.querySelectorAll('[data-reject-proof]').forEach(b=>b.onclick=()=>modal(t('reject'),field('reason','',{optional:false}),res=>api(`payment_proofs/${b.dataset.rejectProof}/review`,{method:'POST',body:JSON.stringify({decision:'rejected',rejection_reason:res.reason})})));
+   document.querySelectorAll('[data-exempt-fine]').forEach(b=>b.onclick=()=>modal(t('exempt_btn'),field('reason','',{optional:false}),res=>api(`fines/${b.dataset.exemptFine}/exempt`,{method:'POST',body:JSON.stringify({reason:res.reason})})));
  };
 
  draw(data);
