@@ -15,7 +15,10 @@ alter table public.units
   add column if not exists payer_responsibility text not null default 'tenant' check(payer_responsibility in ('owner','tenant')),
   add column if not exists vacant_policy text not null default 'full' check(vacant_policy in ('full','partial','exempt','custom')),
   add column if not exists vacant_rate numeric(5,2) not null default 100 check(vacant_rate >= 0 and vacant_rate <= 100),
-  add column if not exists notes text not null default '';
+  add column if not exists notes text not null default '',
+  add column if not exists ownership_type text not null default 'rental' check(ownership_type in ('rental','owned'));
+alter table public.units drop constraint if exists units_status_check;
+alter table public.units add constraint units_status_check check(status in ('vacant','occupied','maintenance','owned'));
 
 -- 3. Money accounts per Tower
 create table if not exists public.money_accounts (

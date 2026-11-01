@@ -1,8 +1,12 @@
 import {mkdir,cp,readFile,writeFile} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import pg from 'pg';
 
 await mkdir('dist',{recursive:true});
 await cp('web','dist',{recursive:true});
+if (existsSync('release/TowerFlow-latest.apk')) {
+  await cp('release/TowerFlow-latest.apk', 'dist/TowerFlow-latest.apk');
+}
 
 // Refresh sql-bundle.mjs to keep runtime migrations self-contained
 const files = ['schema.sql','002_workflows.sql','003_read_permissions.sql','004_platform.sql','005_identity.sql','006_owner_push.sql','007_master_system.sql'];
