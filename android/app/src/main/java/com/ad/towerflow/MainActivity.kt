@@ -19,9 +19,11 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.os.Bundle
 import android.text.InputType
+import android.text.TextUtils
 import android.view.Gravity
 import android.view.View
 import android.widget.*
+import android.widget.FrameLayout
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -109,11 +111,14 @@ class MainActivity : Activity() {
         val scroll = ScrollView(this).apply {
             isFillViewport = true
             setBackgroundColor(Color.parseColor(if (dark) "#090A0F" else "#F8FAFC"))
+            isHorizontalScrollBarEnabled = false
+            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
         }
 
         screen = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(20), dp(18), dp(28))
+            setPadding(dp(14), dp(16), dp(14), dp(24))
+            layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
             layoutDirection = if (arabic) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
         }
         scroll.addView(screen)
@@ -123,7 +128,8 @@ class MainActivity : Activity() {
         val topBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(6), dp(6), dp(6), dp(14))
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            setPadding(dp(2), 0, dp(2), dp(12))
         }
 
         if (showBack && onBack != null) {
@@ -150,7 +156,9 @@ class MainActivity : Activity() {
         })
         brandCol.addView(TextView(this).apply {
             text = heading
-            textSize = 13f
+            textSize = 12f
+            maxLines = 1
+            ellipsize = TextUtils.TruncateAt.END
             setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
         })
         topBar.addView(brandCol)
@@ -194,17 +202,16 @@ class MainActivity : Activity() {
     private fun card(fn: LinearLayout.() -> Unit): LinearLayout {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(18), dp(18), dp(18))
+            setPadding(dp(14), dp(14), dp(14), dp(14))
             background = roundedDrawable(
                 if (dark) Color.parseColor("#11131A") else Color.WHITE,
-                16f,
+                14f,
                 if (dark) Color.parseColor("#1E2330") else Color.parseColor("#E2E8F0")
             )
-            val lp = LinearLayout.LayoutParams(-1, -2).apply {
-                topMargin = dp(8)
-                bottomMargin = dp(8)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(5)
+                bottomMargin = dp(5)
             }
-            layoutParams = lp
         }
         layout.fn()
         screen.addView(layout)
@@ -437,7 +444,7 @@ class MainActivity : Activity() {
         }
 
         // Server URL Configuration
-        outlineButton(text("⚙ رابط الخادم: ", "⚙ Server: ") + base) {
+        outlineButton(text("⚙ إعداد رابط الخادم", "⚙ Server Origin Settings")) {
             val urlInput = EditText(this).apply {
                 setText(base)
                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
@@ -549,37 +556,42 @@ class MainActivity : Activity() {
 
                     val kpiRow = LinearLayout(this).apply {
                         orientation = LinearLayout.HORIZONTAL
+                        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
                         weightSum = 2f
                     }
 
                     fun makeKpi(kpiTitle: String, kpiValue: String, kpiSub: String, isFirst: Boolean): LinearLayout {
                         return LinearLayout(this@MainActivity).apply {
                             orientation = LinearLayout.VERTICAL
-                            setPadding(dp(14), dp(12), dp(14), dp(12))
+                            setPadding(dp(10), dp(10), dp(10), dp(10))
                             background = roundedDrawable(
                                 if (dark) Color.parseColor("#11131A") else Color.WHITE,
-                                14f,
+                                12f,
                                 if (dark) Color.parseColor("#1E2330") else Color.parseColor("#E2E8F0")
                             )
-                            layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply {
-                                if (isFirst) marginEnd = dp(4) else marginStart = dp(4)
+                            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                                if (isFirst) marginEnd = dp(3) else marginStart = dp(3)
                             }
                             addView(TextView(this@MainActivity).apply {
                                 text = kpiTitle
-                                textSize = 11f
+                                textSize = 10.5f
+                                maxLines = 1
+                                ellipsize = TextUtils.TruncateAt.END
                                 setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                                 setTypeface(typeface, Typeface.BOLD)
                             })
                             addView(TextView(this@MainActivity).apply {
                                 text = kpiValue
-                                textSize = 20f
+                                textSize = 18f
                                 setTextColor(Color.parseColor("#4F46E5"))
                                 setTypeface(typeface, Typeface.BOLD)
-                                setPadding(0, dp(2), 0, dp(2))
+                                setPadding(0, dp(1), 0, dp(1))
                             })
                             addView(TextView(this@MainActivity).apply {
                                 text = kpiSub
-                                textSize = 10f
+                                textSize = 9.5f
+                                maxLines = 1
+                                ellipsize = TextUtils.TruncateAt.END
                                 setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
                             })
                         }
@@ -589,14 +601,16 @@ class MainActivity : Activity() {
                     val rentedUnits = unitsObj.optInt("rented", occupiedUnits)
                     val maintUnits = unitsObj.optInt("maintenance", 0)
                     val pct = if (totalUnits > 0) ((rentedUnits + ownedUnits) * 100 / totalUnits) else 0
-                    kpiRow.addView(makeKpi(text("إجمالي الشقق", "Total Units"), totalUnits.toString(), text("$rentedUnits مؤجرة · $ownedUnits ملك", "$rentedUnits rented · $ownedUnits owned"), true))
+                    kpiRow.addView(makeKpi(text("إجمالي الشقق", "Total Units"), totalUnits.toString(), text("$rentedUnits مؤجرة · $ownedUnits ملك", "$rentedUnits rent · $ownedUnits own"), true))
                     kpiRow.addView(makeKpi(text("نسبة الإشغال", "Occupancy"), "$pct%", text("$vacantUnits شاغرة · $maintUnits صيانة", "$vacantUnits vacant"), false))
                     screen.addView(kpiRow)
 
                     val kpiRow2 = LinearLayout(this).apply {
                         orientation = LinearLayout.HORIZONTAL
+                        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                            topMargin = dp(6)
+                        }
                         weightSum = 2f
-                        setPadding(0, dp(8), 0, 0)
                     }
                     kpiRow2.addView(makeKpi(text("وحدات تمليك (ملك)", "Owned Units"), ownedUnits.toString(), text("ملاك مقيمين", "Owner units"), true))
                     kpiRow2.addView(makeKpi(text("وحدات مؤجرة", "Rented Units"), rentedUnits.toString(), text("عقود إيجار نشطة", "Active leases"), false))
@@ -609,6 +623,7 @@ class MainActivity : Activity() {
         sectionHeader(text("إجراءات سريعة", "Quick Actions"))
         val quickGrid = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             weightSum = 2f
         }
 
@@ -795,18 +810,23 @@ class MainActivity : Activity() {
                         detailsList.forEach { (lbl, value) ->
                             val r = LinearLayout(this@MainActivity).apply {
                                 orientation = LinearLayout.HORIZONTAL
+                                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                                    topMargin = dp(2)
+                                    bottomMargin = dp(2)
+                                }
                             }
                             r.addView(TextView(this@MainActivity).apply {
                                 text = lbl
-                                textSize = 12f
+                                textSize = 11.5f
                                 setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
-                                layoutParams = LinearLayout.LayoutParams(dp(80), -2)
+                                layoutParams = LinearLayout.LayoutParams(dp(75), -2)
                             })
                             r.addView(TextView(this@MainActivity).apply {
                                 text = value
-                                textSize = 12f
+                                textSize = 11.5f
                                 setTypeface(typeface, Typeface.BOLD)
                                 setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+                                layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
                             })
                             detailsBox.addView(r)
                         }
@@ -816,7 +836,9 @@ class MainActivity : Activity() {
                     // Action Buttons Row
                     val actionsRow = LinearLayout(this@MainActivity).apply {
                         orientation = LinearLayout.HORIZONTAL
-                        setPadding(0, dp(10), 0, 0)
+                        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                            topMargin = dp(8)
+                        }
                     }
 
                     if (entity in forms.keys && entity !in listOf("invoices", "expenses", "payment_proofs", "fines") && role in listOf("admin", "manager", "accountant", "technician")) {
@@ -827,7 +849,7 @@ class MainActivity : Activity() {
                             background = roundedDrawable(Color.TRANSPARENT, 8f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
                             setOnClickListener { recordForm(entity, row) }
                         }
-                        actionsRow.addView(editBtn, LinearLayout.LayoutParams(-2, dp(36)).apply { marginEnd = dp(8) })
+                        actionsRow.addView(editBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
                     }
 
                     // Payment Proofs Review (Approve / Reject)
@@ -841,7 +863,7 @@ class MainActivity : Activity() {
                                 call("payment_proofs/" + row.getString("id") + "/review", "POST", JSONObject().put("decision", "approved")) { listing(entity) }
                             }
                         }
-                        actionsRow.addView(approveBtn, LinearLayout.LayoutParams(-2, dp(36)).apply { marginEnd = dp(8) })
+                        actionsRow.addView(approveBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
 
                         val rejectBtn = Button(this@MainActivity).apply {
                             text = text("رفض", "Reject")
@@ -863,7 +885,7 @@ class MainActivity : Activity() {
                                     .show()
                             }
                         }
-                        actionsRow.addView(rejectBtn, LinearLayout.LayoutParams(-2, dp(36)))
+                        actionsRow.addView(rejectBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
                     }
 
                     // Fines Exemption
@@ -875,7 +897,7 @@ class MainActivity : Activity() {
                             background = roundedDrawable(Color.parseColor("#FEF3C7"), 8f)
                             setOnClickListener { fineExemptForm(row.getString("id")) }
                         }
-                        actionsRow.addView(exemptBtn, LinearLayout.LayoutParams(-2, dp(36)))
+                        actionsRow.addView(exemptBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
                     }
 
                     // Invoices Issue & Collect
@@ -889,7 +911,7 @@ class MainActivity : Activity() {
                                 background = roundedDrawable(Color.parseColor("#4F46E5"), 8f)
                                 setOnClickListener { call("invoices/$id/issue", "POST", JSONObject()) { listing(entity) } }
                             }
-                            actionsRow.addView(issueBtn, LinearLayout.LayoutParams(-2, dp(36)).apply { marginEnd = dp(8) })
+                            actionsRow.addView(issueBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
                         }
                         if (row.optString("status") == "issued") {
                             val collectBtn = Button(this@MainActivity).apply {
@@ -899,7 +921,7 @@ class MainActivity : Activity() {
                                 background = roundedDrawable(Color.parseColor("#059669"), 8f)
                                 setOnClickListener { collectForm(id) }
                             }
-                            actionsRow.addView(collectBtn, LinearLayout.LayoutParams(-2, dp(36)))
+                            actionsRow.addView(collectBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
                         }
                     }
 
