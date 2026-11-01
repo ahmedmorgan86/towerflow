@@ -134,5 +134,5 @@ export default async function handler(req,res){
  return send(await (['invoices','expenses','recurring_charges','maintenance_plans'].includes(entity)?context(user,work):asUser(user.id,work)),id?200:201);
  }
  throw fail('Not found',404);
- }catch(e){const status=e.status||({'23505':409,'23503':400,'23514':400,'22P02':400,'22007':400,'42501':403,'P0001':400})[e.code]||500;send({error:status===500?'Internal error':e.message,code:e.code||null},status);}
+ }catch(e){const status=e.status||({'23505':409,'23503':400,'23514':400,'22P02':400,'22007':400,'42501':403,'P0001':400})[e.code]||500;if(status===500&&process.env.NODE_ENV!=='test')console.error('[API 500 Error]:', e);send({error:status===500?'Internal error':e.message,code:e.code||null},status);}
 }

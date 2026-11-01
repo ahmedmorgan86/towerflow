@@ -35,9 +35,12 @@ create table if not exists public.money_accounts (
 );
 
 -- 4. Tower tagging on journals to enforce inter-tower financial isolation
-alter table public.journals
-  add column if not exists property_id uuid,
-  add constraint journals_property_fk foreign key(org_id, property_id) references public.properties(org_id, id);
+alter table public.journals add column if not exists property_id uuid;
+do $$begin
+  if not exists (select 1 from pg_constraint where conname='journals_property_fk') then
+    alter table public.journals add constraint journals_property_fk foreign key(org_id, property_id) references public.properties(org_id, id);
+  end if;
+end$$;
 
 -- 5. Payment Proofs from residents
 create table if not exists public.payment_proofs (
@@ -352,34 +355,49 @@ do $$declare t text;begin
    if t in ('money_accounts','payment_proofs','expense_distributions','distribution_shares',
             'fines','credit_balances','credit_transactions','vendor_contracts','contract_versions',
             'budgets','budget_items','account_reconciliations','management_transfers','delegations') then
+      execute format('drop policy if exists staff_read on public.%I', t);
      execute format('create policy staff_read on public.%I for select to towerflow_client using(private.can_read(org_id,%L))', t, t);
      execute format('grant insert,update on public.%I to towerflow_client', t);
+      execute format('drop policy if exists staff_insert on public.%I', t);
      execute format('create policy staff_insert on public.%I for insert to towerflow_client with check(private.can_write(org_id,%L,''create''))', t, t);
+      execute format('drop policy if exists staff_update on public.%I', t);
      execute format('create policy staff_update on public.%I for update to towerflow_client using(private.can_write(org_id,%L,''update'')) with check(private.can_write(org_id,%L,''update''))', t, t, t);
+      execute format('drop trigger if exists audit_change on public.%I', t);
      execute format('create trigger audit_change after insert or update on public.%I for each row execute function private.audit()', t);
    end if;
  end loop;
 end $$;
 
 -- Resident access policies for payment proofs, fines, and personal support tickets
+drop policy if exists resident_proofs on public.payment_proofs;
 create policy resident_proofs on public.payment_proofs for select to towerflow_client
   using(created_by = private.uid() or private.resident_party(org_id, party_id));
 
+drop policy if exists resident_proof_insert on public.payment_proofs;
 create policy resident_proof_insert on public.payment_proofs for insert to towerflow_client
   with check(created_by = private.uid() and private.resident_party(org_id, party_id) and status = 'pending');
 
+drop policy if exists resident_fines on public.fines;
 create policy resident_fines on public.fines for select to towerflow_client
   using(private.resident_party(org_id, party_id));
 
+drop policy if exists resident_credit_balances on public.credit_balances;
+create policy resident_credit_balances on public.credit_balances for select to towerflow_client
+  using(private.resident_party(org_id, party_id));
+
+drop policy if exists user_support_tickets on public.support_tickets;
 create policy user_support_tickets on public.support_tickets for select to towerflow_client
   using(user_id = private.uid());
 
+drop policy if exists user_support_messages on public.support_messages;
 create policy user_support_messages on public.support_messages for select to towerflow_client
   using(exists(select 1 from public.support_tickets st where st.id = ticket_id and (st.user_id = private.uid() or st.assigned_to = private.uid())));
 
+drop policy if exists public_plans on public.subscription_plans;
 create policy public_plans on public.subscription_plans for select to towerflow_client
   using(active = true);
 
+drop policy if exists org_subscriptions on public.property_subscriptions;
 create policy org_subscriptions on public.property_subscriptions for select to towerflow_client
   using(exists(select 1 from private.memberships where org_id = property_subscriptions.org_id and user_id = private.uid()));
 
