@@ -115,6 +115,8 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         base = getPreferences(0).getString("base", "https://towerflow.vercel.app") ?: "https://towerflow.vercel.app"
+        arabic = getPreferences(0).getBoolean("arabic", true)
+        dark = getPreferences(0).getBoolean("dark", false)
         login()
         handleAuth(intent)
         pendingNotifications = intent?.extras?.getBoolean("open_notifications", false) == true || intent?.hasExtra("notification_id") == true
@@ -149,54 +151,68 @@ class MainActivity : Activity() {
         val statusBarHeight = if (statusBarResId > 0) resources.getDimensionPixelSize(statusBarResId) else dp(28)
         val safeTopPadding = statusBarHeight + dp(12)
 
+        // Account for System Navigation Bar (||| O <) Safe Insets
+        val navBarResId = resources.getIdentifier("navigation_bar_height", "dimen", "android")
+        val navBarHeight = if (navBarResId > 0) resources.getDimensionPixelSize(navBarResId) else dp(48)
+        val safeBottomPadding = navBarHeight + dp(36)
+
         screen = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), safeTopPadding, dp(16), dp(24))
+            setPadding(dp(16), safeTopPadding, dp(16), safeBottomPadding)
             layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
             layoutDirection = if (arabic) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
         }
         scroll.addView(screen)
         setContentView(scroll)
 
-        // Modern Header TopBar (Matching Web Topbar & Brand)
+        // Modern Header TopBar with absolute RTL/LTR side-switching support
         val topBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             setPadding(dp(2), 0, dp(2), dp(14))
+            layoutDirection = if (arabic) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
         }
 
         if (showBack && onBack != null) {
             val backBtn = Button(this).apply {
-                text = if (arabic) "‹ عودة" else "‹ Back"
+                text = text("‹ عودة", "‹ Back")
                 setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#4F46E5"))
                 textSize = 13.5f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
                 background = roundedDrawable(Color.TRANSPARENT, 10f)
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(36)).apply {
+                    if (arabic) marginStart = dp(2) else marginEnd = dp(6)
+                }
                 setOnClickListener { onBack() }
             }
             topBar.addView(backBtn)
         }
 
-        // Exact Website Logo Vector
+        // Brand Layout: [Logo] + [Column: TowerFlow & Subtitle] (Right in Arabic, Left in English)
+        val brandLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+
         val logoView = ImageView(this).apply {
             setImageResource(R.drawable.towerflow_logo)
             layoutParams = LinearLayout.LayoutParams(dp(40), dp(40)).apply {
-                if (arabic) marginStart = dp(2) else marginEnd = dp(8)
+                if (arabic) marginStart = dp(6) else marginEnd = dp(8)
             }
         }
-        topBar.addView(logoView)
 
         val brandCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply {
-                setPadding(dp(6), 0, dp(6), 0)
-            }
+            gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         }
         brandCol.addView(TextView(this).apply {
             text = "TowerFlow"
             textSize = 18f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
             setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
         })
         brandCol.addView(TextView(this).apply {
@@ -205,11 +221,27 @@ class MainActivity : Activity() {
             typeface = cairoFont
             maxLines = 1
             ellipsize = TextUtils.TruncateAt.END
+            gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
             setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
         })
-        topBar.addView(brandCol)
 
-        // Language & Theme Toggle Buttons (Pill design matching Web)
+        brandLayout.addView(logoView)
+        brandLayout.addView(brandCol)
+        topBar.addView(brandLayout)
+
+        // Spacer pushing action buttons to the opposite edge
+        val spacer = View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(0, 0, 1f)
+        }
+        topBar.addView(spacer)
+
+        // Actions Group: [Language] [Dark Mode]
+        val actionsGroup = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+
         val langBtn = Button(this).apply {
             text = if (arabic) "EN" else "عربي"
             textSize = 12f
@@ -222,11 +254,12 @@ class MainActivity : Activity() {
             )
             setOnClickListener {
                 arabic = !arabic
+                getPreferences(0).edit().putBoolean("arabic", arabic).apply()
                 if (token.isEmpty()) login() else home()
             }
         }
         val langParams = LinearLayout.LayoutParams(dp(54), dp(36)).apply { marginEnd = dp(6) }
-        topBar.addView(langBtn, langParams)
+        actionsGroup.addView(langBtn, langParams)
 
         val themeBtn = Button(this).apply {
             text = if (dark) "☀" else "☾"
@@ -240,10 +273,13 @@ class MainActivity : Activity() {
             )
             setOnClickListener {
                 dark = !dark
+                getPreferences(0).edit().putBoolean("dark", dark).apply()
                 if (token.isEmpty()) login() else home()
             }
         }
-        topBar.addView(themeBtn, LinearLayout.LayoutParams(dp(42), dp(36)))
+        actionsGroup.addView(themeBtn, LinearLayout.LayoutParams(dp(42), dp(36)))
+
+        topBar.addView(actionsGroup)
         screen.addView(topBar)
     }
 
@@ -467,7 +503,7 @@ class MainActivity : Activity() {
             .show()
     }
 
-    private fun call(path: String, method: String = "GET", data: JSONObject? = null, done: (String) -> Unit) {
+    private fun call(path: String, method: String = "GET", data: JSONObject? = null, onError: ((Exception) -> Unit)? = null, done: (String) -> Unit) {
         worker.execute {
             try {
                 val connection = URL(base + "/api/" + path + (if (path.contains('?')) "&" else "?") + "org=" + org).openConnection() as HttpURLConnection
@@ -485,12 +521,12 @@ class MainActivity : Activity() {
                     val code = connection.responseCode
                     val raw = (if (code in 200..299) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { it.readText() } ?: "{}"
                     if (code !in 200..299) throw IllegalStateException(JSONObject(raw).optString("error", "HTTP $code"))
-                    runOnUiThread { try { done(raw) } catch (e: Exception) { error(e) } }
+                    runOnUiThread { try { done(raw) } catch (e: Exception) { onError?.invoke(e) ?: error(e) } }
                 } finally {
                     connection.disconnect()
                 }
             } catch (e: Exception) {
-                runOnUiThread { error(e) }
+                runOnUiThread { onError?.invoke(e) ?: error(e) }
             }
         }
     }
@@ -815,7 +851,7 @@ class MainActivity : Activity() {
 
         // Live KPI Grid for Managers
         if (role != "resident") {
-            call("dashboard") { raw ->
+            call("dashboard", onError = { /* non-critical dashboard kpi metrics; ignore background error */ }) { raw ->
                 try {
                     val dash = JSONObject(raw)
                     val unitsObj = dash.optJSONObject("units") ?: JSONObject()
@@ -1327,16 +1363,47 @@ class MainActivity : Activity() {
     )
 
     private val fieldNames = mapOf(
-        "name" to "الاسم", "address" to "العنوان", "property_id" to "العقار", "unit_id" to "الوحدة", "party_id" to "الطرف المعني",
-        "floor" to "الطابق", "area" to "المساحة (م²)", "status" to "الحالة", "ownership_type" to "نوع الحيازة والملكية", "email" to "البريد الإلكتروني", "phone" to "رقم الهاتف",
-        "kind" to "النوع", "start_date" to "تاريخ البدء (YYYY-MM-DD)", "end_date" to "تاريخ الانتهاء (YYYY-MM-DD)", "rent" to "مبلغ الإيجار",
-        "share" to "نسبة الملكية %", "code" to "كود الحساب", "number" to "الرقم التسلسلي", "description" to "الوصف والتفاصيل",
-        "amount" to "المبلغ الإجمالي", "due_date" to "تاريخ الاستحقاق (YYYY-MM-DD)", "title" to "العنوان", "body" to "المحتوى والبيان",
-        "priority" to "الأولوية", "asset_id" to "الأصل أو المرفق", "technician_id" to "الفني المعتمد", "specialty" to "التخصص المهني",
-        "serial" to "الرقم التسلسلي", "next_service" to "تاريخ الصيانة القادمة", "reason" to "السبب أو المبرر", "category" to "التصنيف",
-        "vendor_id" to "المورد / شركة الخدمات", "service_type" to "نوع الخدمة", "frequency" to "الدورية",
-        "period" to "الفترة المالية", "destination" to "الصندوق المحول إليه", "bank_name" to "اسم البنك", "account_number" to "رقم الحساب"
+        "name" to Pair("الاسم", "Name"),
+        "address" to Pair("العنوان", "Address"),
+        "property_id" to Pair("العقار", "Property"),
+        "unit_id" to Pair("الوحدة", "Unit"),
+        "party_id" to Pair("الطرف المعني", "Party / Resident"),
+        "floor" to Pair("الطابق", "Floor"),
+        "area" to Pair("المساحة (م²)", "Area (m²)"),
+        "status" to Pair("الحالة", "Status"),
+        "ownership_type" to Pair("نوع الحيازة والملكية", "Ownership Type"),
+        "email" to Pair("البريد الإلكتروني", "Email"),
+        "phone" to Pair("رقم الهاتف", "Phone"),
+        "kind" to Pair("النوع", "Type / Kind"),
+        "start_date" to Pair("تاريخ البدء (YYYY-MM-DD)", "Start Date (YYYY-MM-DD)"),
+        "end_date" to Pair("تاريخ الانتهاء (YYYY-MM-DD)", "End Date (YYYY-MM-DD)"),
+        "rent" to Pair("مبلغ الإيجار", "Rent Amount"),
+        "share" to Pair("نسبة الملكية %", "Ownership Share %"),
+        "code" to Pair("كود الحساب", "Account Code"),
+        "number" to Pair("الرقم التسلسلي", "Serial Number"),
+        "description" to Pair("الوصف والتفاصيل", "Description"),
+        "amount" to Pair("المبلغ الإجمالي", "Total Amount"),
+        "due_date" to Pair("تاريخ الاستحقاق (YYYY-MM-DD)", "Due Date (YYYY-MM-DD)"),
+        "title" to Pair("العنوان", "Title"),
+        "body" to Pair("المحتوى والبيان", "Body / Message"),
+        "priority" to Pair("الأولوية", "Priority"),
+        "asset_id" to Pair("الأصل أو المرفق", "Asset / Equipment"),
+        "technician_id" to Pair("الفني المعتمد", "Assigned Technician"),
+        "specialty" to Pair("التخصص المهني", "Specialty"),
+        "serial" to Pair("الرقم التسلسلي", "Serial Number"),
+        "next_service" to Pair("تاريخ الصيانة القادمة", "Next Service Date"),
+        "reason" to Pair("السبب أو المبرر", "Reason"),
+        "category" to Pair("التصنيف", "Category"),
+        "vendor_id" to Pair("المورد / شركة الخدمات", "Vendor / Service Company"),
+        "service_type" to Pair("نوع الخدمة", "Service Type"),
+        "frequency" to Pair("الدورية", "Frequency"),
+        "period" to Pair("الفترة المالية", "Financial Period"),
+        "destination" to Pair("الصندوق المحول إليه", "Destination Fund"),
+        "bank_name" to Pair("اسم البنك", "Bank Name"),
+        "account_number" to Pair("رقم الحساب", "Account Number")
     )
+
+    private fun fieldTitle(k: String) = fieldNames[k]?.let { if (arabic) it.first else it.second } ?: k.replace('_', ' ')
 
     private fun recordForm(entity: String, record: JSONObject? = null) {
         scaffold(title(entity), true) { listing(entity) }
@@ -1385,7 +1452,7 @@ class MainActivity : Activity() {
             }
 
             if (relation != null || options.isNotEmpty()) {
-                label(text(fieldNames[key] ?: key, key.replace('_', ' ')), 13, true)
+                label(fieldTitle(key), 13, true)
                 fun select(items: List<Pair<String, String>>) {
                     val spinner = Spinner(this)
                     spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items.map { it.second })
@@ -1406,7 +1473,7 @@ class MainActivity : Activity() {
                     select(options.map { it to it })
                 }
             } else {
-                val control = input(text(fieldNames[key] ?: key, key.replace('_', ' '))).apply {
+                val control = input(fieldTitle(key)).apply {
                     setText(initial)
                     if (key in listOf("amount", "rent", "area", "share", "floor")) {
                         inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED
@@ -1482,7 +1549,7 @@ class MainActivity : Activity() {
         FirebaseMessaging.getInstance().token.addOnSuccessListener { device ->
             getSharedPreferences("push_device", MODE_PRIVATE).edit().putString("token", device).apply()
             if (token.isNotEmpty()) {
-                call("push/devices", "POST", JSONObject().put("token", device)) {
+                call("push/devices", "POST", JSONObject().put("token", device), onError = {}) {
                     if (showResult) Toast.makeText(this, text("تم تفعيل الإشعارات بنجاح", "Notifications enabled successfully"), Toast.LENGTH_SHORT).show()
                 }
             }
