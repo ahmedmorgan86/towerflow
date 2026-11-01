@@ -49,7 +49,15 @@ class MainActivity : Activity() {
         "tickets" to Pair("الصيانة", "Maintenance"), "assets" to Pair("الأصول", "Assets"),
         "technicians" to Pair("الفنيون", "Technicians"), "announcements" to Pair("الإعلانات", "Announcements"),
         "notifications" to Pair("الإشعارات", "Notifications"), "trial_balance" to Pair("ميزان المراجعة", "Trial balance"),
-        "audit_logs" to Pair("التدقيق", "Audit log")
+        "audit_logs" to Pair("التدقيق", "Audit log"),
+        "payment_proofs" to Pair("إثباتات السداد", "Payment proofs"),
+        "fines" to Pair("الغرامات", "Fines"),
+        "credit_balances" to Pair("الأرصدة الدائنة", "Credit balances"),
+        "money_accounts" to Pair("الخزائن والحسابات", "Cash & bank accounts"),
+        "support_tickets" to Pair("الدعم الفني", "Support tickets"),
+        "expense_distributions" to Pair("توزيع المصروفات", "Expense distributions"),
+        "vendor_contracts" to Pair("عقود الموردين", "Vendor contracts"),
+        "budgets" to Pair("الميزانيات التقديرية", "Budgets")
     )
     private fun text(ar: String, en: String) = if (arabic) ar else en
     private fun title(k: String) = names[k]?.let { if (arabic) it.first else it.second } ?: k
@@ -119,25 +127,33 @@ class MainActivity : Activity() {
         button(text("ملفي الشخصي", "My profile")) { profile() }
         button(text("تفعيل إشعارات الموبايل", "Enable phone notifications")) { enablePush() }
         label(text("بيانات حقيقية من مؤسستك. تُطبق الصلاحيات على الخادم.", "Live workspace data. Permissions are enforced on the server."))
-        names.keys.filter { role != "resident" || it in listOf("units", "leases", "invoices", "tickets", "announcements", "notifications") }.forEach { key -> button(title(key)) { listing(key) } }
+        names.keys.filter { role != "resident" || it in listOf("units", "leases", "invoices", "tickets", "announcements", "notifications", "payment_proofs", "fines", "credit_balances", "support_tickets") }.forEach { key -> button(title(key)) { listing(key) } }
         button(text("تسجيل الخروج", "Sign out")) { disablePushAndLogout() }
     }
     private fun listing(entity: String) {
         scaffold(title(entity)); button(text("الرئيسية", "Home")) { home() }
         if (entity in forms.keys && role in listOf("admin", "manager", "accountant", "technician")) button(text("إضافة سجل", "Add record")) { recordForm(entity) }
         if (entity == "tickets") button(text("طلب صيانة", "Request maintenance")) { ticketForm() }
+        if (entity == "payment_proofs") button(text("إرسال إثبات سداد", "Submit payment proof")) { proofForm() }
+        if (entity == "support_tickets") button(text("تذكرة دعم جديدة", "New support ticket")) { supportTicketForm() }
         call(entity) { raw ->
             val records = JSONArray(raw)
             if (records.length() == 0) label(text("لا توجد سجلات بعد", "No records yet"))
             for (i in 0 until records.length()) {
                 val row = records.getJSONObject(i)
-                val heading = listOf("name", "title", "number", "description", "message", "entity").map { row.optString(it) }.firstOrNull { it.isNotEmpty() } ?: "Record"
+                val heading = listOf("name", "title", "number", "description", "message", "entity", "reference", "reason").map { row.optString(it) }.firstOrNull { it.isNotEmpty() } ?: "Record"
                 label(heading, 19)
-                val details = listOf("status", "amount", "due_date", "priority", "phone", "address", "body", "debit", "credit", "action").filter { row.has(it) && !row.isNull(it) }.joinToString(" · ") { "$it: ${row.optString(it)}" }
+                val details = listOf("status", "amount", "due_date", "priority", "phone", "address", "body", "debit", "credit", "action", "balance", "kind", "notes").filter { row.has(it) && !row.isNull(it) }.joinToString(" · ") { "$it: ${row.optString(it)}" }
                 label(details)
-                if (entity in forms.keys && entity !in listOf("invoices", "expenses") && role in listOf("admin", "manager", "accountant", "technician")) button(text("تعديل", "Edit")) { recordForm(entity, row) }
+                if (entity in forms.keys && entity !in listOf("invoices", "expenses", "payment_proofs", "fines") && role in listOf("admin", "manager", "accountant", "technician")) button(text("تعديل", "Edit")) { recordForm(entity, row) }
                 if (entity == "expenses" && row.optString("status") == "pending" && role in listOf("admin", "manager")) {
                     listOf("approved", "rejected").forEach { decision -> button(text(if (decision == "approved") "اعتماد" else "رفض", decision)) { call("expenses/" + row.getString("id") + "/decide", "POST", JSONObject().put("decision", decision)) { listing(entity) } } }
+                }
+                if (entity == "payment_proofs" && row.optString("status") == "pending" && role in listOf("admin", "manager")) {
+                    listOf("approved", "rejected").forEach { decision -> button(text(if (decision == "approved") "اعتماد السداد" else "رفض الإثبات", decision)) { call("payment_proofs/" + row.getString("id") + "/review", "POST", JSONObject().put("status", decision)) { listing(entity) } } }
+                }
+                if (entity == "fines" && row.optString("status") == "issued" && role in listOf("admin", "manager")) {
+                    button(text("إعفاء من الغرامة", "Exempt fine")) { fineExemptForm(row.getString("id")) }
                 }
                 if (entity == "notifications" && row.isNull("read_at")) button(text("تمت القراءة", "Mark as read")) { call("notifications/" + row.getString("id") + "/read", "POST", JSONObject()) { listing(entity) } }
                 if (entity == "invoices" && role in listOf("admin", "manager", "accountant")) {
@@ -153,6 +169,42 @@ class MainActivity : Activity() {
         scaffold(text("طلب صيانة", "Maintenance request")); val heading = input(text("عنوان المشكلة", "Issue title")); val description = input(text("التفاصيل", "Details")); val spinner = Spinner(this); screen.addView(spinner)
         call("units") { raw -> val units = JSONArray(raw); spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until units.length()).map { units.getJSONObject(it).getString("name") }); button(text("إرسال", "Submit")) { val payload = JSONObject().put("title", heading.text.toString()).put("description", description.text.toString()); if (units.length() > 0) payload.put("unit_id", units.getJSONObject(spinner.selectedItemPosition).getString("id")); call("tickets", "POST", payload) { listing("tickets") } } }
         button(text("إلغاء", "Cancel")) { listing("tickets") }
+    }
+    private fun proofForm() {
+        scaffold(text("إرسال إثبات سداد", "Submit payment proof"))
+        val amount = input(text("المبلغ", "Amount")).apply { inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL }
+        val reference = input(text("رقم المعاملة / المرجع", "Transaction reference"))
+        val bank = input(text("البنك أو المحفظة المحول إليها", "Target bank or wallet"))
+        val notes = input(text("ملاحظات إضافية", "Additional notes"))
+        val unitSpinner = Spinner(this); screen.addView(unitSpinner)
+        call("units") { raw ->
+            val units = JSONArray(raw)
+            unitSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until units.length()).map { units.getJSONObject(it).getString("name") })
+            button(text("إرسال", "Submit")) {
+                val payload = JSONObject().put("amount", amount.text.toString()).put("reference", reference.text.toString()).put("bank_name", bank.text.toString()).put("notes", notes.text.toString())
+                if (units.length() > 0) payload.put("unit_id", units.getJSONObject(unitSpinner.selectedItemPosition).getString("id"))
+                call("payment_proofs", "POST", payload) { listing("payment_proofs") }
+            }
+        }
+        button(text("إلغاء", "Cancel")) { listing("payment_proofs") }
+    }
+    private fun supportTicketForm() {
+        scaffold(text("تذكرة دعم فني", "New support ticket"))
+        val title = input(text("عنوان المشكلة", "Issue title"))
+        val desc = input(text("وصف المشكلة", "Description")).apply { setSingleLine(false); maxLines = 4 }
+        button(text("إرسال التذكرة", "Submit ticket")) {
+            val payload = JSONObject().put("title", title.text.toString()).put("description", desc.text.toString()).put("category", "support").put("priority", "normal")
+            call("support_tickets", "POST", payload) { listing("support_tickets") }
+        }
+        button(text("إلغاء", "Cancel")) { listing("support_tickets") }
+    }
+    private fun fineExemptForm(fineId: String) {
+        scaffold(text("إعفاء من الغرامة", "Exempt fine"))
+        val reason = input(text("سبب الإعفاء الإلزامي", "Exemption rationale"))
+        button(text("تأكيد الإعفاء", "Confirm exemption")) {
+            call("fines/$fineId/exempt", "POST", JSONObject().put("reason", reason.text.toString())) { listing("fines") }
+        }
+        button(text("إلغاء", "Cancel")) { listing("fines") }
     }
     private fun collectForm(id: String) { scaffold(text("تسجيل تحصيل", "Record receipt")); val amount = input(text("المبلغ", "Amount")).apply { inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL }; val reference = input(text("مرجع فريد", "Unique reference")); button(text("حفظ", "Save")) { call("invoices/$id/collect", "POST", JSONObject().put("amount", amount.text.toString()).put("reference", reference.text.toString())) { listing("invoices") } }; button(text("إلغاء", "Cancel")) { listing("invoices") } }
 
@@ -213,8 +265,22 @@ class MainActivity : Activity() {
         "ownerships" to listOf("unit_id", "party_id", "share"), "accounts" to listOf("code", "name", "kind"),
         "invoices" to listOf("number", "party_id", "unit_id", "description", "amount", "due_date"), "expenses" to listOf("description", "amount"),
         "assets" to listOf("property_id", "name", "serial", "next_service"), "technicians" to listOf("name", "specialty", "phone"),
-        "tickets" to listOf("title", "description", "unit_id", "asset_id", "priority", "status", "technician_id"), "announcements" to listOf("title", "body"))
-    private val fieldNames = mapOf("name" to "الاسم", "address" to "العنوان", "property_id" to "العقار", "unit_id" to "الوحدة", "party_id" to "المالك / المستأجر", "floor" to "الطابق", "area" to "المساحة", "status" to "الحالة", "email" to "البريد", "phone" to "الهاتف", "kind" to "النوع", "start_date" to "بداية العقد YYYY-MM-DD", "end_date" to "نهاية العقد YYYY-MM-DD", "rent" to "الإيجار", "share" to "الملكية %", "code" to "الكود", "number" to "رقم الفاتورة", "description" to "الوصف", "amount" to "المبلغ", "due_date" to "الاستحقاق YYYY-MM-DD", "title" to "العنوان", "body" to "المحتوى", "priority" to "الأولوية", "asset_id" to "الأصل", "technician_id" to "الفني", "specialty" to "التخصص", "serial" to "الرقم التسلسلي", "next_service" to "الصيانة القادمة YYYY-MM-DD")
+        "tickets" to listOf("title", "description", "unit_id", "asset_id", "priority", "status", "technician_id"), "announcements" to listOf("title", "body"),
+        "money_accounts" to listOf("property_id", "name", "kind", "currency"),
+        "fines" to listOf("property_id", "unit_id", "party_id", "reason", "amount"),
+        "support_tickets" to listOf("title", "description", "category", "priority"),
+        "vendor_contracts" to listOf("property_id", "title", "contractor_name", "amount", "start_date", "end_date"),
+        "budgets" to listOf("property_id", "title", "year", "total_amount")
+    )
+    private val fieldNames = mapOf(
+        "name" to "الاسم", "address" to "العنوان", "property_id" to "العقار", "unit_id" to "الوحدة", "party_id" to "المالك / المستأجر",
+        "floor" to "الطابق", "area" to "المساحة", "status" to "الحالة", "email" to "البريد", "phone" to "الهاتف", "kind" to "النوع",
+        "start_date" to "بداية العقد YYYY-MM-DD", "end_date" to "نهاية العقد YYYY-MM-DD", "rent" to "الإيجار", "share" to "الملكية %",
+        "code" to "الكود", "number" to "الرقم", "description" to "الوصف", "amount" to "المبلغ", "due_date" to "الاستحقاق YYYY-MM-DD",
+        "title" to "العنوان", "body" to "المحتوى", "priority" to "الأولوية", "asset_id" to "الأصل", "technician_id" to "الفني",
+        "specialty" to "التخصص", "serial" to "الرقم التسلسلي", "next_service" to "الصيانة القادمة YYYY-MM-DD", "reason" to "السبب / البيان",
+        "currency" to "العملة", "category" to "التصنيف", "contractor_name" to "اسم المورد", "year" to "السنة", "total_amount" to "إجمالي الميزانية"
+    )
     private fun recordForm(entity: String, record: JSONObject? = null) {
         scaffold(title(entity)); val values = linkedMapOf<String, () -> String>()
         val keys = forms[entity] ?: return
@@ -225,13 +291,23 @@ class MainActivity : Activity() {
             }
             val key = keys[index]; val initial = if (record?.isNull(key) == false) record.optString(key) else ""
             val relation = mapOf("property_id" to "properties", "unit_id" to "units", "party_id" to "parties", "asset_id" to "assets", "technician_id" to "technicians")[key]
-            val options = when { key == "kind" && entity == "parties" -> listOf("tenant", "owner", "vendor"); key == "kind" && entity == "accounts" -> listOf("asset", "liability", "equity", "income", "expense"); key == "status" && entity == "units" -> listOf("vacant", "occupied", "maintenance"); key == "status" && entity == "leases" -> listOf("active", "ended"); key == "status" -> listOf("open", "assigned", "in_progress", "resolved", "closed"); key == "priority" -> listOf("normal", "low", "urgent"); else -> emptyList() }
+            val options = when {
+                key == "kind" && entity == "parties" -> listOf("tenant", "owner", "vendor")
+                key == "kind" && entity == "accounts" -> listOf("asset", "liability", "equity", "income", "expense")
+                key == "kind" && entity == "money_accounts" -> listOf("cash", "bank", "wallet", "maintenance_fund")
+                key == "status" && entity == "units" -> listOf("vacant", "occupied", "maintenance")
+                key == "status" && entity == "leases" -> listOf("active", "ended")
+                key == "priority" -> listOf("normal", "low", "urgent")
+                key == "category" && entity == "support_tickets" -> listOf("support", "billing", "technical", "feature")
+                key == "status" -> listOf("open", "assigned", "in_progress", "resolved", "closed")
+                else -> emptyList()
+            }
             if (relation != null || options.isNotEmpty()) {
                 label(text(fieldNames[key] ?: key, key.replace('_', ' ')))
                 fun select(items: List<Pair<String, String>>) { val spinner = Spinner(this); spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items.map { it.second }); spinner.setSelection(items.indexOfFirst { it.first == initial }.coerceAtLeast(0)); screen.addView(spinner); values[key] = { items.getOrNull(spinner.selectedItemPosition)?.first ?: "" }; addField(index+1) }
-                if (relation != null) call(relation) { raw -> val rows = JSONArray(raw); select(listOf("" to "—") + (0 until rows.length()).map { val row = rows.getJSONObject(it); row.getString("id") to row.optString("name") }) } else select(options.map { it to (if (arabic) when (it) { "occupied" -> "متأجرة"; "vacant" -> "غير متأجرة"; "maintenance" -> "تحت الصيانة"; else -> it } else if (it == "occupied") "Rented" else if (it == "vacant") "Not rented" else it) })
+                if (relation != null) call(relation) { raw -> val rows = JSONArray(raw); select(listOf("" to "—") + (0 until rows.length()).map { val row = rows.getJSONObject(it); row.getString("id") to row.optString("name") }) } else select(options.map { it to (if (arabic) when (it) { "occupied" -> "متأجرة"; "vacant" -> "غير متأجرة"; "maintenance" -> "تحت الصيانة"; "cash" -> "خزينة نقدية"; "bank" -> "حساب بنكي"; "wallet" -> "محفظة إلكترونية"; "maintenance_fund" -> "صندوق صيانة"; else -> it } else if (it == "occupied") "Rented" else if (it == "vacant") "Not rented" else it) })
             } else {
-                val control = input(text(fieldNames[key] ?: key, key.replace('_', ' '))).apply { setText(initial); if (key in listOf("amount", "rent", "area", "share", "floor")) inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED }
+                val control = input(text(fieldNames[key] ?: key, key.replace('_', ' '))).apply { setText(initial); if (key in listOf("amount", "rent", "area", "share", "floor", "year", "total_amount")) inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED }
                 values[key] = { control.text.toString() }; addField(index+1)
             }
         }; addField(0)

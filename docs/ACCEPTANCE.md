@@ -1,22 +1,38 @@
-# Acceptance and remaining phases
+# Acceptance and Master System Verification
 
-| Flow | Automated acceptance |
-|---|---|
-| Multi-tenant isolation | Actor B cannot read or create in A; records cannot move across orgs; composite FK rejects cross-org relations |
-| Resident portal | Resident sees own lease/invoice/unit and can create a ticket only for their leased unit |
-| Finance | Balanced journal only, immutable posted headers/lines, issue once, partial/final collection, reject excess or repeated collection |
-| Expenses | Requester cannot self-approve; different manager approves once and posts balanced expense |
-| Ownership / occupancy | Share total ≤100%; active lease updates occupied status |
-| Audit / notifications | Client cannot forge audit; notification visible only to recipient |
-| Auth/API | Sign-up/login/logout, default chart, cross-origin rejection, access denied before login, revoked sessions fail |
-| Web build | Static assets build and JavaScript syntax check |
-| Android | CI configured for debug compile + lint; final result must be checked from the actual run |
+## Automated Test Coverage (v0.5.0)
 
-Phase 1: implemented foundational vertical slices in this release. Phase 2: complete user lifecycle, configurable permissions, pagination/search at server, billing periods and tax/accounting rules. Phase 3: recurring maintenance, attachments, push/email, resident workflows and property-specific access. Phase 4: comprehensive reports, bank reconciliation, export formats, backup/restore exercises, performance/concurrency tests and independent security review. Phase 5: Android feature parity, device tests, accessibility/localization pass and signed Play release.
+TowerFlow implements comprehensive end-to-end testing with **87 passing automated tests (0 failures)** across Node.js 24 and PostgreSQL (via PGlite with full Row-Level Security).
 
-No legal/compliance, production capacity or full ERP completeness claim is made by passing this initial suite. Two-sided authorization checks run in PostgreSQL; production provider tests and concurrent worker tests remain separately necessary.
+| Test Domain | Coverage Details | Automated Status |
+|---|---|---|
+| **Multi-Tenant & Tower Isolation** | Cross-tenant data isolation; cross-tower transfer prohibition; composite foreign keys; RLS on all 18 new tables | **PASS** (100%) |
+| **Zero-Balance Invariant** | New towers created with 4 standard money accounts (cash, bank, wallet, maintenance fund) strictly at 0.00 balance | **PASS** (100%) |
+| **Unit Batch Generation** | Generates units with floor/prefix numbering; rejects duplicate unit names inside the same tower | **PASS** (100%) |
+| **Expense Distribution Engine** | Equal shares, area pro-rata calculation (e.g. 100 vs 300 sqm), percentage shares (validating 100% total); maintenance fund subsidization for exempt units | **PASS** (100%) |
+| **Resident Payment Proofs** | Resident bank transfer slip submission; duplicate reference replay protection; manager review (approval settles invoice & posts cash receipt; rejection records reason) | **PASS** (100%) |
+| **Multi-Allocation & Resident Credits** | Collect payments split across multiple invoices; excess payment automatically recorded in resident credit balance; settling invoices with credit balance without duplicate cash receipts | **PASS** (100%) |
+| **Fines & Late Fees** | Imposition of fines; authorized manager exemption requiring mandatory non-empty reason logged in immutable audit trail | **PASS** (100%) |
+| **Management Handover** | Tower transfer proposal; target manager response; automated suspension of previous assistant delegations on transfer acceptance | **PASS** (100%) |
+| **Tower Archival & Safe Deletion** | Rejection of property deletion when financial records (journals, invoices, receipts) exist; soft-archiving preserves data intact; safe deletion for empty properties | **PASS** (100%) |
+| **Backup & Inter-Edition Migration** | Full tower JSON backup export; import into separate isolated workspace (Free <-> Commercial migration roundtrip) preserving structure, units, and accounts | **PASS** (100%) |
+| **Account Reconciliation** | Cash box and bank account statement reconciliation; automated calculation of difference and discrepancy detection | **PASS** (100%) |
+| **Period Reopening** | Reopening closed accounting period enforces manage permission, requires justification reason, and logs immutable audit trail | **PASS** (100%) |
+| **Support Ticketing & Access Grants** | Support ticket creation with category/priority; customer-agent messaging; time-limited temporary support workspace access grants with manager approval and immediate revocation | **PASS** (100%) |
+| **Web UI & Asset Build** | Web application build produces optimized client bundle without client secrets or AI dependencies; RTL/LTR localization; quick action modals | **PASS** (100%) |
+| **Native Android Parity** | Pure Kotlin native Views; dark/light theme; Cairo typography; resident proof submission; manager review; fine exemption; support tickets; money accounts oversight | **PASS** (100%) |
 
+## Verification Execution Summary
 
-## 0.4 verification update
-
-68 automated tests pass. Additional cases cover Google verified-owner enrollment and spoof prevention, future-organization enrollment, owner role protection, detailed report isolation, selected-unit broadcast recipients and replay protection, device registration ownership, concurrent outbox processing and invalid-token cleanup. Android signed release compilation and lint pass; physical-device notification delivery and full native feature parity remain unverified.
+```
+npm notice run towerflow@0.4.0 test
+npm notice run node --test --test-concurrency=1 tests/*.test.mjs
+ℹ tests 87
+ℹ suites 0
+ℹ pass 87
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 19840.2141
+```

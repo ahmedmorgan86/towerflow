@@ -8,6 +8,8 @@ import {passwordHash,passwordMatches,createSession,session,tokenFrom,hashToken,t
 import {permission,journal,issue,collect,approve} from '../lib/finance.mjs';
 import {permissions,createPeriod,closePeriod,reverse,detailedInvoice,generate,generateMaintenance,reports,writePermission,isoDate} from '../lib/platform.mjs';
 import {googleReady,googleStart,googleCallback,mobileExchange,updateProfile} from '../lib/identity.mjs';
+import {createTowerWithZeroBalance,generateUnitsBatch,transferWithinTower,submitPaymentProof,reviewPaymentProof,createExpenseDistribution,collectMulti,applyCreditToInvoice,exemptFine,initiateTowerTransfer,respondTowerTransfer,archiveTower,deleteTowerSafely,exportTowerBackup,importTowerBackup,reconcileMoneyAccount,reopenPeriod} from '../lib/tower-operations.mjs';
+import {createSupportTicket,addSupportMessage,requestSupportAccess,approveSupportAccess,revokeSupportAccess} from '../lib/support-system.mjs';
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
 async function body(req){if(req.body&&typeof req.body==='object')return req.body;let data='';for await(const chunk of req){data+=chunk;if(Buffer.byteLength(data)>750000)throw fail('Request too large',413);}try{return data?JSON.parse(data):{};}catch{throw fail('Invalid JSON');}}
 const cookie=(token,secure)=>`tf_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${token?43200:0}${secure?'; Secure':''}`;
@@ -57,6 +59,8 @@ export default async function handler(req,res){
  if(route==='me/profile'&&method==='PATCH')return send({user:await updateProfile(user,await body(req))});
  if(route==='me/security'&&method==='GET')return send(await database().transaction(async c=>({googleLinked:!!(await c.query("select 1 from private.oauth_accounts where provider='google' and user_id=$1",[user.id])).rows.length,passwordEnabled:!!(await c.query('select 1 from private.users where id=$1 and password_hash is not null',[user.id])).rows.length,googleAvailable:googleReady()})));
  if(route==='me'&&method==='GET'){const orgs=await database().transaction(c=>c.query('select o.*,m.role from organizations o join private.memberships m on m.org_id=o.id where m.user_id=$1 order by o.created_at',[user.id]));return send({user,organizations:orgs.rows});}
+ if(route==='support_tickets'&&method==='POST'){const b=await body(req);return send(await database().transaction(c=>createSupportTicket(c,user.id,b)),201);}
+ if(route.startsWith('support_tickets/')&&route.endsWith('/messages')&&method==='POST'){const tid=route.split('/')[1];const b=await body(req);return send(await database().transaction(c=>addSupportMessage(c,user.id,tid,b.message)),201);}
  const org=u.searchParams.get('org');if(!/^[a-f0-9-]{36}$/.test(org||''))throw fail('Organization required');
  if(route==='reports'&&method==='GET'&&detailedKinds.includes(u.searchParams.get('kind'))){const from=isoDate(u.searchParams.get('from')||'0001-01-01'),to=isoDate(u.searchParams.get('to')||new Date().toISOString().slice(0,10));if(from>to)throw fail('Invalid date range');return send(await asUser(user.id,c=>detailedReport(c,org,u.searchParams.get('kind'),from,to,u.searchParams.get('property_id'),Number(u.searchParams.get('limit')||500),Number(u.searchParams.get('offset')||0))));}
  if(route==='broadcasts/recipients'&&method==='GET'){const unitIds=u.searchParams.get('scope')==='units'?(u.searchParams.get('unit_ids')||'').split(',').filter(Boolean):null;const r=await context(user,c=>recipients(c,org,u.searchParams.get('property_id'),unitIds));return send({registered:r.registered,unlinked:r.unlinked,pushConfigured:pushReady()});}
@@ -88,6 +92,24 @@ export default async function handler(req,res){
  if(entity==='journals'&&!id&&method==='POST')return send(await context(user,async c=>{await writePermission(c,org,'journals');const b=await body(req);if(b.entry_date)isoDate(b.entry_date);return {id:await journal(c,org,user.id,String(b.description||'Journal').slice(0,4000),b.lines,b.entry_date)};}),201);
  if(entity==='invoices'&&id&&action&&method==='POST'){const b=await body(req);return send(await context(user,c=>action==='issue'?issue(c,org,user.id,id):action==='collect'?collect(c,org,user.id,id,b.amount,b.reference):Promise.reject(fail('Unknown action',404))));}
  if(entity==='expenses'&&id&&action==='decide'&&method==='POST'){const b=await body(req);return send(await context(user,c=>approve(c,org,user.id,id,b.decision)));}
+ if(route==='properties/create-tower'&&method==='POST'){const b=await body(req);return send(await context(user,c=>createTowerWithZeroBalance(c,org,user.id,b)),201);}
+ if(route==='collections/multi'&&method==='POST'){const b=await body(req);return send(await context(user,c=>collectMulti(c,org,user.id,b)),200);}
+ if(route==='expense_distributions'&&method==='POST'){const b=await body(req);return send(await context(user,c=>createExpenseDistribution(c,org,user.id,b)),201);}
+ if(entity==='properties'&&id&&action==='units_batch'&&method==='POST'){const b=await body(req);return send(await context(user,c=>generateUnitsBatch(c,org,user.id,id,b)),201);}
+ if(entity==='properties'&&id&&action==='transfer_funds'&&method==='POST'){const b=await body(req);return send(await context(user,c=>transferWithinTower(c,org,user.id,id,b.from_account_id,b.to_account_id,b.amount,b.note)),200);}
+ if(entity==='properties'&&id&&action==='archive'&&method==='POST')return send(await context(user,c=>archiveTower(c,org,user.id,id)),200);
+ if(entity==='properties'&&id&&!action&&method==='DELETE')return send(await context(user,c=>deleteTowerSafely(c,org,user.id,id)),200);
+ if(entity==='properties'&&id&&action==='backup'&&method==='GET')return send(await context(user,c=>exportTowerBackup(c,org,user.id,id)),200);
+ if(entity==='properties'&&id&&action==='transfer_management'&&method==='POST'){const b=await body(req);return send(await context(user,c=>initiateTowerTransfer(c,org,user.id,id,b.target_email,b.notes)),201);}
+ if(entity==='management_transfers'&&id&&action==='respond'&&method==='POST'){const b=await body(req);return send(await context(user,c=>respondTowerTransfer(c,org,user.id,id,b.accept)),200);}
+ if(entity==='payment_proofs'&&id&&action==='review'&&method==='POST'){const b=await body(req);return send(await context(user,c=>reviewPaymentProof(c,org,user.id,id,b.decision,b.rejection_reason)),200);}
+ if(entity==='fines'&&id&&action==='exempt'&&method==='POST'){const b=await body(req);return send(await context(user,c=>exemptFine(c,org,user.id,id,b.reason)),200);}
+ if(entity==='credit_balances'&&id&&action==='apply'&&method==='POST'){const b=await body(req);return send(await context(user,c=>applyCreditToInvoice(c,org,user.id,id,b.invoice_id,b.amount)),200);}
+ if(entity==='support_grants'&&id&&action==='approve'&&method==='POST'){const b=await body(req);return send(await context(user,c=>approveSupportAccess(c,user.id,id,b.allow_download)),200);}
+ if(entity==='support_grants'&&id&&action==='revoke'&&method==='POST')return send(await context(user,c=>revokeSupportAccess(c,user.id,id)),200);
+ if(route==='properties/import_backup'&&method==='POST'){const b=await body(req);return send(await context(user,c=>importTowerBackup(c,org,user.id,b)),201);}
+ if(route==='reconciliations'&&method==='POST'){const b=await body(req);return send(await context(user,c=>reconcileMoneyAccount(c,org,user.id,b)),201);}
+ if(entity==='periods'&&id&&action==='reopen'&&method==='POST'){const b=await body(req);return send(await context(user,c=>reopenPeriod(c,org,user.id,id,b.reason)),200);}
  if(readable.includes(entity)&&method==='GET')return send(await asUser(user.id,async c=>{
  const limit=Math.min(500,Math.max(1,Number(u.searchParams.get('limit')||100))),offset=Math.max(0,Number(u.searchParams.get('offset')||0));if(!Number.isInteger(limit)||!Number.isInteger(offset))throw fail('Invalid pagination');
  const params=[org];let where='org_id=$1';if(id){params.push(id);where+=' and id=$'+params.length;}if(entity==='units'&&u.searchParams.get('property_id')){params.push(u.searchParams.get('property_id'));where+=' and property_id=$'+params.length;}

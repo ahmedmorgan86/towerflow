@@ -3,80 +3,518 @@ import {mountReports} from './reports.js';
 import {mountWorkflows} from './workflows.js';
 import {mountProfile} from './profile.js';
 import {icon,architecture} from './design.js';
+
 const $=s=>document.querySelector(s), escape=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
 let lang=localStorage.tfLang||'ar',dark=localStorage.tfDark==='true',me=null,org='',page='dashboard',cache={},busy=false;
-const words={dashboard:['نظرة عامة','Overview'],properties:['العقارات والأبراج','Properties'],units:['الوحدات','Units'],parties:['الملاك والمستأجرون','People'],leases:['العقود','Leases'],ownerships:['ملكيات الوحدات','Ownerships'],invoices:['الفواتير والمستحقات','Invoices'],receipts:['التحصيل','Receipts'],expenses:['المصروفات والموافقات','Expenses'],journals:['دفتر اليومية','Journal'],accounts:['دليل الحسابات','Accounts'],tickets:['الصيانة','Maintenance'],assets:['الأصول','Assets'],technicians:['الفنيون','Technicians'],reports:['التقارير','Reports'],announcements:['إعلانات السكان','Announcements'],notifications:['الإشعارات','Notifications'],audit_logs:['سجل التدقيق','Audit trail'],members:['المستخدمون والصلاحيات','Members & roles'],settings:['الإعدادات','Settings'],portal:['بوابة السكان','Resident portal'],name:['الاسم','Name'],address:['العنوان','Address'],kind:['النوع','Type'],property_id:['العقار','Property'],unit_id:['الوحدة','Unit'],party_id:['المالك / المستأجر','Person'],floor:['الطابق','Floor'],area:['المساحة م²','Area m²'],status:['الحالة','Status'],email:['البريد الإلكتروني','Email'],phone:['الهاتف','Phone'],start_date:['بداية العقد','Start date'],end_date:['نهاية العقد','End date'],rent:['الإيجار','Rent'],share:['نسبة الملكية %','Ownership %'],code:['الكود','Code'],specialty:['التخصص','Specialty'],serial:['الرقم التسلسلي','Serial'],next_service:['الصيانة القادمة','Next service'],title:['العنوان','Title'],description:['الوصف','Description'],priority:['الأولوية','Priority'],technician_id:['الفني المسؤول','Technician'],asset_id:['الأصل','Asset'],body:['المحتوى','Body'],number:['رقم الفاتورة','Invoice number'],amount:['المبلغ','Amount'],due_date:['تاريخ الاستحقاق','Due date'],reference:['مرجع التحصيل الفريد','Unique receipt reference'],received_on:['تاريخ التحصيل','Received on'],created_at:['التاريخ','Date'],entry_date:['تاريخ القيد','Entry date'],message:['الرسالة','Message'],entity:['الجدول','Entity'],entity_id:['السجل','Record'],action:['الإجراء','Action'],role:['الصلاحية','Role'],debit:['مدين','Debit'],credit:['دائن','Credit'],save:['حفظ','Save'],cancel:['إلغاء','Cancel'],add:['إضافة','Add'],edit:['تعديل','Edit'],export:['تصدير CSV','Export CSV'],empty:['لا توجد سجلات بعد. ابدأ بإضافة أول سجل.','No records yet. Add your first record.'],loading:['جارٍ التحميل…','Loading…'],saved:['تم الحفظ','Saved'],search:['ابحث في السجلات…','Search records…'],logout:['تسجيل الخروج','Sign out'],signin:['تسجيل الدخول','Sign in'],signup:['إنشاء حساب ومؤسسة','Create account & workspace'],password:['كلمة المرور (12 حرفًا على الأقل)','Password (at least 12 characters)'],organization:['اسم المؤسسة','Organization name'],welcome:['إدارة عقاراتك، بوضوح.','Your properties. In perspective.'],subtitle:['كل التفاصيل في مكان واحد. من أول عقد إلى آخر قيد.','Every detail in one place. From your first lease to your last entry.'],draft:['مسودة','Draft'],issued:['صادرة','Issued'],paid:['مدفوعة','Paid'],pending:['قيد الموافقة','Pending'],approved:['معتمدة','Approved'],rejected:['مرفوضة','Rejected'],vacant:['غير متأجرة','Not rented'],occupied:['متأجرة','Rented'],maintenance:['صيانة','Maintenance'],active:['نشط','Active'],ended:['منتهٍ','Ended'],open:['مفتوح','Open'],assigned:['مسند','Assigned'],in_progress:['جارٍ العمل','In progress'],resolved:['تم الحل','Resolved'],closed:['مغلق','Closed'],normal:['عادية','Normal'],urgent:['عاجلة','Urgent'],low:['منخفضة','Low'],owner:['مالك','Owner'],tenant:['مستأجر','Tenant'],vendor:['مورد','Vendor'],asset:['أصل','Asset'],liability:['التزام','Liability'],equity:['حقوق ملكية','Equity'],income:['إيراد','Income'],expense:['مصروف','Expense'],admin:['مدير نظام','Administrator'],manager:['مدير','Manager'],accountant:['محاسب','Accountant'],technician:['فني','Technician'],resident:['ساكن','Resident'],viewer:['مشاهد','Viewer'],posted:['مرحّل','Posted'],issue:['إصدار وترحيل','Issue & post'],collect:['تسجيل تحصيل','Collect'],approve:['اعتماد','Approve'],reject:['رفض','Reject']};
-Object.assign(words,{resident_messages:['رسائل سكان الأبراج','Resident messages'],platform_owner:['مالك التطبيق','App owner'],recurring_charges:['المستحقات الدورية','Recurring charges'],maintenance_plans:['الصيانة الوقائية','Preventive maintenance'],accounting_periods:['الفترات المحاسبية','Accounting periods'],profile:['الملف الشخصي','My profile'],debit_account:['الحساب المدين','Debit account'],credit_account:['الحساب الدائن','Credit account'],tower:['برج','Tower']});
+
+const words={
+ dashboard:['نظرة عامة','Overview'],properties:['العقارات والأبراج','Properties'],units:['الوحدات','Units'],
+ parties:['الملاك والمستأجرون','People'],leases:['العقود','Leases'],ownerships:['ملكيات الوحدات','Ownerships'],
+ invoices:['الفواتير والمستحقات','Invoices'],receipts:['التحصيل','Receipts'],expenses:['المصروفات والموافقات','Expenses'],
+ journals:['دفتر اليومية','Journal'],accounts:['دليل الحسابات','Accounts'],tickets:['الصيانة','Maintenance'],
+ assets:['الأصول','Assets'],technicians:['الفنيون','Technicians'],reports:['التقارير','Reports'],
+ announcements:['إعلانات السكان','Announcements'],notifications:['الإشعارات','Notifications'],
+ audit_logs:['سجل التدقيق','Audit trail'],members:['المستخدمون والصلاحيات','Members & roles'],settings:['الإعدادات','Settings'],
+ portal:['بوابة السكان','Resident portal'],money_accounts:['حسابات الأموال والخزائن','Money Accounts & Cash Boxes'],
+ payment_proofs:['إثباتات الدفع','Payment Proofs'],fines:['الغرامات والتأخير','Fines & Late Fees'],
+ credit_balances:['الأرصدة الدائنة','Credit Balances'],expense_distributions:['توزيع المصروفات','Expense Distributions'],
+ vendor_contracts:['عقود الخدمات والموردين','Vendor Contracts'],budgets:['الميزانيات التقديرية','Budgets'],
+ support_tickets:['الدعم الفني','Support Tickets'],quick_collect:['سجّل تحصيل','Quick Collect'],
+ quick_expense:['إضافة مصروف','Quick Expense'],quick_proof:['إرسال إثبات دفع','Submit Payment Proof'],
+ transfer_funds:['تحويل بين حسابات البرج','Transfer Within Tower'],
+ name:['الاسم','Name'],address:['العنوان','Address'],kind:['النوع','Type'],property_id:['العقار / البرج','Property / Tower'],
+ unit_id:['الوحدة','Unit'],party_id:['الطرف المسؤول','Person'],floor:['الطابق','Floor'],area:['المساحة م²','Area m²'],
+ status:['الحالة','Status'],email:['البريد الإلكتروني','Email'],phone:['الهاتف','Phone'],start_date:['بداية العقد','Start date'],
+ end_date:['نهاية العقد','End date'],rent:['الإيجار','Rent'],share:['نسبة الملكية %','Ownership %'],code:['الكود','Code'],
+ specialty:['التخصص','Specialty'],serial:['الرقم التسلسلي','Serial'],next_service:['الصيانة القادمة','Next service'],
+ title:['العنوان','Title'],description:['الوصف','Description'],priority:['الأولوية','Priority'],
+ technician_id:['الفني المسؤول','Technician'],asset_id:['الأصل','Asset'],body:['المحتوى','Body'],
+ number:['رقم الفاتورة','Invoice number'],amount:['المبلغ','Amount'],due_date:['تاريخ الاستحقاق','Due date'],
+ reference:['المرجع الفريد','Unique Reference'],received_on:['تاريخ التحصيل','Received on'],created_at:['التاريخ','Date'],
+ entry_date:['تاريخ القيد','Entry date'],message:['الرسالة','Message'],entity:['الجدول','Entity'],
+ entity_id:['السجل','Record'],action:['الإجراء','Action'],role:['الصلاحية','Role'],debit:['مدين','Debit'],
+ credit:['دائن','Credit'],balance:['الرصيد','Balance'],destination:['جهة الحصيلة','Destination'],
+ vendor_id:['المورد','Vendor'],service_type:['نوع الخدمة','Service Type'],frequency:['الدورية','Frequency'],
+ period:['الفترة','Period'],payment_method:['طريقة الدفع','Payment Method'],ticket_number:['رقم التذكرة','Ticket #'],
+ category:['التصنيف','Category'],save:['حفظ','Save'],cancel:['إلغاء','Cancel'],add:['إضافة','Add'],
+ edit:['تعديل','Edit'],export:['تصدير CSV','Export CSV'],empty:['لا توجد سجلات بعد. ابدأ بإضافة أول سجل.','No records yet. Add your first record.'],
+ loading:['جارٍ التحميل…','Loading…'],saved:['تم الحفظ','Saved'],search:['ابحث في السجلات…','Search records…'],
+ logout:['تسجيل الخروج','Sign out'],signin:['تسجيل الدخول','Sign in'],signup:['إنشاء حساب ومؤسسة','Create account & workspace'],
+ password:['كلمة المرور (12 حرفًا على الأقل)','Password (at least 12 characters)'],organization:['اسم المؤسسة','Organization name'],
+ welcome:['إدارة عقاراتك، بوضوح.','Your properties. In perspective.'],
+ subtitle:['كل التفاصيل في مكان واحد. من أول عقد إلى آخر قيد.','Every detail in one place. From your first lease to your last entry.'],
+ draft:['مسودة','Draft'],issued:['صادرة','Issued'],paid:['مدفوعة','Paid'],pending:['قيد المراجعة','Pending'],
+ approved:['معتمدة','Approved'],rejected:['مرفوضة','Rejected'],exempt:['معفاة','Exempt'],
+ vacant:['غير متأجرة','Not rented'],occupied:['متأجرة','Rented'],maintenance:['صيانة','Maintenance'],
+ active:['نشط','Active'],ended:['منتهٍ','Ended'],open:['مفتوح','Open'],assigned:['مسند','Assigned'],
+ in_progress:['جارٍ العمل','In progress'],resolved:['تم الحل','Resolved'],closed:['مغلق','Closed'],
+ normal:['عادية','Normal'],urgent:['عاجلة','Urgent'],low:['منخفضة','Low'],high:['مرتفعة','High'],critical:['حرجة','Critical'],
+ owner:['مالك','Owner'],tenant:['مستأجر','Tenant'],vendor:['مورد','Vendor'],asset:['أصل','Asset'],
+ liability:['التزام','Liability'],equity:['حقوق ملكية','Equity'],income:['إيراد','Income'],expense:['مصروف','Expense'],
+ admin:['مدير نظام','Administrator'],manager:['مدير برج','Manager'],accountant:['محاسب','Accountant'],
+ technician:['فني','Technician'],resident:['ساكن','Resident'],viewer:['مشاهد','Viewer'],posted:['مرحّل','Posted'],
+ issue:['إصدار وترحيل','Issue & post'],collect:['تسجيل تحصيل','Collect'],approve:['اعتماد','Approve'],
+ reject:['رفض','Reject'],exempt_btn:['إعفاء','Exempt'],apply_credit:['سداد من الرصيد الدائن','Settle with credit'],
+ cash:['خزنة نقدية','Cash Box'],bank:['حساب بنكي','Bank Account'],wallet:['محفظة إلكترونية','E-Wallet'],
+ maintenance_fund:['صندوق الصيانة','Maintenance Fund'],fines_fund:['صندوق الغرامات','Fines Fund']
+};
+
+Object.assign(words,{
+ resident_messages:['رسائل سكان الأبراج','Resident messages'],platform_owner:['مالك التطبيق','App owner'],
+ recurring_charges:['المستحقات الدورية','Recurring charges'],maintenance_plans:['الصيانة الوقائية','Preventive maintenance'],
+ accounting_periods:['الفترات المحاسبية','Accounting periods'],profile:['الملف الشخصي','My profile'],
+ debit_account:['الحساب المدين','Debit account'],credit_account:['الحساب الدائن','Credit account'],tower:['برج','Tower']
+});
+
 const t=(k)=>words[k]?.[lang==='ar'?0:1]||k;
-const schemas={properties:['name','address','kind'],units:['property_id','name','floor','area','status'],parties:['name','kind','email','phone'],leases:['unit_id','party_id','start_date','end_date','rent','status'],ownerships:['unit_id','party_id','share'],accounts:['code','name','kind'],technicians:['name','specialty','phone'],assets:['property_id','name','serial','next_service'],tickets:['title','description','unit_id','asset_id','priority','status','technician_id'],announcements:['title','body'],invoices:['number','party_id','unit_id','description','amount','due_date'],expenses:['description','amount']};
-const optional=new Set(['address','phone','email','area','floor','serial','next_service','asset_id','technician_id','description']);
-const relations={property_id:'properties',unit_id:'units',party_id:'parties',asset_id:'assets',technician_id:'technicians'};
-const enums={units:{status:['vacant','occupied','maintenance']},parties:{kind:['owner','tenant','vendor']},leases:{status:['active','ended']},accounts:{kind:['asset','liability','equity','income','expense']},tickets:{priority:['low','normal','urgent'],status:['open','assigned','in_progress','resolved','closed']}};
-const iconNames={dashboard:'grid',properties:'building',units:'grid',parties:'people',leases:'file',ownerships:'home',invoices:'file',receipts:'wallet',expenses:'wallet',journals:'file',accounts:'chart',tickets:'tool',assets:'building',technicians:'people',reports:'chart',portal:'home',recurring_charges:'wallet',maintenance_plans:'tool',accounting_periods:'file',resident_messages:'bell',settings:'settings',profile:'people',notifications:'bell',announcements:'bell',audit_logs:'shield',members:'people'};
-const descriptions={dashboard:['ملخص محفظتك العقارية، وكل ما يحتاج انتباهك اليوم.','Your portfolio at a glance, and what needs your attention.'],properties:['كل عقاراتك وأبراجك في مساحة واحدة منظّمة.','A clear view of every building in your portfolio.'],units:['تابع حالة الوحدات وتفاصيلها بسهولة.','Keep track of every unit and its availability.'],invoices:['تابع المستحقات، وأصدر الفواتير، وسجّل التحصيل.','Manage your invoices, outstanding balances and collections.'],tickets:['متابعة الطلبات من أول بلاغ حتى إتمام الصيانة.','Follow every request from first report to resolution.'],reports:['رؤية أوضح للحسابات والعمليات.','A clearer picture of your finances and operations.']};
+
+const schemas={
+ properties:['name','address','kind'],
+ units:['property_id','name','floor','area','status'],
+ parties:['name','kind','email','phone'],
+ leases:['unit_id','party_id','start_date','end_date','rent','status'],
+ ownerships:['unit_id','party_id','share'],
+ accounts:['code','name','kind'],
+ technicians:['name','specialty','phone'],
+ assets:['property_id','name','serial','next_service'],
+ tickets:['title','description','unit_id','asset_id','priority','status','technician_id'],
+ announcements:['title','body'],
+ invoices:['number','party_id','unit_id','description','amount','due_date'],
+ expenses:['description','amount'],
+ money_accounts:['property_id','name','kind','bank_name','account_number'],
+ payment_proofs:['property_id','unit_id','party_id','amount','payment_method','reference'],
+ fines:['property_id','unit_id','party_id','title','amount','destination'],
+ vendor_contracts:['property_id','vendor_id','title','service_type','amount','frequency','start_date','end_date'],
+ budgets:['property_id','name','period','start_date','end_date'],
+ support_tickets:['title','description','category','priority']
+};
+
+const optional=new Set(['address','phone','email','area','floor','serial','next_service','asset_id','technician_id','description','bank_name','account_number']);
+const relations={property_id:'properties',unit_id:'units',party_id:'parties',asset_id:'assets',technician_id:'technicians',vendor_id:'parties'};
+const enums={
+ units:{status:['vacant','occupied','maintenance']},
+ parties:{kind:['owner','tenant','vendor']},
+ leases:{status:['active','ended']},
+ accounts:{kind:['asset','liability','equity','income','expense']},
+ tickets:{priority:['low','normal','urgent'],status:['open','assigned','in_progress','resolved','closed']},
+ money_accounts:{kind:['cash','bank','wallet','maintenance_fund','fines_fund']},
+ payment_proofs:{payment_method:['cash','bank_transfer','wallet','card','other']},
+ fines:{destination:['maintenance_fund','fines_fund']},
+ vendor_contracts:{frequency:['monthly','quarterly','yearly','one_time']},
+ budgets:{period:['monthly','quarterly','annual']},
+ support_tickets:{category:['general','billing','accounting','technical','security'],priority:['low','normal','high','critical']}
+};
+
+const iconNames={
+ dashboard:'grid',properties:'building',units:'grid',parties:'people',leases:'file',ownerships:'home',
+ invoices:'file',receipts:'wallet',expenses:'wallet',journals:'file',accounts:'chart',tickets:'tool',
+ assets:'building',technicians:'people',reports:'chart',portal:'home',recurring_charges:'wallet',
+ maintenance_plans:'tool',accounting_periods:'file',resident_messages:'bell',settings:'settings',
+ profile:'people',notifications:'bell',announcements:'bell',audit_logs:'shield',members:'people',
+ money_accounts:'wallet',payment_proofs:'check',fines:'clock',credit_balances:'wallet',
+ expense_distributions:'chart',vendor_contracts:'file',budgets:'chart',support_tickets:'shield'
+};
+
+const descriptions={
+ dashboard:['ملخص محفظتك العقارية، وكل ما يحتاج انتباهك اليوم.','Your portfolio at a glance, and what needs your attention.'],
+ properties:['كل عقاراتك وأبراجك في مساحة واحدة منظّمة.','A clear view of every building in your portfolio.'],
+ units:['تابع حالة الوحدات وتفاصيلها بسهولة.','Keep track of every unit and its availability.'],
+ invoices:['تابع المستحقات، وأصدر الفواتير، وسجّل التحصيل.','Manage your invoices, outstanding balances and collections.'],
+ payment_proofs:['مراجعة واعتماد إثباتات التحويل المرسلة من السكان.','Review and verify resident payment slips.'],
+ tickets:['متابعة الطلبات من أول بلاغ حتى إتمام الصيانة.','Follow every request from first report to resolution.'],
+ reports:['رؤية أوضح للحسابات والعمليات.','A clearer picture of your finances and operations.'],
+ support_tickets:['تواصل مع الدعم الفني وتتبع تذاكرك ومستجداتها.','Contact support and track your inquiries and tickets.']
+};
+
 const localText=(ar,en)=>lang==='ar'?ar:en;
 function navigate(next){page=next;cache={};document.body.classList.remove('nav-open');render();}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)navigate(b.dataset.go);const add=e.target.closest('[data-new]');if(add)editor(add.dataset.new);});
-function emptyState(entity,canAdd=false){return `<div class="empty"><span class="empty-icon">${icon(iconNames[entity]||'file',25)}</span><strong>${localText('المساحة جاهزة لبياناتك','Ready for your first record')}</strong><p>${localText('ستظهر سجلاتك هنا فور إضافتها، مع تفاصيلها وحالتها.','Your records will appear here with their details and current status.')}</p>${canAdd?`<button class="primary" data-new="${entity}">${icon('plus',16)}${t('add')} ${t(entity)}</button>`:''}</div>`;}
+document.addEventListener('click',e=>{
+ const b=e.target.closest('[data-go]');if(b)navigate(b.dataset.go);
+ const add=e.target.closest('[data-new]');if(add)editor(add.dataset.new);
+ const qc=e.target.closest('[data-quick]');if(qc)handleQuickAction(qc.dataset.quick);
+});
+
+function emptyState(entity,canAdd=false){
+ return `<div class="empty"><span class="empty-icon">${icon(iconNames[entity]||'file',25)}</span><strong>${localText('المساحة جاهزة لبياناتك','Ready for your first record')}</strong><p>${localText('ستظهر سجلاتك هنا فور إضافتها، مع تفاصيلها وحالتها.','Your records will appear here with their details and current status.')}</p>${canAdd?`<button class="primary" data-new="${entity}">${icon('plus',16)}${t('add')} ${t(entity)}</button>`:''}</div>`;
+}
 
 const money=n=>new Intl.NumberFormat(lang==='ar'?'ar-EG':'en-GB',{style:'currency',currency:me?.organizations.find(x=>x.id===org)?.currency||'EGP',maximumFractionDigits:2}).format(Number(n||0));
 const display=(key,v)=>relations[key]?cache[relations[key]]?.find(x=>x.id===v)?.name||v:t(String(v??''));
-async function api(path,options={}){const res=await fetch('/api/'+path+(path.includes('?')?'&':'?')+'org='+encodeURIComponent(org),{...options,headers:{'Content-Type':'application/json',...options.headers},credentials:'same-origin'});const data=await res.json();if(!res.ok)throw new Error(data.error||res.statusText);return data;}
+async function api(path,options={}){
+ const res=await fetch('/api/'+path+(path.includes('?')?'&':'?')+'org='+encodeURIComponent(org),{...options,headers:{'Content-Type':'application/json',...options.headers},credentials:'same-origin'});
+ const data=await res.json();if(!res.ok)throw new Error(data.error||res.statusText);return data;
+}
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';setTimeout(()=>$('#toast').style.display='none',4000);}
 function theme(){document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.documentElement.classList.toggle('dark',dark);localStorage.tfLang=lang;localStorage.tfDark=dark;}
 const brand=()=>'<div class="brand"><img src="/logo.svg" alt="AD TowerFlow"><span>TowerFlow<span>AD · PROPERTY SYSTEM</span></span></div>';
 const toggles=()=>`<button data-global="language" aria-label="${localText('تغيير اللغة','Change language')}">${lang==='ar'?'English':'العربية'}</button><button class="icon-button" data-global="theme" aria-label="${localText('تغيير المظهر','Toggle theme')}">${icon(dark?'sun':'moon',18)}</button>`;
 
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-global]');if(!b)return;if(b.dataset.global==='language')lang=lang==='ar'?'en':'ar';else dark=!dark;theme();if(me)await render();else auth();});
-function auth(register=false){theme();document.body.classList.remove('nav-open');$('#app').innerHTML=`<main class="auth"><section class="auth-art">${brand()}<div class="auth-story"><div class="eyebrow">${localText('عقاراتك. رؤيتك. مساحتك.','YOUR PROPERTIES. YOUR PERSPECTIVE.')}</div><h1>${localText('إدارة أذكى للعقارات.<br>ومساحة أكبر للنمو.','A clearer way to manage.<br>More room to grow.')}</h1><p class="story-desc">${localText('من العقود والتحصيل إلى الصيانة والحسابات، كل تفاصيل محفظتك في مكان واحد.','From leases and collections to maintenance and accounting, bring your entire portfolio together.')}</p>${architecture()}<div class="auth-benefits"><span>${icon('check',15)}${localText('عقارات ووحدات','Properties & units')}</span><span>${icon('check',15)}${localText('محاسبة وتحصيل','Accounting & collections')}</span><span>${icon('check',15)}${localText('صيانة وسكان','Maintenance & residents')}</span></div></div><div class="foot">© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow ${localText('لإدارة العقارات','Property Management')}</div></section><section class="auth-main"><div class="auth-mobile-brand">${brand()}</div><div class="auth-tools">${toggles()}</div><form id="authform"><div class="login-symbol">${icon(register?'building':'shield',24)}</div><h1>${localText(register?'ابدأ مع TowerFlow':'أهلًا بعودتك',register?'Your workspace starts here':'Welcome back')}</h1><p>${localText(register?'أنشئ حسابك وابدأ تنظيم محفظتك العقارية.':'سجّل دخولك لمتابعة عقاراتك وأعمالك اليومية.',register?'Create an account and organize your portfolio.':'Sign in to your workspace and pick up where you left off.')}</p>${register?`<label>${t('name')}<input name="name" required maxlength="160" autocomplete="name" placeholder="${localText('اسمك الكامل','Your full name')}"></label><label>${t('organization')}<input name="organization" required maxlength="160" autocomplete="organization" placeholder="${localText('اسم شركتك أو مؤسستك','Your organization name')}"></label>`:''}<label>${t('email')}<input name="email" type="email" required autocomplete="email" placeholder="name@company.com"></label><label>${localText('كلمة المرور','Password')}<input name="password" type="password" minlength="12" maxlength="128" required autocomplete="${register?'new-password':'current-password'}" placeholder="${localText('12 حرفًا على الأقل','At least 12 characters')}"></label><div class="error" id="autherror" role="alert"></div><button class="primary" type="submit">${t(register?'signup':'signin')}${icon('arrow',17)}</button><div class="auth-divider">${localText('أو','or')}</div><button type="button" class="google-button" id="google-login"><span aria-hidden="true">G</span>${localText('المتابعة باستخدام Google','Continue with Google')}</button><p id="google-note" class="muted" role="status"></p><div class="auth-switch"><span>${localText(register?'لديك حساب بالفعل؟':'ليس لديك حساب بعد؟',register?'Already have an account?':'New to TowerFlow?')}</span><button type="button" class="text-button" id="switchauth">${localText(register?'تسجيل الدخول':'إنشاء حساب',register?'Sign in':'Create an account')}</button></div><p class="privacy-link"><a href="/privacy.html">${localText('الخصوصية وبياناتك','Privacy & your data')}</a></p><div class="auth-security">${icon('shield',14)}${localText('بيانات مؤسستك معزولة ومحمية بصلاحيات الوصول','Your workspace is isolated and protected by access controls')}</div></form></section></main>`;
+document.addEventListener('click',async e=>{
+ const b=e.target.closest('[data-global]');if(!b)return;
+ if(b.dataset.global==='language')lang=lang==='ar'?'en':'ar';else dark=!dark;
+ theme();if(me)await render();else auth();
+});
+
+function auth(register=false){
+ theme();document.body.classList.remove('nav-open');
+ $('#app').innerHTML=`<main class="auth"><section class="auth-art">${brand()}<div class="auth-story"><div class="eyebrow">${localText('عقاراتك. رؤيتك. مساحتك.','YOUR PROPERTIES. YOUR PERSPECTIVE.')}</div><h1>${localText('إدارة أذكى للعقارات.<br>ومساحة أكبر للنمو.','A clearer way to manage.<br>More room to grow.')}</h1><p class="story-desc">${localText('من العقود والتحصيل إلى الصيانة والحسابات، كل تفاصيل محفظتك في مكان واحد.','From leases and collections to maintenance and accounting, bring your entire portfolio together.')}</p>${architecture()}<div class="auth-benefits"><span>${icon('check',15)}${localText('عقارات ووحدات','Properties & units')}</span><span>${icon('check',15)}${localText('محاسبة وتحصيل','Accounting & collections')}</span><span>${icon('check',15)}${localText('صيانة وسكان','Maintenance & residents')}</span></div></div><div class="foot">© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow ${localText('لإدارة العقارات','Property Management')}</div></section><section class="auth-main"><div class="auth-mobile-brand">${brand()}</div><div class="auth-tools">${toggles()}</div><form id="authform"><div class="login-symbol">${icon(register?'building':'shield',24)}</div><h1>${localText(register?'ابدأ مع TowerFlow':'أهلًا بعودتك',register?'Your workspace starts here':'Welcome back')}</h1><p>${localText(register?'أنشئ حسابك وابدأ تنظيم محفظتك العقارية.':'سجّل دخولك لمتابعة عقاراتك وأعمالك اليومية.',register?'Create an account and organize your portfolio.':'Sign in to your workspace and pick up where you left off.')}</p>${register?`<label>${t('name')}<input name="name" required maxlength="160" autocomplete="name" placeholder="${localText('اسمك الكامل','Your full name')}"></label><label>${t('organization')}<input name="organization" required maxlength="160" autocomplete="organization" placeholder="${localText('اسم شركتك أو مؤسستك','Your organization name')}"></label>`:''}<label>${t('email')}<input name="email" type="email" required autocomplete="email" placeholder="name@company.com"></label><label>${localText('كلمة المرور','Password')}<input name="password" type="password" minlength="12" maxlength="128" required autocomplete="${register?'new-password':'current-password'}" placeholder="${localText('12 حرفًا على الأقل','At least 12 characters')}"></label><div class="error" id="autherror" role="alert"></div><button class="primary" type="submit">${t(register?'signup':'signin')}${icon('arrow',17)}</button><div class="auth-divider">${localText('أو','or')}</div><button type="button" class="google-button" id="google-login"><span aria-hidden="true">G</span>${localText('المتابعة باستخدام Google','Continue with Google')}</button><p id="google-note" class="muted" role="status"></p><div class="auth-switch"><span>${localText(register?'لديك حساب بالفعل؟':'ليس لديك حساب بعد؟',register?'Already have an account?':'New to TowerFlow?')}</span><button type="button" class="text-button" id="switchauth">${localText(register?'تسجيل الدخول':'إنشاء حساب',register?'Sign in':'Create an account')}</button></div><p class="privacy-link"><a href="/privacy.html">${localText('الخصوصية وبياناتك','Privacy & your data')}</a></p><div class="auth-security">${icon('shield',14)}${localText('بيانات مؤسستك معزولة ومحمية بصلاحيات الوصول','Your workspace is isolated and protected by access controls')}</div></form></section></main>`;
  api('auth/providers').then(p=>{if(!p.google)$('#google-note')&&( $('#google-note').textContent=localText('الدخول بجوجل بانتظار تفعيل إعدادات الحساب. يمكنك استخدام البريد الآن.','Google is awaiting account setup. Email sign-in is available.'));}).catch(()=>{});
  $('#google-login').onclick=()=>{location.href='/api/auth/google/start';};
  const googleError=new URLSearchParams(location.search).get('google_error');if(googleError)$('#autherror').textContent=googleError;
- $('#switchauth').onclick=()=>auth(!register);$('#authform').onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;try{await api('auth/'+(register?'register':'login'),{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});await boot();}catch(error){$('#autherror').textContent=error.message;}finally{b.disabled=false;}};
+ $('#switchauth').onclick=()=>auth(!register);
+ $('#authform').onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;try{await api('auth/'+(register?'register':'login'),{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});await boot();}catch(error){$('#autherror').textContent=error.message;}finally{b.disabled=false;}};
 }
 
 function role(){return me?.organizations.find(x=>x.id===org)?.role;}
-function baseAllowed(){if(role()==='technician')return ['properties','units','tickets','assets','technicians','announcements','notifications','profile','settings'];return role()==='resident'?['portal','invoices','leases','tickets','announcements','notifications','profile','settings']:['dashboard','properties','units','parties','leases','ownerships','invoices','receipts','expenses','journals','accounts','tickets','assets','technicians','reports','announcements','notifications','audit_logs',...(['admin','manager'].includes(role())?['members']:[]),'profile','settings'];}
-function allowed(){return [...new Set([...baseAllowed(),...(['admin','manager'].includes(role())?['resident_messages']:[]),...(['admin','manager','accountant'].includes(role())?['recurring_charges','accounting_periods']:[]),...(['admin','manager','technician'].includes(role())?['maintenance_plans']:[])])];}
-async function boot(){try{me=await api('me');org=me.organizations.some(x=>x.id===localStorage.tfOrg)?localStorage.tfOrg:me.organizations[0]?.id||'';if(role()==='resident')page='portal';await render();}catch{me=null;auth();}}
+function baseAllowed(){
+ if(role()==='technician')return ['properties','units','tickets','assets','technicians','announcements','notifications','support_tickets','profile','settings'];
+ if(role()==='resident')return ['portal','invoices','payment_proofs','leases','tickets','announcements','notifications','support_tickets','profile','settings'];
+ return ['dashboard','properties','units','parties','leases','ownerships','invoices','receipts','expenses','payment_proofs','credit_balances','fines','money_accounts','journals','accounts','tickets','assets','technicians','vendor_contracts','budgets','reports','announcements','notifications','support_tickets','audit_logs',...(['admin','manager'].includes(role())?['members']:[]),'profile','settings'];
+}
+function allowed(){
+ return [...new Set([...baseAllowed(),...(['admin','manager'].includes(role())?['resident_messages']:[]),...(['admin','manager','accountant'].includes(role())?['recurring_charges','accounting_periods']:[]),...(['admin','manager','technician'].includes(role())?['maintenance_plans']:[])])];
+}
+async function boot(){
+ try{me=await api('me');org=me.organizations.some(x=>x.id===localStorage.tfOrg)?localStorage.tfOrg:me.organizations[0]?.id||'';if(role()==='resident')page='portal';await render();}catch{me=null;auth();}
+}
 async function rows(entity){return cache[entity]=await api(entity);}
-function head(title,action=''){const desc=descriptions[page]?.[lang==='ar'?0:1]||localText('إدارة واضحة لكل التفاصيل، في مكان واحد.','Every detail, organized in one place.');return `<div class="pagehead"><div><h1>${escape(title)}</h1><p>${escape(desc)}</p></div><div class="actions">${action}</div></div>`;}
-function sidebar(){const available=allowed(),groups=[['portfolio',localText('المحفظة العقارية','Portfolio'),['properties','units','parties','leases','ownerships']],['finance',localText('الإدارة المالية','Finance'),['invoices','receipts','expenses','journals','accounts','recurring_charges','accounting_periods','reports']],['operations',localText('التشغيل والصيانة','Operations'),['tickets','assets','technicians','maintenance_plans']],['workspace',localText('المؤسسة والسكان','Workspace'),['resident_messages','announcements','notifications','members','audit_logs']]];const item=k=>`<button data-page="${k}" class="nav-item ${k===page?'active':''}" ${k===page?'aria-current="page"':''}>${icon(iconNames[k],18)}<span>${t(k)}</span></button>`;return `<aside class="sidebar" id="navigation" aria-label="${localText('التنقل الرئيسي','Main navigation')}">${brand()}<nav><div class="sidebar-caption">${localText('مساحة العمل','WORKSPACE')}</div>${available.includes('dashboard')?item('dashboard'):''}${available.includes('portal')?item('portal'):''}${groups.map(([key,label,keys])=>{const visible=keys.filter(k=>available.includes(k));return visible.length?`<details class="nav-group" ${keys.includes(page)||['portfolio','finance'].includes(key)?'open':''}><summary>${label}</summary>${visible.map(item).join('')}</details>`:''}).join('')}</nav><div class="sidebar-bottom">${item('profile')}${item('settings')}<p>AD · TOWERFLOW</p></div></aside>`;}
+function head(title,action=''){
+ const desc=descriptions[page]?.[lang==='ar'?0:1]||localText('إدارة واضحة لكل التفاصيل، في مكان واحد.','Every detail, organized in one place.');
+ return `<div class="pagehead"><div><h1>${escape(title)}</h1><p>${escape(desc)}</p></div><div class="actions">${action}</div></div>`;
+}
+
+function sidebar(){
+ const available=allowed(),groups=[
+   ['portfolio',localText('المحفظة العقارية','Portfolio'),['properties','units','parties','leases','ownerships']],
+   ['finance',localText('الإدارة المالية','Finance'),['invoices','receipts','expenses','payment_proofs','credit_balances','fines','money_accounts','journals','accounts','recurring_charges','accounting_periods','reports']],
+   ['operations',localText('التشغيل والصيانة','Operations'),['tickets','assets','technicians','vendor_contracts','budgets','maintenance_plans']],
+   ['workspace',localText('المؤسسة والدعم','Workspace & Support'),['resident_messages','announcements','notifications','support_tickets','members','audit_logs']]
+ ];
+ const item=k=>`<button data-page="${k}" class="nav-item ${k===page?'active':''}" ${k===page?'aria-current="page"':''}>${icon(iconNames[k],18)}<span>${t(k)}</span></button>`;
+ return `<aside class="sidebar" id="navigation" aria-label="${localText('التنقل الرئيسي','Main navigation')}">${brand()}<nav><div class="sidebar-caption">${localText('مساحة العمل','WORKSPACE')}</div>${available.includes('dashboard')?item('dashboard'):''}${available.includes('portal')?item('portal'):''}${groups.map(([key,label,keys])=>{const visible=keys.filter(k=>available.includes(k));return visible.length?`<details class="nav-group" ${keys.includes(page)||['portfolio','finance'].includes(key)?'open':''}><summary>${label}</summary>${visible.map(item).join('')}</details>`:''}).join('')}</nav><div class="sidebar-bottom">${item('profile')}${item('settings')}<p>AD · TOWERFLOW</p></div></aside>`;
+}
 
 async function render(){
  if(busy)return;busy=true;theme();localStorage.tfOrg=org;
  if(!allowed().includes(page))page=allowed()[0];
  $('#app').innerHTML=`<div class="layout">${sidebar()}<button class="sidebar-overlay" aria-label="${localText('إغلاق القائمة','Close menu')}"></button><main class="workspace"><header class="topbar"><div class="topbar-start"><button class="mobile-toggle icon-button" id="menu" aria-label="${localText('فتح القائمة','Open navigation')}" aria-expanded="false" aria-controls="navigation">${icon('menu')}</button><div class="breadcrumb">TowerFlow <span> / </span><strong>${t(page)}</strong></div><select id="org" aria-label="${t('organization')}">${me.organizations.map(x=>`<option value="${x.id}" ${x.id===org?'selected':''}>${escape(x.name)}</option>`).join('')}</select></div><div class="topbar-end"><div class="actions">${toggles()}<button class="icon-button" data-go="notifications" aria-label="${t('notifications')}">${icon('bell',18)}</button></div><button class="profile profile-link" data-go="profile"><div class="avatar">${me.user.avatar?`<img src="${escape(me.user.avatar)}" alt="">`:escape(me.user.name.slice(0,1))}</div><div><b>${escape(me.user.name)}</b><small>${t(me.user.platform_owner?'platform_owner':role())}</small></div></button><button class="icon-button" id="logout" aria-label="${t('logout')}" title="${t('logout')}">${icon('logout',17)}</button></div></header><div class="content-wrap"><section id="content" aria-live="polite"><div class="loading">${t('loading')}</div></section><footer class="footer"><span>© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow</span><span>${localText('مساحة واحدة. كل التفاصيل.','One workspace. Every detail.')}</span></footer></div></main></div>`;
- document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>navigate(b.dataset.page));$('#org').onchange=e=>{org=e.target.value;cache={};render();};$('#logout').onclick=async()=>{await api('auth/logout',{method:'POST',body:'{}'});me=null;cache={};auth();};const closeMenu=()=>{document.body.classList.remove('nav-open');$('#menu')?.setAttribute('aria-expanded','false');};$('#menu').onclick=()=>{const opened=document.body.classList.toggle('nav-open');$('#menu').setAttribute('aria-expanded',String(opened));};$('.sidebar-overlay').onclick=closeMenu;document.onkeydown=e=>{if(e.key==='Escape')closeMenu();};
- try{if(['dashboard','portal'].includes(page))await dashboard();else if(['recurring_charges','maintenance_plans','accounting_periods'].includes(page))await mountWorkflows({api,lang,page,escape,toast,money});else if(page==='reports')await mountReports({api,lang,escape,money});else if(page==='resident_messages')await mountMessages({api,lang,escape,toast});else if(page==='profile')await mountProfile({api,me,lang,escape,toast,onSave:async user=>{me.user=user;lang=user.locale||lang;await render();}});else if(page==='settings')settings();else if(page==='members')await members();else await listing(page);}catch(e){$('#content').innerHTML=head(t(page))+`<div class="notice" role="alert">${escape(e.message)}</div><button id="retry">${localText('إعادة المحاولة','Retry')}</button>`;$('#retry').onclick=render;}finally{busy=false;}
+ document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>navigate(b.dataset.page));
+ $('#org').onchange=e=>{org=e.target.value;cache={};render();};
+ $('#logout').onclick=async()=>{await api('auth/logout',{method:'POST',body:'{}'});me=null;cache={};auth();};
+ const closeMenu=()=>{document.body.classList.remove('nav-open');$('#menu')?.setAttribute('aria-expanded','false');};
+ $('#menu').onclick=()=>{const opened=document.body.classList.toggle('nav-open');$('#menu').setAttribute('aria-expanded',String(opened));};
+ $('.sidebar-overlay').onclick=closeMenu;document.onkeydown=e=>{if(e.key==='Escape')closeMenu();};
+ try{
+   if(['dashboard','portal'].includes(page))await dashboard();
+   else if(['recurring_charges','maintenance_plans','accounting_periods'].includes(page))await mountWorkflows({api,lang,page,escape,toast,money});
+   else if(page==='reports')await mountReports({api,lang,escape,money});
+   else if(page==='resident_messages')await mountMessages({api,lang,escape,toast});
+   else if(page==='profile')await mountProfile({api,me,lang,escape,toast,onSave:async user=>{me.user=user;lang=user.locale||lang;await render();}});
+   else if(page==='settings')settings();
+   else if(page==='members')await members();
+   else await listing(page);
+ }catch(e){
+   $('#content').innerHTML=head(t(page))+`<div class="notice" role="alert">${escape(e.message)}</div><button id="retry">${localText('إعادة المحاولة','Retry')}</button>`;
+   $('#retry').onclick=render;
+ }finally{busy=false;}
 }
 
 async function dashboard(){
- const [units,invoices,tickets,receipts,summary]=await Promise.all([...['units','invoices','tickets','receipts'].map(rows),api('dashboard')]);
- const due=invoices.filter(i=>i.status!=='draft').reduce((s,x)=>s+Number(x.amount),0)-receipts.reduce((s,x)=>s+Number(x.amount),0),occupied=summary.units.occupied,vacant=summary.units.vacant,unitTotal=summary.units.total,percent=unitTotal?Math.round(occupied/unitTotal*100):0,collected=receipts.reduce((s,x)=>s+Number(x.amount),0),open=tickets.filter(x=>!['closed','resolved'].includes(x.status));
- $('#content').innerHTML=head(t(page),`<button class="primary" data-go="${role()==='resident'?'tickets':'properties'}">${icon('plus',17)}${localText(role()==='resident'?'طلب صيانة':'إدارة العقارات',role()==='resident'?'Maintenance request':'Manage properties')}</button>`)+`<div class="card hero"><div class="hero-copy"><div class="eyebrow">${localText('مساحة واحدة. كل التفاصيل.','ONE WORKSPACE. EVERY DETAIL.')}</div><h2>${localText('أهلًا، ','Hello, ')}${escape(me.user.name)}</h2><p>${localText('رؤية واضحة لعقاراتك، وحساباتك، وكل ما يجري في مؤسستك.','A clear view of your properties, finances and everything happening across your workspace.')}</p><span class="hero-tag">${escape(me.organizations.find(o=>o.id===org)?.name||'')}</span></div>${architecture()}</div><div class="metrics">${[[t('units'),unitTotal,'building'],[localText('المبالغ المستحقة','Outstanding balance'),money(due),'wallet'],[localText('إجمالي التحصيل','Total collected'),money(collected),'chart'],[localText('طلبات صيانة مفتوحة','Open maintenance'),open.length,'tool']].map(([label,value,i])=>`<article class="card metric"><div class="metric-top"><small>${label}</small><span class="metric-icon">${icon(i,18)}</span></div><strong title="${escape(value)}">${value}</strong><div class="metric-foot"><span class="dot"></span>${localText('حسب سجلات مؤسستك','Based on your workspace records')}</div></article>`).join('')}</div><div class="grid"><article class="card"><div class="card-header"><h2>${localText('إشغال الوحدات','Unit occupancy')}</h2><button class="text-button" data-go="units">${localText('عرض الوحدات','View units')}</button></div><div class="occupancy-body"><div class="donut"><svg viewBox="0 0 120 120" role="img" aria-label="${localText('متأجرة','Rented')} ${occupied} ${localText('من','of')} ${unitTotal}"><circle cx="60" cy="60" r="52"/><circle class="donut-fill" id="occupancy" cx="60" cy="60" r="52"/></svg><div class="donut-label"><b>${percent}%</b><small>${localText('نسبة التأجير','Rental rate')}</small></div></div><div class="legend"><h3>${localText('حالة التأجير','Rental status')}</h3><p>${t('occupied')}<b>${occupied}</b></p><p>${t('vacant')}<b>${vacant}</b></p><p>${localText('تحت الصيانة','Under maintenance')}<b>${summary.units.maintenance}</b></p></div></div></article><article class="card"><div class="card-header"><h2>${localText('آخر طلبات الصيانة','Recent maintenance')}</h2><button class="text-button" data-go="tickets">${localText('عرض الكل','View all')}</button></div>${tickets.length?tickets.slice(-4).reverse().map(x=>`<div class="listrow"><div class="listrow-main"><span class="list-icon">${icon('tool',17)}</span><div><b>${escape(x.title)}</b><p class="muted">${t(x.priority)}</p></div></div><span class="badge ${x.priority==='urgent'?'warn':''}">${t(x.status)}</span></div>`).join(''):`<div class="empty"><span class="empty-icon">${icon('check',25)}</span><strong>${localText('كل شيء هادئ هنا','Everything is quiet here')}</strong><p>${localText('لا توجد طلبات صيانة مسجلة حتى الآن.','There are no maintenance requests yet.')}</p></div>`}</article></div><div class="dashboard-bottom"><article class="card"><div class="card-header"><h2>${localText('آخر الفواتير','Recent invoices')}</h2><button class="text-button" data-go="invoices">${localText('عرض الكل','View all')}</button></div>${invoices.length?`<div class="tablewrap"><table><thead><tr><th>${t('number')}</th><th>${t('amount')}</th><th>${t('due_date')}</th><th>${t('status')}</th></tr></thead><tbody>${invoices.slice(-4).reverse().map(x=>`<tr><td>${escape(x.number)}</td><td>${money(x.amount)}</td><td>${escape(x.due_date)}</td><td><span class="badge ${x.status==='draft'?'warn':''}">${t(x.status)}</span></td></tr>`).join('')}</tbody></table></div>`:emptyState('invoices',false)}</article><article class="card"><div class="card-header"><h2>${localText('وصول سريع','Quick access')}</h2></div><p class="muted">${localText('الأعمال اليومية، على بُعد خطوة.','Your everyday tasks, one step away.')}</p><div class="quick-actions">${['properties','invoices','tickets','reports'].filter(k=>allowed().includes(k)).map(k=>`<button data-go="${k}">${icon(iconNames[k],18)}${t(k)}</button>`).join('')}</div></article></div>`;
+ const [units,invoices,tickets,receipts,proofs,summary]=await Promise.all([
+   ...['units','invoices','tickets','receipts','payment_proofs'].map(rows),
+   api('dashboard')
+ ]);
+ const due=invoices.filter(i=>i.status!=='draft').reduce((s,x)=>s+Number(x.amount),0)-receipts.reduce((s,x)=>s+Number(x.amount),0);
+ const occupied=summary.units.occupied,vacant=summary.units.vacant,unitTotal=summary.units.total;
+ const percent=unitTotal?Math.round(occupied/unitTotal*100):0;
+ const collected=receipts.reduce((s,x)=>s+Number(x.amount),0);
+ const open=tickets.filter(x=>!['closed','resolved'].includes(x.status));
+ const pendingProofs=proofs.filter(p=>p.status==='pending');
+
+ const quickActionsHtml = role()==='resident' ? `
+   <button class="primary" data-quick="submit_proof">${icon('plus',17)}${t('quick_proof')}</button>
+   <button data-quick="new_ticket">${icon('tool',17)}${localText('طلب صيانة','Request Maintenance')}</button>
+   <button data-quick="new_support">${icon('shield',17)}${localText('تذكرة دعم','Support Ticket')}</button>
+ ` : `
+   <button class="primary" data-quick="collect">${icon('plus',17)}${t('quick_collect')}</button>
+   <button data-quick="expense">${icon('wallet',17)}${t('quick_expense')}</button>
+   <button data-go="payment_proofs">${icon('check',17)}${t('payment_proofs')} ${pendingProofs.length?`<span class="badge warn">${pendingProofs.length}</span>`:''}</button>
+   <button data-quick="units_batch">${icon('grid',17)}${localText('توليد شقق','Batch Units')}</button>
+ `;
+
+ $('#content').innerHTML=head(t(page), quickActionsHtml)+`
+   <div class="card hero">
+     <div class="hero-copy">
+       <div class="eyebrow">${localText('مساحة واحدة. كل التفاصيل.','ONE WORKSPACE. EVERY DETAIL.')}</div>
+       <h2>${localText('أهلًا، ','Hello, ')}${escape(me.user.name)}</h2>
+       <p>${localText('رؤية واضحة لعقاراتك، وحساباتك، وكل ما يجري في مؤسستك.','A clear view of your properties, finances and operations.')}</p>
+       <span class="hero-tag">${escape(me.organizations.find(o=>o.id===org)?.name||'')}</span>
+     </div>
+     ${architecture()}
+   </div>
+   <div class="metrics">
+     ${[
+       [t('units'),unitTotal,'building'],
+       [localText('المبالغ المستحقة','Outstanding balance'),money(due),'wallet'],
+       [localText('إجمالي التحصيل','Total collected'),money(collected),'chart'],
+       [localText('طلبات صيانة مفتوحة','Open maintenance'),open.length,'tool']
+     ].map(([label,value,i])=>`
+       <article class="card metric">
+         <div class="metric-top"><small>${label}</small><span class="metric-icon">${icon(i,18)}</span></div>
+         <strong title="${escape(value)}">${value}</strong>
+         <div class="metric-foot"><span class="dot"></span>${localText('حسب سجلات مؤسستك','Based on workspace records')}</div>
+       </article>
+     `).join('')}
+   </div>
+   <div class="grid">
+     <article class="card">
+       <div class="card-header"><h2>${localText('إشغال الوحدات','Unit occupancy')}</h2><button class="text-button" data-go="units">${localText('عرض الوحدات','View units')}</button></div>
+       <div class="occupancy-body">
+         <div class="donut">
+           <svg viewBox="0 0 120 120" role="img" aria-label="${localText('متأجرة','Rented')} ${occupied} ${localText('من','of')} ${unitTotal}">
+             <circle cx="60" cy="60" r="52"/><circle class="donut-fill" id="occupancy" cx="60" cy="60" r="52"/>
+           </svg>
+           <div class="donut-label"><b>${percent}%</b><small>${localText('نسبة التأجير','Rental rate')}</small></div>
+         </div>
+         <div class="legend">
+           <h3>${localText('حالة التأجير','Rental status')}</h3>
+           <p>${t('occupied')}<b>${occupied}</b></p>
+           <p>${t('vacant')}<b>${vacant}</b></p>
+           <p>${localText('تحت الصيانة','Under maintenance')}<b>${summary.units.maintenance}</b></p>
+         </div>
+       </div>
+     </article>
+     <article class="card">
+       <div class="card-header"><h2>${localText('آخر طلبات الصيانة','Recent maintenance')}</h2><button class="text-button" data-go="tickets">${localText('عرض الكل','View all')}</button></div>
+       ${tickets.length?tickets.slice(-4).reverse().map(x=>`
+         <div class="listrow">
+           <div class="listrow-main"><span class="list-icon">${icon('tool',17)}</span><div><b>${escape(x.title)}</b><p class="muted">${t(x.priority)}</p></div></div>
+           <span class="badge ${x.priority==='urgent'?'warn':''}">${t(x.status)}</span>
+         </div>
+       `).join(''):`<div class="empty"><span class="empty-icon">${icon('check',25)}</span><strong>${localText('كل شيء هادئ هنا','Everything is quiet here')}</strong><p>${localText('لا توجد طلبات صيانة مسجلة حتى الآن.','There are no maintenance requests yet.')}</p></div>`}
+     </article>
+   </div>
+   <div class="dashboard-bottom">
+     <article class="card">
+       <div class="card-header"><h2>${localText('آخر الفواتير','Recent invoices')}</h2><button class="text-button" data-go="invoices">${localText('عرض الكل','View all')}</button></div>
+       ${invoices.length?`
+         <div class="tablewrap">
+           <table>
+             <thead><tr><th>${t('number')}</th><th>${t('amount')}</th><th>${t('due_date')}</th><th>${t('status')}</th></tr></thead>
+             <tbody>
+               ${invoices.slice(-4).reverse().map(x=>`<tr><td>${escape(x.number)}</td><td>${money(x.amount)}</td><td>${escape(x.due_date)}</td><td><span class="badge ${x.status==='draft'?'warn':''}">${t(x.status)}</span></td></tr>`).join('')}
+             </tbody>
+           </table>
+         </div>
+       `:emptyState('invoices',false)}
+     </article>
+     <article class="card">
+       <div class="card-header"><h2>${localText('إجراءات سريعة ومباشرة','Quick Actions')}</h2></div>
+       <p class="muted">${localText('كل ما تحتاجه لإدارة برجك في خطوات بسيطة.','Everyday actions in minimal clicks.')}</p>
+       <div class="quick-actions">
+         ${['properties','invoices','payment_proofs','tickets','money_accounts','reports'].filter(k=>allowed().includes(k)).map(k=>`
+           <button data-go="${k}">${icon(iconNames[k],18)}${t(k)}</button>
+         `).join('')}
+       </div>
+     </article>
+   </div>
+ `;
  $('#occupancy').style.setProperty('--fill',String(percent*3.27));
 }
 
-const columns={properties:['name','kind','address'],units:['name','property_id','floor','area','status'],parties:['name','kind','phone','email'],leases:['unit_id','party_id','start_date','end_date','rent','status'],ownerships:['unit_id','party_id','share'],invoices:['number','party_id','description','amount','due_date','status'],receipts:['reference','amount','received_on'],expenses:['description','amount','status'],journals:['description','entry_date','status'],accounts:['code','name','kind'],tickets:['title','priority','status','technician_id'],assets:['name','property_id','serial','next_service'],technicians:['name','specialty','phone'],announcements:['title','body','created_at'],notifications:['message','created_at'],audit_logs:['entity','action','entity_id','created_at']};
-function canWrite(entity){const r=role();if(r==='admin')return true;if(r==='viewer')return false;if(r==='resident')return entity==='tickets';if(['invoices','expenses','accounts','journals'].includes(entity))return ['manager','accountant'].includes(r);if(['assets','tickets','technicians'].includes(entity))return ['manager','technician'].includes(r);return r==='manager';}
-async function listing(entity){const data=await rows(entity);const cols=columns[entity]||[];const deps=[...new Set(cols.filter(k=>relations[k]).map(k=>relations[k]))];await Promise.all(deps.map(rows));
- $('#content').innerHTML=head(t(entity),`<button id="export">${t('export')}</button>${(schemas[entity]||entity==='journals')&&canWrite(entity)?`<button class="primary" id="add">＋ ${t('add')}</button>`:''}`)+`<div class="table-toolbar"><div class="search-wrap">${icon('search',18)}<input id="search" class="search" aria-label="${t('search')}" placeholder="${t('search')}"></div><span class="table-count">${data.length} ${localText('سجل','records')}</span></div><div id="records"></div>`;
- const draw=(list)=>{$('#records').innerHTML=list.length?`<div class="tablewrap"><table><thead><tr>${cols.map(k=>`<th>${t(k)}</th>`).join('')}<th></th></tr></thead><tbody>${list.map(x=>`<tr>${cols.map(k=>`<td>${['status','priority'].includes(k)?`<span class="badge ${['pending','urgent','draft','open'].includes(x[k])?'warn':''}">${escape(t(x[k]))}</span>`:['amount','rent'].includes(k)?money(x[k]):escape(display(k,x[k]))}</td>`).join('')}<td><div class="actions">${(schemas[entity]&&!['invoices','expenses'].includes(entity)&&canWrite(entity)&&role()!=='resident')?`<button data-edit="${x.id}">${t('edit')}</button>`:''}${entity==='invoices'&&canWrite(entity)?(x.status==='draft'?`<button data-issue="${x.id}">${t('issue')}</button>`:x.status==='issued'?`<button data-collect="${x.id}">${t('collect')}</button>`:''):''}${entity==='expenses'&&x.status==='pending'&&['admin','manager'].includes(role())?`<button data-approve="${x.id}">${t('approve')}</button><button data-reject="${x.id}" class="danger">${t('reject')}</button>`:''}</div></td></tr>`).join('')}</tbody></table></div>`:`<div class="card">${emptyState(entity,!!schemas[entity]&&canWrite(entity))}</div>`;
- document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editor(entity,data.find(x=>x.id===b.dataset.edit)));
- document.querySelectorAll('[data-issue]').forEach(b=>b.onclick=()=>perform(()=>api(`invoices/${b.dataset.issue}/issue`,{method:'POST',body:'{}'})));
- document.querySelectorAll('[data-collect]').forEach(b=>b.onclick=()=>collection(b.dataset.collect));
- for(const [attr,decision] of [['approve','approved'],['reject','rejected']])document.querySelectorAll(`[data-${attr}]`).forEach(b=>b.onclick=()=>perform(()=>api(`expenses/${b.dataset[attr]}/decide`,{method:'POST',body:JSON.stringify({decision})})));
- };draw(data);$('#search').oninput=e=>{const q=e.target.value.toLowerCase();draw(data.filter(x=>cols.some(k=>String(display(k,x[k])).toLowerCase().includes(q))));};$('#export').onclick=()=>csv(entity,cols,data);if($('#add'))$('#add').onclick=()=>entity==='journals'?journalForm():editor(entity);
+const columns={
+ properties:['name','kind','currency','country','status'],
+ units:['name','property_id','floor','area','status','payer_responsibility'],
+ parties:['name','kind','phone','email'],
+ leases:['unit_id','party_id','start_date','end_date','rent','status'],
+ ownerships:['unit_id','party_id','share'],
+ invoices:['number','party_id','description','amount','due_date','status'],
+ receipts:['reference','amount','received_on'],
+ expenses:['description','amount','status'],
+ money_accounts:['name','property_id','kind','balance'],
+ payment_proofs:['reference','unit_id','amount','payment_method','status','created_at'],
+ fines:['title','unit_id','amount','status','destination'],
+ credit_balances:['party_id','property_id','balance'],
+ vendor_contracts:['title','property_id','vendor_id','amount','frequency','status'],
+ budgets:['name','property_id','period','start_date','end_date','status'],
+ support_tickets:['ticket_number','title','category','priority','status','created_at'],
+ journals:['description','entry_date','status'],
+ accounts:['code','name','kind'],
+ tickets:['title','priority','status','technician_id'],
+ assets:['name','property_id','serial','next_service'],
+ technicians:['name','specialty','phone'],
+ announcements:['title','body','created_at'],
+ notifications:['message','created_at'],
+ audit_logs:['entity','action','entity_id','created_at']
+};
+
+function canWrite(entity){
+ const r=role();
+ if(r==='admin')return true;
+ if(r==='viewer')return false;
+ if(r==='resident')return ['tickets','payment_proofs','support_tickets'].includes(entity);
+ if(['invoices','expenses','accounts','journals','money_accounts','fines','credit_balances'].includes(entity))return ['manager','accountant'].includes(r);
+ if(['assets','tickets','technicians','vendor_contracts','budgets'].includes(entity))return ['manager','technician'].includes(r);
+ return r==='manager';
 }
-function csv(name,cols,data){const cell=v=>'"'+String(v??'').replace(/^[=+@\-\t\r]/,"'$&").replaceAll('"','""')+'"';const text='\ufeff'+[cols.map(t),...data.map(x=>cols.map(k=>display(k,x[k])))].map(r=>r.map(cell).join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='towerflow-'+name+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),500);}
-function modal(title,fields,submit){const d=$('#modal');d.innerHTML=`<form id="editor"><h2>${escape(title)}</h2><div class="fields">${fields}</div><div class="error" id="formerror" role="alert"></div><div class="actions"><button type="button" id="cancel">${t('cancel')}</button><button class="primary" type="submit">${t('save')}</button></div></form>`;$('#cancel').onclick=()=>d.close();$('#editor').onsubmit=async e=>{e.preventDefault();e.submitter.disabled=true;try{await submit(Object.fromEntries(new FormData(e.target)));d.close();toast(t('saved'));cache={};await render();}catch(error){$('#formerror').textContent=error.message;}finally{e.submitter.disabled=false;}};d.showModal();}
-function field(key,value='',options={}){const label=t(key),choices=options.choices;return `<label class="${['description','body','title'].includes(key)?'full':''}">${label}${choices?`<select name="${key}" ${options.optional?'':'required'}>${options.optional?'<option value="">—</option>':''}${choices.map(x=>`<option value="${escape(x.value??x)}" ${String(x.value??x)===String(value)?'selected':''}>${escape(x.label??t(x))}</option>`).join('')}</select>`:`<input name="${key}" value="${escape(value)}" type="${key.endsWith('_date')||key==='next_service'?'date':['amount','rent','area','share','floor'].includes(key)?'number':key==='email'?'email':'text'}" ${['amount','rent','area','share'].includes(key)?'min="0.01" step="0.01"':''} ${options.optional?'':'required'} maxlength="4000">`}</label>`;}
-async function editor(entity,record={}){try{let keys=schemas[entity];if(role()==='resident'&&entity==='tickets')keys=['title','description','unit_id','priority'];await Promise.all([...new Set(keys.filter(k=>relations[k]).map(k=>relations[k]))].map(rows));modal(t(entity),keys.map(k=>field(k,record[k],{optional:optional.has(k)||(entity==='invoices'&&k==='unit_id'),choices:relations[k]?cache[relations[k]].map(x=>({value:x.id,label:x.name})):enums[entity]?.[k]})).join(''),b=>api(entity+(record.id?'/'+record.id:''),{method:record.id?'PATCH':'POST',body:JSON.stringify(b)}));}catch(e){toast(e.message);}}
+
+async function listing(entity){
+ const data=await rows(entity);
+ const cols=columns[entity]||[];
+ const deps=[...new Set(cols.filter(k=>relations[k]).map(k=>relations[k]))];
+ await Promise.all(deps.map(rows));
+
+ $('#content').innerHTML=head(
+   t(entity),
+   `<button id="export">${t('export')}</button>${(schemas[entity]||entity==='journals')&&canWrite(entity)?`<button class="primary" id="add">＋ ${t('add')}</button>`:''}`
+ )+`
+   <div class="table-toolbar">
+     <div class="search-wrap">${icon('search',18)}<input id="search" class="search" aria-label="${t('search')}" placeholder="${t('search')}"></div>
+     <span class="table-count">${data.length} ${localText('سجل','records')}</span>
+   </div>
+   <div id="records"></div>
+ `;
+
+ const draw=(list)=>{
+   $('#records').innerHTML=list.length?`
+     <div class="tablewrap">
+       <table>
+         <thead><tr>${cols.map(k=>`<th>${t(k)}</th>`).join('')}<th></th></tr></thead>
+         <tbody>
+           ${list.map(x=>`
+             <tr>
+               ${cols.map(k=>`
+                 <td>
+                   ${['status','priority'].includes(k)?`<span class="badge ${['pending','urgent','draft','open','high','critical'].includes(x[k])?'warn':''}">${escape(t(x[k]))}</span>`:['amount','rent','balance'].includes(k)?money(x[k]):escape(display(k,x[k]))}
+                 </td>
+               `).join('')}
+               <td>
+                 <div class="actions">
+                   ${(schemas[entity]&&!['invoices','expenses','payment_proofs'].includes(entity)&&canWrite(entity)&&role()!=='resident')?`<button data-edit="${x.id}">${t('edit')}</button>`:''}
+                   ${entity==='invoices'&&canWrite(entity)?(x.status==='draft'?`<button data-issue="${x.id}">${t('issue')}</button>`:x.status==='issued'?`<button data-collect="${x.id}">${t('collect')}</button>`:''):''}
+                   ${entity==='expenses'&&x.status==='pending'&&['admin','manager'].includes(role())?`<button data-approve="${x.id}">${t('approve')}</button><button data-reject="${x.id}" class="danger">${t('reject')}</button>`:''}
+                   ${entity==='payment_proofs'&&x.status==='pending'&&['admin','manager'].includes(role())?`<button data-approve-proof="${x.id}">${t('approve')}</button><button data-reject-proof="${x.id}" class="danger">${t('reject')}</button>`:''}
+                   ${entity==='fines'&&x.status==='pending'&&['admin','manager'].includes(role())?`<button data-exempt-fine="${x.id}">${t('exempt_btn')}</button>`:''}
+                 </div>
+               </td>
+             </tr>
+           `).join('')}
+         </tbody>
+       </table>
+     </div>
+   `:`<div class="card">${emptyState(entity,!!schemas[entity]&&canWrite(entity))}</div>`;
+
+   document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editor(entity,data.find(x=>x.id===b.dataset.edit)));
+   document.querySelectorAll('[data-issue]').forEach(b=>b.onclick=()=>perform(()=>api(`invoices/${b.dataset.issue}/issue`,{method:'POST',body:'{}'})));
+   document.querySelectorAll('[data-collect]').forEach(b=>b.onclick=()=>collection(b.dataset.collect));
+   for(const [attr,decision] of [['approve','approved'],['reject','rejected']]) {
+     document.querySelectorAll(`[data-${attr}]`).forEach(b=>b.onclick=()=>perform(()=>api(`expenses/${b.dataset[attr]}/decide`,{method:'POST',body:JSON.stringify({decision})})));
+   }
+   document.querySelectorAll('[data-approve-proof]').forEach(b=>b.onclick=()=>perform(()=>api(`payment_proofs/${b.dataset.approveProof}/review`,{method:'POST',body:JSON.stringify({decision:'approved'})})));
+   document.querySelectorAll('[data-reject-proof]').forEach(b=>b.onclick=()=>modal(t('reject'),field('reason','',{optional:false}),res=>api(`payment_proofs/${b.dataset.rejectProof}/review`,{method:'POST',body:JSON.stringify({decision:'rejected',rejection_reason:res.reason}))));
+   document.querySelectorAll('[data-exempt-fine]').forEach(b=>b.onclick=()=>modal(t('exempt_btn'),field('reason','',{optional:false}),res=>api(`fines/${b.dataset.exemptFine}/exempt`,{method:'POST',body:JSON.stringify({reason:res.reason}))));
+ };
+
+ draw(data);
+ $('#search').oninput=e=>{const q=e.target.value.toLowerCase();draw(data.filter(x=>cols.some(k=>String(display(k,x[k])).toLowerCase().includes(q))));};
+ $('#export').onclick=()=>csv(entity,cols,data);
+ if($('#add'))$('#add').onclick=()=>entity==='journals'?journalForm():editor(entity);
+}
+
+function csv(name,cols,data){
+ const cell=v=>'"'+String(v??'').replace(/^[=+@\-\t\r]/,"'$&").replaceAll('"','""')+'"';
+ const text='\ufeff'+[cols.map(t),...data.map(x=>cols.map(k=>display(k,x[k])))].map(r=>r.map(cell).join(',')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));
+ const a=document.createElement('a');a.href=url;a.download='towerflow-'+name+'.csv';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),500);
+}
+
+function modal(title,fields,submit){
+ const d=$('#modal');
+ d.innerHTML=`<form id="editor"><h2>${escape(title)}</h2><div class="fields">${fields}</div><div class="error" id="formerror" role="alert"></div><div class="actions"><button type="button" id="cancel">${t('cancel')}</button><button class="primary" type="submit">${t('save')}</button></div></form>`;
+ $('#cancel').onclick=()=>d.close();
+ $('#editor').onsubmit=async e=>{
+   e.preventDefault();e.submitter.disabled=true;
+   try{await submit(Object.fromEntries(new FormData(e.target)));d.close();toast(t('saved'));cache={};await render();}catch(error){$('#formerror').textContent=error.message;}finally{e.submitter.disabled=false;}
+ };
+ d.showModal();
+}
+
+function field(key,value='',options={}){
+ const label=t(key),choices=options.choices;
+ return `<label class="${['description','body','title','terms','notes'].includes(key)?'full':''}">${label}${choices?`<select name="${key}" ${options.optional?'':'required'}>${options.optional?'<option value="">—</option>':''}${choices.map(x=>`<option value="${escape(x.value??x)}" ${String(x.value??x)===String(value)?'selected':''}>${escape(x.label??t(x))}</option>`).join('')}</select>`:`<input name="${key}" value="${escape(value)}" type="${key.endsWith('_date')||key==='next_service'?'date':['amount','rent','area','share','floor','floors_count','units_per_floor','balance'].includes(key)?'number':key==='email'?'email':'text'}" ${['amount','rent','area','share','balance'].includes(key)?'min="0.01" step="0.01"':''} ${options.optional?'':'required'} maxlength="4000">`}</label>`;
+}
+
+async function editor(entity,record={}){
+ try{
+   let keys=schemas[entity]||[];
+   if(role()==='resident'&&entity==='tickets')keys=['title','description','unit_id','priority'];
+   await Promise.all([...new Set(keys.filter(k=>relations[k]).map(k=>relations[k]))].map(rows));
+   modal(t(entity),keys.map(k=>field(k,record[k],{optional:optional.has(k)||(entity==='invoices'&&k==='unit_id'),choices:relations[k]?cache[relations[k]].map(x=>({value:x.id,label:x.name})):enums[entity]?.[k]})).join(''),b=>api(entity+(record.id?'/'+record.id:''),{method:record.id?'PATCH':'POST',body:JSON.stringify(b)}));
+ }catch(e){toast(e.message);}
+}
+
 async function perform(fn){try{await fn();toast(t('saved'));cache={};await render();}catch(e){toast(e.message);}}
-function collection(id){modal(t('collect'),field('amount')+field('reference'),b=>api('invoices/'+id+'/collect',{method:'POST',body:JSON.stringify(b)}));}
-async function journalForm(){try{const accounts=await rows('accounts');const opts=accounts.map(x=>({value:x.id,label:x.code+' · '+x.name}));modal(t('journals'),field('description')+field('debit_account','',{choices:opts})+field('credit_account','',{choices:opts})+field('amount'),b=>api('journals',{method:'POST',body:JSON.stringify({description:b.description,lines:[{account_id:b.debit_account,debit:b.amount},{account_id:b.credit_account,credit:b.amount}]})}));}catch(e){toast(e.message);}}
-async function reports(){const data=await rows('trial_balance');$('#content').innerHTML=head(t('reports'),`<button id="export">${t('export')}</button>`)+`<div class="card"><h2>${lang==='ar'?'ميزان المراجعة · القيود المرحلة فقط':'Trial balance · posted entries'}</h2><div class="tablewrap"><table><thead><tr>${['code','name','debit','credit'].map(k=>`<th>${t(k)}</th>`).join('')}</tr></thead><tbody>${data.map(x=>`<tr><td>${escape(x.code)}</td><td>${escape(x.name)}</td><td>${money(x.debit)}</td><td>${money(x.credit)}</td></tr>`).join('')}<tr><th>Σ</th><th></th><th>${money(data.reduce((s,x)=>s+Number(x.debit),0))}</th><th>${money(data.reduce((s,x)=>s+Number(x.credit),0))}</th></tr></tbody></table></div></div>`;$('#export').onclick=()=>csv('trial-balance',['code','name','debit','credit'],data);}
-async function members(){const data=await api('members');$('#content').innerHTML=head(t('members'),role()==='admin'?`<button class="primary" id="addmember">＋ ${t('add')}</button>`:'')+`<div class="card">${data.map(x=>`<div class="listrow"><div><b>${escape(x.name)}</b><p class="muted">${escape(x.email)}</p></div><span class="badge">${t(x.role)}</span></div>`).join('')}</div>`;if($('#addmember'))$('#addmember').onclick=async()=>{try{await rows('parties');modal(t('members'),`<p class="muted full">${lang==='ar'?'يجب أن ينشئ المستخدم حسابه أولًا. اربط الساكن بسجل المستأجر لإتاحة وحدته وفواتيره.':'The user must register first. Link residents to their tenant record for unit and invoice access.'}</p>`+field('email')+field('role','viewer',{choices:['viewer','resident','technician','accountant','manager','admin']})+field('party_id','',{optional:true,choices:cache.parties.map(x=>({value:x.id,label:x.name}))}),b=>api('members',{method:'POST',body:JSON.stringify(b)}));}catch(e){toast(e.message);}};}
-function settings(){$('#content').innerHTML=head(t('settings'))+`<div class="card"><h2>${escape(me.organizations.find(x=>x.id===org)?.name)}</h2><p>${escape(me.user.email)}</p><p class="muted">${lang==='ar'?'المؤسسات معزولة. يتطلب اعتماد المصروف موافقة مدير آخر. القيود المرحلة غير قابلة للتعديل.':'Workspaces are isolated. Expenses require a different manager to approve. Posted journals are immutable.'}</p><button id="neworg">${lang==='ar'?'إنشاء مؤسسة إضافية':'Create another workspace'}</button></div><div class="notice">${lang==='ar'?'إشعارات الهاتف تتطلب تفعيلها في Android وربط الساكن بوحدته. البريد وSMS والدفع الإلكتروني غير موصلة. تطبيق Android يتطلب بناء APK/AAB ونشر Google Play منفصلًا عن Vercel.':'Phone notifications require opting in on Android and linking the resident to their unit. Email, SMS and online payments are not connected. Android requires a separate APK/AAB build and Google Play release.'}</div>`;$('#neworg').onclick=()=>modal(t('organization'),field('name'),async b=>{await api('organizations',{method:'POST',body:JSON.stringify(b)});me=await api('me');});}
-theme();boot();
+
+function collection(id){
+ modal(t('collect'),field('amount')+field('reference'),b=>api('invoices/'+id+'/collect',{method:'POST',body:JSON.stringify(b)}));
+}
+
+async function handleQuickAction(action){
+ if(action==='collect'){
+   const invoices=(await rows('invoices')).filter(i=>i.status==='issued');
+   const opts=invoices.map(i=>({value:i.id,label:`${i.number} · ${money(i.amount)}`}));
+   modal(t('quick_collect'),field('invoice_id','',{choices:opts})+field('amount')+field('reference'),b=>api(`invoices/${b.invoice_id}/collect`,{method:'POST',body:JSON.stringify({amount:b.amount,reference:b.reference})}));
+ }else if(action==='expense'){
+   editor('expenses');
+ }else if(action==='submit_proof'){
+   editor('payment_proofs');
+ }else if(action==='new_ticket'){
+   editor('tickets');
+ }else if(action==='new_support'){
+   editor('support_tickets');
+ }else if(action==='units_batch'){
+   const props=await rows('properties');
+   const opts=props.map(p=>({value:p.id,label:p.name}));
+   modal(localText('توليد أدوار وشقق','Batch Generate Units'),field('property_id','',{choices:opts})+field('floors_count','5')+field('units_per_floor','4')+field('prefix',''),b=>api(`properties/${b.property_id}/units_batch`,{method:'POST',body:JSON.stringify({floors:b.floors_count,units_per_floor:b.units_per_floor,prefix:b.prefix})}));
+ }
+}
+
+async function journalForm(){
+ try{
+   const accounts=await rows('accounts');
+   const opts=accounts.map(x=>({value:x.id,label:x.code+' · '+x.name}));
+   modal(t('journals'),field('description')+field('debit_account','',{choices:opts})+field('credit_account','',{choices:opts})+field('amount'),b=>api('journals',{method:'POST',body:JSON.stringify({description:b.description,lines:[{account_id:b.debit_account,debit:b.amount},{account_id:b.credit_account,credit:b.amount}]})}));
+ }catch(e){toast(e.message);}
+}
+
+async function members(){
+ const data=await api('members');
+ $('#content').innerHTML=head(t('members'),role()==='admin'?`<button class="primary" id="addmember">＋ ${t('add')}</button>`:'')+`
+   <div class="card">${data.map(x=>`<div class="listrow"><div><b>${escape(x.name)}</b><p class="muted">${escape(x.email)}</p></div><span class="badge">${t(x.role)}</span></div>`).join('')}</div>
+ `;
+ if($('#addmember'))$('#addmember').onclick=async()=>{
+   try{
+     await rows('parties');
+     modal(t('members'),`<p class="muted full">${lang==='ar'?'يجب أن ينشئ المستخدم حسابه أولًا. اربط الساكن بسجل المستأجر لإتاحة وحدته وفواتيره.':'The user must register first. Link residents to their tenant record for unit and invoice access.'}</p>`+field('email')+field('role','viewer',{choices:['viewer','resident','technician','accountant','manager','admin']})+field('party_id','',{optional:true,choices:cache.parties.map(x=>({value:x.id,label:x.name}))}),b=>api('members',{method:'POST',body:JSON.stringify(b)}));
+   }catch(e){toast(e.message);}
+ };
+}
+
+function settings(){
+ $('#content').innerHTML=head(t('settings'))+`
+   <div class="card">
+     <h2>${escape(me.organizations.find(x=>x.id===org)?.name)}</h2>
+     <p>${escape(me.user.email)}</p>
+     <p class="muted">${lang==='ar'?'المؤسسات والأبراج معزولة إداريًا وماليًا. التحويل بين الأبراج ممنوع منعًا باتًا. القيود المرحلة غير قابلة للتعديل.':'Towers and organizations are strictly isolated financially and administratively. Inter-tower transfers are forbidden.'}</p>
+     <button id="neworg">${lang==='ar'?'إنشاء مؤسسة إضافية':'Create another workspace'}</button>
+   </div>
+   <div class="notice">
+     ${lang==='ar'?'TowerFlow Free مجاني بالكامل للأبد لجميع الوظائف. النسخة التجارية تقدم دعمًا فنيًا ذا أولوية وإعدادًا مخصصًا ومستوى خدمة SLA.':'TowerFlow Free is completely free forever for all tower operations. Commercial edition offers priority SLAs and dedicated assistance.'}
+   </div>
+ `;
+ $('#neworg').onclick=()=>modal(t('organization'),field('name'),async b=>{await api('organizations',{method:'POST',body:JSON.stringify(b)});me=await api('me');});
+}
+
+theme();
+boot();
