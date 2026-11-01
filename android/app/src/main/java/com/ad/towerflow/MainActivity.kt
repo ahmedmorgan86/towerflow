@@ -84,7 +84,16 @@ class MainActivity : Activity() {
     private fun title(k: String) = names[k]?.let { if (arabic) it.first else it.second } ?: k
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
 
-    // --- Modern Design Helpers ---
+    // --- Executive Design System & Cairo Typography ---
+    private val cairoFont: Typeface by lazy {
+        try {
+            val resId = resources.getIdentifier("cairo", "font", packageName)
+            if (resId != 0) resources.getFont(resId) else Typeface.DEFAULT
+        } catch (_: Exception) {
+            Typeface.DEFAULT
+        }
+    }
+
     private fun roundedDrawable(bgColor: Int, cornerRadiusDp: Float = 14f, strokeColor: Int? = null, strokeWidthDp: Int = 1): GradientDrawable {
         return GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
@@ -93,6 +102,13 @@ class MainActivity : Activity() {
             if (strokeColor != null) {
                 setStroke(dp(strokeWidthDp), strokeColor)
             }
+        }
+    }
+
+    private fun gradientDrawable(startColor: Int, endColor: Int, cornerRadiusDp: Float = 12f): GradientDrawable {
+        return GradientDrawable(GradientDrawable.Orientation.TL_BR, intArrayOf(startColor, endColor)).apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dp(cornerRadiusDp.toInt()).toFloat()
         }
     }
 
@@ -108,6 +124,19 @@ class MainActivity : Activity() {
     }
 
     private fun scaffold(heading: String, showBack: Boolean = false, onBack: (() -> Unit)? = null) {
+        // Dynamic Status Bar & Navigation Bar Theming (Matches Executive Web Palette)
+        try {
+            window.statusBarColor = Color.parseColor(if (dark) "#090A0F" else "#FFFFFF")
+            window.navigationBarColor = Color.parseColor(if (dark) "#090A0F" else "#FFFFFF")
+            var flags = window.decorView.systemUiVisibility
+            flags = if (dark) {
+                flags and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv() and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
+            } else {
+                flags or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+            }
+            window.decorView.systemUiVisibility = flags
+        } catch (_: Exception) {}
+
         val scroll = ScrollView(this).apply {
             isFillViewport = true
             setBackgroundColor(Color.parseColor(if (dark) "#090A0F" else "#F8FAFC"))
@@ -124,49 +153,68 @@ class MainActivity : Activity() {
         scroll.addView(screen)
         setContentView(scroll)
 
-        // Modern Header TopBar
+        // Modern Header TopBar (Matching Web Topbar & Brand)
         val topBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-            setPadding(dp(2), 0, dp(2), dp(12))
+            setPadding(dp(2), 0, dp(2), dp(14))
         }
 
         if (showBack && onBack != null) {
             val backBtn = Button(this).apply {
                 text = if (arabic) "‹ عودة" else "‹ Back"
                 setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#4F46E5"))
-                textSize = 14f
+                textSize = 13.5f
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
                 background = roundedDrawable(Color.TRANSPARENT, 10f)
                 setOnClickListener { onBack() }
             }
             topBar.addView(backBtn)
         }
 
+        // Squircle Brand Icon
+        val brandIcon = LinearLayout(this).apply {
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(dp(38), dp(38)).apply {
+                if (arabic) marginStart = dp(2) else marginEnd = dp(8)
+            }
+            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 11f)
+            addView(TextView(this@MainActivity).apply {
+                text = "🏢"
+                textSize = 17f
+                gravity = Gravity.CENTER
+            })
+        }
+        topBar.addView(brandIcon)
+
         val brandCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
-            setPadding(dp(4), 0, dp(4), 0)
+            layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply {
+                setPadding(dp(6), 0, dp(6), 0)
+            }
         }
         brandCol.addView(TextView(this).apply {
             text = "TowerFlow"
-            textSize = 20f
-            setTypeface(typeface, Typeface.BOLD)
+            textSize = 18f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
             setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
         })
         brandCol.addView(TextView(this).apply {
             text = heading
-            textSize = 12f
+            textSize = 11.5f
+            typeface = cairoFont
             maxLines = 1
             ellipsize = TextUtils.TruncateAt.END
             setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
         })
         topBar.addView(brandCol)
 
-        // Language & Theme Toggle Buttons
+        // Language & Theme Toggle Buttons (Pill design matching Web)
         val langBtn = Button(this).apply {
             text = if (arabic) "EN" else "عربي"
             textSize = 12f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
             setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
             background = roundedDrawable(
                 if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"),
@@ -178,12 +226,13 @@ class MainActivity : Activity() {
                 if (token.isEmpty()) login() else home()
             }
         }
-        val langParams = LinearLayout.LayoutParams(dp(54), dp(38)).apply { marginEnd = dp(6) }
+        val langParams = LinearLayout.LayoutParams(dp(54), dp(36)).apply { marginEnd = dp(6) }
         topBar.addView(langBtn, langParams)
 
         val themeBtn = Button(this).apply {
             text = if (dark) "☀" else "☾"
             textSize = 14f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
             setTextColor(Color.parseColor(if (dark) "#FCD34D" else "#1E293B"))
             background = roundedDrawable(
                 if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"),
@@ -195,22 +244,22 @@ class MainActivity : Activity() {
                 if (token.isEmpty()) login() else home()
             }
         }
-        topBar.addView(themeBtn, LinearLayout.LayoutParams(dp(42), dp(38)))
+        topBar.addView(themeBtn, LinearLayout.LayoutParams(dp(42), dp(36)))
         screen.addView(topBar)
     }
 
     private fun card(fn: LinearLayout.() -> Unit): LinearLayout {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), dp(14), dp(14), dp(14))
+            setPadding(dp(16), dp(16), dp(16), dp(16))
             background = roundedDrawable(
                 if (dark) Color.parseColor("#11131A") else Color.WHITE,
-                14f,
+                16f,
                 if (dark) Color.parseColor("#1E2330") else Color.parseColor("#E2E8F0")
             )
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                topMargin = dp(5)
-                bottomMargin = dp(5)
+                topMargin = dp(6)
+                bottomMargin = dp(6)
             }
         }
         layout.fn()
@@ -221,7 +270,7 @@ class MainActivity : Activity() {
     private fun label(value: String, size: Int = 14, isBold: Boolean = false): TextView = TextView(this).apply {
         text = value
         textSize = size.toFloat()
-        if (isBold) setTypeface(typeface, Typeface.BOLD)
+        typeface = if (isBold) Typeface.create(cairoFont, Typeface.BOLD) else cairoFont
         setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
         setPadding(0, dp(4), 0, dp(4))
         screen.addView(this)
@@ -231,7 +280,7 @@ class MainActivity : Activity() {
         val tv = TextView(this).apply {
             text = titleText
             textSize = 12f
-            setTypeface(typeface, Typeface.BOLD)
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
             setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             setPadding(dp(4), dp(16), dp(4), dp(8))
         }
@@ -241,6 +290,8 @@ class MainActivity : Activity() {
     private fun input(hintText: String, password: Boolean = false): EditText = EditText(this).apply {
         this.hint = hintText
         setSingleLine()
+        typeface = cairoFont
+        textSize = 14f
         inputType = if (password) InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD else InputType.TYPE_CLASS_TEXT
         setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
         setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
@@ -262,9 +313,9 @@ class MainActivity : Activity() {
             text = value
             setTextColor(Color.WHITE)
             textSize = 14f
-            setTypeface(typeface, Typeface.BOLD)
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
             isAllCaps = false
-            background = roundedDrawable(Color.parseColor("#4F46E5"), 12f)
+            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
             setOnClickListener { fn() }
         }
         val lp = LinearLayout.LayoutParams(-1, dp(48)).apply {
@@ -279,7 +330,7 @@ class MainActivity : Activity() {
             text = value
             setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             textSize = 13f
-            setTypeface(typeface, Typeface.BOLD)
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
             isAllCaps = false
             background = roundedDrawable(
                 Color.TRANSPARENT,
@@ -296,12 +347,40 @@ class MainActivity : Activity() {
     }
 
     private fun navTile(key: String, titleText: String, subtitleText: String = "", badgeCount: Int = 0) {
+        val navIcons = mapOf(
+            "properties" to "🏢",
+            "units" to "🚪",
+            "parties" to "👥",
+            "leases" to "📑",
+            "ownerships" to "🔑",
+            "invoices" to "💳",
+            "receipts" to "🧾",
+            "payment_proofs" to "📤",
+            "credit_balances" to "💰",
+            "fines" to "⚠️",
+            "money_accounts" to "🏦",
+            "expenses" to "📉",
+            "journals" to "📊",
+            "trial_balance" to "📈",
+            "tickets" to "🛠️",
+            "assets" to "🛗",
+            "technicians" to "👷",
+            "vendor_contracts" to "📝",
+            "budgets" to "📋",
+            "expense_distributions" to "⚖️",
+            "announcements" to "📢",
+            "notifications" to "🔔",
+            "support_tickets" to "🎫",
+            "audit_logs" to "📜"
+        )
+        val iconGlyph = navIcons[key] ?: "📁"
+
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(16), dp(14), dp(16), dp(14))
+            setPadding(dp(14), dp(12), dp(14), dp(12))
             background = roundedDrawable(
                 if (dark) Color.parseColor("#11131A") else Color.WHITE,
-                12f,
+                14f,
                 if (dark) Color.parseColor("#1E2330") else Color.parseColor("#E2E8F0")
             )
             gravity = Gravity.CENTER_VERTICAL
@@ -315,20 +394,42 @@ class MainActivity : Activity() {
             setOnClickListener { listing(key) }
         }
 
+        // Squircle Item Icon Badge
+        val iconBox = LinearLayout(this).apply {
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(dp(38), dp(38)).apply {
+                if (arabic) marginStart = dp(2) else marginEnd = dp(10)
+            }
+            background = roundedDrawable(
+                if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"),
+                10f,
+                if (dark) Color.parseColor("#312E81") else Color.parseColor("#C7D2FE")
+            )
+            addView(TextView(this@MainActivity).apply {
+                text = iconGlyph
+                textSize = 17f
+                gravity = Gravity.CENTER
+            })
+        }
+        row.addView(iconBox)
+
         val textCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+            layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply {
+                setPadding(dp(6), 0, dp(6), 0)
+            }
         }
         textCol.addView(TextView(this).apply {
             text = titleText
             textSize = 14f
-            setTypeface(typeface, Typeface.BOLD)
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
             setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
         })
         if (subtitleText.isNotEmpty()) {
             textCol.addView(TextView(this).apply {
                 text = subtitleText
                 textSize = 11f
+                typeface = cairoFont
                 setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                 setPadding(0, dp(2), 0, 0)
             })
@@ -339,7 +440,7 @@ class MainActivity : Activity() {
             val badge = TextView(this).apply {
                 text = badgeCount.toString()
                 textSize = 11f
-                setTypeface(typeface, Typeface.BOLD)
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
                 setTextColor(Color.parseColor("#B45309"))
                 setPadding(dp(8), dp(2), dp(8), dp(2))
                 background = roundedDrawable(Color.parseColor("#FEF3C7"), 99f, Color.parseColor("#FDE68A"))
@@ -350,6 +451,7 @@ class MainActivity : Activity() {
         val chevron = TextView(this).apply {
             text = if (arabic) "‹" else "›"
             textSize = 18f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
             setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
             setPadding(dp(6), 0, dp(2), 0)
         }
@@ -395,76 +497,263 @@ class MainActivity : Activity() {
     }
 
     private fun login(register: Boolean = false) {
-        scaffold(text(if (register) "إنشاء حساب جديد" else "تسجيل الدخول", if (register) "Create Account" else "Sign In"))
+        scaffold(text(if (register) "إنشاء حساب ومؤسسة" else "تسجيل الدخول", if (register) "Create Account" else "Sign In"))
 
-        card {
-            val titleView = TextView(this@MainActivity).apply {
-                text = text(if (register) "انضم إلى TowerFlow" else "مرحبًا بعودتك", if (register) "Join TowerFlow" else "Welcome Back")
-                textSize = 18f
-                setTypeface(typeface, Typeface.BOLD)
-                setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+        // SaaS Auth Form Card (Exact Web Component)
+        val authCard = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(22), dp(20), dp(24))
+            background = roundedDrawable(
+                if (dark) Color.parseColor("#11131A") else Color.WHITE,
+                20f,
+                if (dark) Color.parseColor("#1E2330") else Color.parseColor("#E2E8F0")
+            )
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(6)
+                bottomMargin = dp(12)
             }
-            addView(titleView)
+        }
 
-            val subtitleView = TextView(this@MainActivity).apply {
-                text = text("منصة إدارة الأبراج والعقارات الذكية", "Smart Property & Tower Management Platform")
+        // Center Symbol Badge (.login-symbol from web)
+        val symbolBadge = LinearLayout(this).apply {
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(dp(54), dp(54)).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                bottomMargin = dp(12)
+            }
+            background = roundedDrawable(
+                if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"),
+                16f,
+                if (dark) Color.parseColor("#312E81") else Color.parseColor("#C7D2FE")
+            )
+            addView(TextView(this@MainActivity).apply {
+                text = if (register) "🛡️" else "🏢"
+                textSize = 22f
+                gravity = Gravity.CENTER
+            })
+        }
+        authCard.addView(symbolBadge)
+
+        // Title
+        val titleView = TextView(this).apply {
+            text = text(if (register) "ابدأ مع TowerFlow" else "أهلًا بعودتك", if (register) "Start with TowerFlow" else "Welcome back")
+            textSize = 20f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            gravity = Gravity.CENTER_HORIZONTAL
+            setTextColor(Color.parseColor(if (dark) "#F8FAFC" else "#0F172A"))
+        }
+        authCard.addView(titleView)
+
+        // Subtitle
+        val subtitleView = TextView(this).apply {
+            text = text(
+                if (register) "أنشئ حسابك وابدأ تنظيم محفظتك العقارية." else "سجّل دخولك لمتابعة عقاراتك وأعمالك اليومية.",
+                if (register) "Create an account and organize your portfolio." else "Sign in to your workspace and pick up where you left off."
+            )
+            textSize = 12.5f
+            typeface = cairoFont
+            gravity = Gravity.CENTER_HORIZONTAL
+            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+            setPadding(dp(6), dp(4), dp(6), dp(16))
+        }
+        authCard.addView(subtitleView)
+
+        fun addFormField(lblText: String, hintText: String, isPass: Boolean = false, isEmail: Boolean = false): EditText {
+            val lbl = TextView(this).apply {
+                text = lblText
                 textSize = 12f
-                setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
-                setPadding(0, dp(4), 0, dp(16))
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#475569"))
+                setPadding(dp(2), dp(6), dp(2), dp(4))
             }
-            addView(subtitleView)
-        }
+            authCard.addView(lbl)
 
-        val name = if (register) input(text("الاسم الكامل", "Full Name")) else null
-        val organization = if (register) input(text("اسم المؤسسة أو البرج", "Workspace or Tower Name")) else null
-        val email = input(text("البريد الإلكتروني", "Email Address")).apply { inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS }
-        val pass = input(text("كلمة المرور (12 حرفًا على الأقل)", "Password (min 12 chars)"), true)
-
-        primaryButton(text("متابعة", "Continue")) {
-            try {
-                val uri = URI(base)
-                require(uri.scheme in listOf("http", "https") && !uri.host.isNullOrEmpty()) { "A valid HTTP/HTTPS origin is required" }
-                base = uri.toString().trimEnd('/')
-                getPreferences(0).edit().putString("base", base).apply()
-                val payload = JSONObject().put("email", email.text.toString().trim()).put("password", pass.text.toString())
-                if (register) payload.put("name", name?.text.toString().trim()).put("organization", organization?.text.toString().trim())
-                call("auth/" + if (register) "register" else "login", "POST", payload) { raw ->
-                    token = JSONObject(raw).getString("token")
-                    pass.text.clear()
-                    loadMe()
+            val et = EditText(this).apply {
+                hint = hintText
+                setSingleLine()
+                typeface = cairoFont
+                textSize = 14f
+                inputType = when {
+                    isPass -> InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    isEmail -> InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+                    else -> InputType.TYPE_CLASS_TEXT
                 }
-            } catch (e: Exception) {
-                error(e)
+                setTextColor(Color.parseColor(if (dark) "#F8FAFC" else "#0F172A"))
+                setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+                background = roundedDrawable(
+                    if (dark) Color.parseColor("#0C0E14") else Color.parseColor("#F8FAFC"),
+                    12f,
+                    if (dark) Color.parseColor("#242838") else Color.parseColor("#CBD5E1")
+                )
+                setPadding(dp(14), dp(12), dp(14), dp(12))
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(48)).apply {
+                    bottomMargin = dp(6)
+                }
             }
+            authCard.addView(et)
+            return et
         }
 
-        outlineButton(text("المتابعة باستخدام Google", "Continue with Google")) { googleLogin() }
-        outlineButton(text(if (register) "لدي حساب بالفعل" else "إنشاء حساب ومؤسسة جديدة", if (register) "Already have an account" else "Create new account")) {
-            login(!register)
-        }
+        val name = if (register) addFormField(text("الاسم الكامل", "Full Name"), text("اسمك الكامل", "Your full name")) else null
+        val organization = if (register) addFormField(text("اسم المؤسسة أو البرج", "Organization / Tower"), text("اسم شركتك أو مؤسستك", "Your organization name")) else null
+        val email = addFormField(text("البريد الإلكتروني", "Email Address"), "name@company.com", isEmail = true)
+        val pass = addFormField(text("كلمة المرور", "Password"), text("12 حرفًا على الأقل", "At least 12 characters"), isPass = true)
 
-        // Server URL Configuration
-        outlineButton(text("⚙ إعداد رابط الخادم", "⚙ Server Origin Settings")) {
-            val urlInput = EditText(this).apply {
-                setText(base)
-                inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+        // Primary Submit Button with Indigo Gradient
+        val submitBtn = Button(this).apply {
+            val arrow = if (arabic) "‹" else "›"
+            text = text(
+                if (register) "إنشاء حساب ومؤسسة  $arrow" else "تسجيل الدخول  $arrow",
+                if (register) "Create Account  $arrow" else "Sign In  $arrow"
+            )
+            setTextColor(Color.WHITE)
+            textSize = 14.5f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            isAllCaps = false
+            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(48)).apply {
+                topMargin = dp(14)
+                bottomMargin = dp(4)
             }
-            AlertDialog.Builder(this)
-                .setTitle(text("إعداد رابط الخادم", "Server URL Configuration"))
-                .setMessage(text("أدخل رابط خادم TowerFlow (مثال: https://towerflow.vercel.app أو http://10.0.2.2:3000)", "Enter TowerFlow backend origin"))
-                .setView(urlInput)
-                .setPositiveButton(text("حفظ وتحديث", "Save")) { _, _ ->
-                    var newUrl = urlInput.text.toString().trim().trimEnd('/')
-                    if (!newUrl.startsWith("http://") && !newUrl.startsWith("https://")) {
-                        newUrl = "https://$newUrl"
-                    }
-                    base = newUrl
+            setOnClickListener {
+                try {
+                    val uri = URI(base)
+                    require(uri.scheme in listOf("http", "https") && !uri.host.isNullOrEmpty()) { "A valid HTTP/HTTPS origin is required" }
+                    base = uri.toString().trimEnd('/')
                     getPreferences(0).edit().putString("base", base).apply()
-                    login(register)
+                    val payload = JSONObject().put("email", email.text.toString().trim()).put("password", pass.text.toString())
+                    if (register) payload.put("name", name?.text.toString().trim()).put("organization", organization?.text.toString().trim())
+                    call("auth/" + if (register) "register" else "login", "POST", payload) { raw ->
+                        token = JSONObject(raw).getString("token")
+                        pass.text.clear()
+                        loadMe()
+                    }
+                } catch (e: Exception) {
+                    error(e)
                 }
-                .setNegativeButton(text("إلغاء", "Cancel"), null)
-                .show()
+            }
         }
+        authCard.addView(submitBtn)
+
+        // Divider (.auth-divider)
+        val dividerRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(12)
+                bottomMargin = dp(12)
+            }
+            addView(View(this@MainActivity).apply {
+                layoutParams = LinearLayout.LayoutParams(0, dp(1), 1f)
+                setBackgroundColor(Color.parseColor(if (dark) "#1E2330" else "#E2E8F0"))
+            })
+            addView(TextView(this@MainActivity).apply {
+                text = text("أو", "or")
+                textSize = 11.5f
+                typeface = cairoFont
+                setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+                setPadding(dp(12), 0, dp(12), 0)
+            })
+            addView(View(this@MainActivity).apply {
+                layoutParams = LinearLayout.LayoutParams(0, dp(1), 1f)
+                setBackgroundColor(Color.parseColor(if (dark) "#1E2330" else "#E2E8F0"))
+            })
+        }
+        authCard.addView(dividerRow)
+
+        // Google Login Button
+        val googleBtn = Button(this).apply {
+            text = text("G  المتابعة باستخدام Google", "G  Continue with Google")
+            setTextColor(Color.parseColor(if (dark) "#F8FAFC" else "#0F172A"))
+            textSize = 13.5f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            isAllCaps = false
+            background = roundedDrawable(
+                if (dark) Color.parseColor("#151824") else Color.WHITE,
+                12f,
+                if (dark) Color.parseColor("#27324A") else Color.parseColor("#CBD5E1")
+            )
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(46)).apply {
+                bottomMargin = dp(10)
+            }
+            setOnClickListener { googleLogin() }
+        }
+        authCard.addView(googleBtn)
+
+        // Switch Auth Row
+        val switchRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(8)
+                bottomMargin = dp(4)
+            }
+            addView(TextView(this@MainActivity).apply {
+                text = text(
+                    if (register) "لديك حساب بالفعل؟ " else "ليس لديك حساب بعد؟ ",
+                    if (register) "Already have an account? " else "New to TowerFlow? "
+                )
+                textSize = 12.5f
+                typeface = cairoFont
+                setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+            })
+            val switchBtn = TextView(this@MainActivity).apply {
+                text = text(if (register) "تسجيل الدخول" else "إنشاء حساب", if (register) "Sign in" else "Create account")
+                textSize = 13f
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                setPadding(dp(4), dp(4), dp(4), dp(4))
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { login(!register) }
+            }
+            addView(switchBtn)
+        }
+        authCard.addView(switchRow)
+
+        screen.addView(authCard)
+
+        // Server URL Configuration (Subtle Footer link)
+        val serverFooter = LinearLayout(this).apply {
+            gravity = Gravity.CENTER
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(4)
+                bottomMargin = dp(14)
+            }
+            val serverBtn = TextView(this@MainActivity).apply {
+                text = text("🌐 خادم النظام: $base  (تغيير)", "🌐 Server: $base  (Edit)")
+                textSize = 11f
+                typeface = cairoFont
+                setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+                setPadding(dp(12), dp(8), dp(12), dp(8))
+                background = roundedDrawable(Color.TRANSPARENT, 8f, Color.parseColor(if (dark) "#1E2330" else "#E2E8F0"))
+                setOnClickListener {
+                    val urlInput = EditText(this@MainActivity).apply {
+                        setText(base)
+                        typeface = cairoFont
+                        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+                    }
+                    AlertDialog.Builder(this@MainActivity)
+                        .setTitle(text("إعداد رابط خادم TowerFlow", "Server URL Configuration"))
+                        .setMessage(text("أدخل رابط الخادم المخصص (مثال: https://towerflow.vercel.app أو http://10.0.2.2:3000)", "Enter backend server URL"))
+                        .setView(urlInput)
+                        .setPositiveButton(text("حفظ وتحديث", "Save")) { _, _ ->
+                            var newUrl = urlInput.text.toString().trim().trimEnd('/')
+                            if (!newUrl.startsWith("http://") && !newUrl.startsWith("https://")) {
+                                newUrl = "https://$newUrl"
+                            }
+                            base = newUrl
+                            getPreferences(0).edit().putString("base", base).apply()
+                            login(register)
+                        }
+                        .setNegativeButton(text("إلغاء", "Cancel"), null)
+                        .show()
+                }
+            }
+            addView(serverBtn)
+        }
+        screen.addView(serverFooter)
     }
 
     private fun loadMe() {
@@ -495,7 +784,7 @@ class MainActivity : Activity() {
                 val h = TextView(this@MainActivity).apply {
                     text = text("المؤسسة / البرج النشط", "Active Workspace / Tower")
                     textSize = 11f
-                    setTypeface(typeface, Typeface.BOLD)
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
                     setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                 }
                 addView(h)
@@ -518,13 +807,41 @@ class MainActivity : Activity() {
 
         // Executive Hero Greeting Card
         card {
+            val heroRow = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+            }
+            val userName = member.optString("name", "User")
+            val initial = if (userName.isNotEmpty()) userName.take(1) else "U"
+            val avatarBox = LinearLayout(this@MainActivity).apply {
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(dp(44), dp(44)).apply {
+                    if (arabic) marginStart = dp(2) else marginEnd = dp(10)
+                }
+                background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 14f)
+                addView(TextView(this@MainActivity).apply {
+                    text = initial
+                    textSize = 18f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.WHITE)
+                    gravity = Gravity.CENTER
+                })
+            }
+            heroRow.addView(avatarBox)
+
+            val infoCol = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, -2, 1f).apply {
+                    setPadding(dp(4), 0, dp(4), 0)
+                }
+            }
             val greeting = TextView(this@MainActivity).apply {
-                text = text("مرحبًا، ", "Hello, ") + member.optString("name", "User")
-                textSize = 17f
-                setTypeface(typeface, Typeface.BOLD)
+                text = text("مرحبًا، ", "Welcome back, ") + userName
+                textSize = 16.5f
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
                 setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
             }
-            addView(greeting)
+            infoCol.addView(greeting)
 
             val roleBadge = TextView(this@MainActivity).apply {
                 val roleName = when (role) {
@@ -536,12 +853,17 @@ class MainActivity : Activity() {
                 }
                 text = roleName
                 textSize = 11f
-                setTypeface(typeface, Typeface.BOLD)
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
                 setTextColor(Color.parseColor("#4F46E5"))
-                setPadding(dp(8), dp(3), dp(8), dp(3))
+                setPadding(dp(8), dp(2), dp(8), dp(2))
                 background = roundedDrawable(Color.parseColor(if (dark) "#1E1B4B" else "#EEF2FF"), 99f)
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                    topMargin = dp(2)
+                }
             }
-            addView(roleBadge)
+            infoCol.addView(roleBadge)
+            heroRow.addView(infoCol)
+            addView(heroRow)
         }
 
         // Live KPI Grid for Managers
@@ -578,13 +900,13 @@ class MainActivity : Activity() {
                                 maxLines = 1
                                 ellipsize = TextUtils.TruncateAt.END
                                 setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
-                                setTypeface(typeface, Typeface.BOLD)
+                                typeface = Typeface.create(cairoFont, Typeface.BOLD)
                             })
                             addView(TextView(this@MainActivity).apply {
                                 text = kpiValue
                                 textSize = 18f
                                 setTextColor(Color.parseColor("#4F46E5"))
-                                setTypeface(typeface, Typeface.BOLD)
+                                typeface = Typeface.create(cairoFont, Typeface.BOLD)
                                 setPadding(0, dp(1), 0, dp(1))
                             })
                             addView(TextView(this@MainActivity).apply {
@@ -592,6 +914,7 @@ class MainActivity : Activity() {
                                 textSize = 9.5f
                                 maxLines = 1
                                 ellipsize = TextUtils.TruncateAt.END
+                                typeface = cairoFont
                                 setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
                             })
                         }
@@ -631,8 +954,8 @@ class MainActivity : Activity() {
             text = text(if (role == "resident") "📤 إثبات سداد" else "⚡ تحصيل", if (role == "resident") "Proof" else "Collect")
             setTextColor(Color.WHITE)
             textSize = 12f
-            setTypeface(typeface, Typeface.BOLD)
-            background = roundedDrawable(Color.parseColor("#4F46E5"), 12f)
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
             layoutParams = LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginEnd = dp(4) }
             setOnClickListener { if (role == "resident") proofForm() else listing("invoices") }
         }
@@ -642,7 +965,7 @@ class MainActivity : Activity() {
             text = text("🔧 بلاغ صيانة", "Ticket")
             setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             textSize = 12f
-            setTypeface(typeface, Typeface.BOLD)
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
             background = roundedDrawable(
                 Color.TRANSPARENT,
                 12f,
@@ -751,7 +1074,7 @@ class MainActivity : Activity() {
                     val titleView = TextView(this@MainActivity).apply {
                         text = heading
                         textSize = 15f
-                        setTypeface(typeface, Typeface.BOLD)
+                        typeface = Typeface.create(cairoFont, Typeface.BOLD)
                         setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
                         layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
                     }
@@ -777,7 +1100,7 @@ class MainActivity : Activity() {
                                 else -> status
                             }
                             textSize = 11f
-                            setTypeface(typeface, Typeface.BOLD)
+                            typeface = Typeface.create(cairoFont, Typeface.BOLD)
                             setPadding(dp(8), dp(3), dp(8), dp(3))
                             val (bgColor, textColor) = when (status) {
                                 "active", "paid", "approved", "owned" -> Pair(Color.parseColor("#ECFDF5"), Color.parseColor("#059669"))
@@ -818,13 +1141,14 @@ class MainActivity : Activity() {
                             r.addView(TextView(this@MainActivity).apply {
                                 text = lbl
                                 textSize = 11.5f
+                                typeface = cairoFont
                                 setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                                 layoutParams = LinearLayout.LayoutParams(dp(75), -2)
                             })
                             r.addView(TextView(this@MainActivity).apply {
                                 text = value
                                 textSize = 11.5f
-                                setTypeface(typeface, Typeface.BOLD)
+                                typeface = Typeface.create(cairoFont, Typeface.BOLD)
                                 setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
                                 layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
                             })
