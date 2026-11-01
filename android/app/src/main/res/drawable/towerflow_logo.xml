@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- Background rounded squircle matching web logo.svg -->
+    <path
+        android:fillColor="#10293E"
+        android:pathData="M18,0 L46,0 A18,18 0 0,1 64,18 L64,46 A18,18 0 0,1 46,64 L18,64 A18,18 0 0,1 0,46 L0,18 A18,18 0 0,1 18,0 Z" />
+    <!-- Tower and window strokes matching web logo.svg -->
+    <path
+        android:strokeColor="#35D4C2"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M14,45 V24 l12,-7 v28 M31,45 V13 l18,9 v23 M10,47 h44 M36,25 h7 m-7,7 h7 m-7,7 h7 M19,29 h3 m-3,8 h3" />
+</vector>

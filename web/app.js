@@ -147,7 +147,7 @@ async function api(path,options={}){
 }
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';setTimeout(()=>$('#toast').style.display='none',4000);}
 function theme(){document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.documentElement.classList.toggle('dark',dark);localStorage.tfLang=lang;localStorage.tfDark=dark;}
-const brand=()=>'<div class="brand"><img src="/logo.svg" alt="AD TowerFlow"><span>TowerFlow<span>AD · PROPERTY SYSTEM</span></span></div>';
+const brand=()=>`<div class="brand"><img src="/logo.svg" alt="TowerFlow"><span>TowerFlow<span>${localText('منظومة إدارة العقارات','PROPERTY SYSTEM')}</span></span></div>`;
 const toggles=()=>`<button data-global="language" aria-label="${localText('تغيير اللغة','Change language')}">${lang==='ar'?'English':'العربية'}</button><button class="icon-button" data-global="theme" aria-label="${localText('تغيير المظهر','Toggle theme')}">${icon(dark?'sun':'moon',18)}</button>`;
 
 document.addEventListener('click',async e=>{
@@ -203,7 +203,7 @@ function sidebar(){
    ['workspace',localText('المؤسسة والدعم','Workspace & Support'),['resident_messages','announcements','notifications','support_tickets','members','audit_logs']]
  ];
  const item=k=>`<button data-page="${k}" class="nav-item ${k===page?'active':''}" ${k===page?'aria-current="page"':''}>${icon(iconNames[k],18)}<span>${t(k)}</span></button>`;
- return `<aside class="sidebar" id="navigation" aria-label="${localText('التنقل الرئيسي','Main navigation')}">${brand()}<nav><div class="sidebar-caption">${localText('مساحة العمل','WORKSPACE')}</div>${available.includes('dashboard')?item('dashboard'):''}${available.includes('portal')?item('portal'):''}${groups.map(([key,label,keys])=>{const visible=keys.filter(k=>available.includes(k));return visible.length?`<details class="nav-group" ${keys.includes(page)||['portfolio','finance'].includes(key)?'open':''}><summary>${label}</summary>${visible.map(item).join('')}</details>`:''}).join('')}</nav><div class="sidebar-bottom">${item('profile')}${item('settings')}<p>AD · TOWERFLOW</p></div></aside>`;
+ return `<aside class="sidebar" id="navigation" aria-label="${localText('التنقل الرئيسي','Main navigation')}">${brand()}<nav><div class="sidebar-caption">${localText('مساحة العمل','WORKSPACE')}</div>${available.includes('dashboard')?item('dashboard'):''}${available.includes('portal')?item('portal'):''}${groups.map(([key,label,keys])=>{const visible=keys.filter(k=>available.includes(k));return visible.length?`<details class="nav-group" ${keys.includes(page)||['portfolio','finance'].includes(key)?'open':''}><summary>${label}</summary>${visible.map(item).join('')}</details>`:''}).join('')}</nav><div class="sidebar-bottom">${item('profile')}${item('settings')}<p>TOWERFLOW</p></div></aside>`;
 }
 
 async function render(){

@@ -144,9 +144,14 @@ class MainActivity : Activity() {
             overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
         }
 
+        // Account for Phone Notch, Status Bar, Clock and Battery Safe Insets
+        val statusBarResId = resources.getIdentifier("status_bar_height", "dimen", "android")
+        val statusBarHeight = if (statusBarResId > 0) resources.getDimensionPixelSize(statusBarResId) else dp(28)
+        val safeTopPadding = statusBarHeight + dp(12)
+
         screen = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), dp(16), dp(14), dp(24))
+            setPadding(dp(16), safeTopPadding, dp(16), dp(24))
             layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT)
             layoutDirection = if (arabic) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
         }
@@ -173,20 +178,14 @@ class MainActivity : Activity() {
             topBar.addView(backBtn)
         }
 
-        // Squircle Brand Icon
-        val brandIcon = LinearLayout(this).apply {
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(dp(38), dp(38)).apply {
+        // Exact Website Logo Vector
+        val logoView = ImageView(this).apply {
+            setImageResource(R.drawable.towerflow_logo)
+            layoutParams = LinearLayout.LayoutParams(dp(40), dp(40)).apply {
                 if (arabic) marginStart = dp(2) else marginEnd = dp(8)
             }
-            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 11f)
-            addView(TextView(this@MainActivity).apply {
-                text = "🏢"
-                textSize = 17f
-                gravity = Gravity.CENTER
-            })
         }
-        topBar.addView(brandIcon)
+        topBar.addView(logoView)
 
         val brandCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -514,23 +513,13 @@ class MainActivity : Activity() {
             }
         }
 
-        // Center Symbol Badge (.login-symbol from web)
-        val symbolBadge = LinearLayout(this).apply {
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(dp(54), dp(54)).apply {
+        // Center Logo Badge (Exact Website Logo Vector)
+        val symbolBadge = ImageView(this).apply {
+            setImageResource(R.drawable.towerflow_logo)
+            layoutParams = LinearLayout.LayoutParams(dp(58), dp(58)).apply {
                 gravity = Gravity.CENTER_HORIZONTAL
                 bottomMargin = dp(12)
             }
-            background = roundedDrawable(
-                if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"),
-                16f,
-                if (dark) Color.parseColor("#312E81") else Color.parseColor("#C7D2FE")
-            )
-            addView(TextView(this@MainActivity).apply {
-                text = if (register) "🛡️" else "🏢"
-                textSize = 22f
-                gravity = Gravity.CENTER
-            })
         }
         authCard.addView(symbolBadge)
 
@@ -712,48 +701,6 @@ class MainActivity : Activity() {
         authCard.addView(switchRow)
 
         screen.addView(authCard)
-
-        // Server URL Configuration (Subtle Footer link)
-        val serverFooter = LinearLayout(this).apply {
-            gravity = Gravity.CENTER
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                topMargin = dp(4)
-                bottomMargin = dp(14)
-            }
-            val serverBtn = TextView(this@MainActivity).apply {
-                text = text("🌐 خادم النظام: $base  (تغيير)", "🌐 Server: $base  (Edit)")
-                textSize = 11f
-                typeface = cairoFont
-                setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
-                setPadding(dp(12), dp(8), dp(12), dp(8))
-                background = roundedDrawable(Color.TRANSPARENT, 8f, Color.parseColor(if (dark) "#1E2330" else "#E2E8F0"))
-                setOnClickListener {
-                    val urlInput = EditText(this@MainActivity).apply {
-                        setText(base)
-                        typeface = cairoFont
-                        inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-                    }
-                    AlertDialog.Builder(this@MainActivity)
-                        .setTitle(text("إعداد رابط خادم TowerFlow", "Server URL Configuration"))
-                        .setMessage(text("أدخل رابط الخادم المخصص (مثال: https://towerflow.vercel.app أو http://10.0.2.2:3000)", "Enter backend server URL"))
-                        .setView(urlInput)
-                        .setPositiveButton(text("حفظ وتحديث", "Save")) { _, _ ->
-                            var newUrl = urlInput.text.toString().trim().trimEnd('/')
-                            if (!newUrl.startsWith("http://") && !newUrl.startsWith("https://")) {
-                                newUrl = "https://$newUrl"
-                            }
-                            base = newUrl
-                            getPreferences(0).edit().putString("base", base).apply()
-                            login(register)
-                        }
-                        .setNegativeButton(text("إلغاء", "Cancel"), null)
-                        .show()
-                }
-            }
-            addView(serverBtn)
-        }
-        screen.addView(serverFooter)
     }
 
     private fun loadMe() {
