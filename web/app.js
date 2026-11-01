@@ -141,7 +141,8 @@ function emptyState(entity,canAdd=false){
 const money=n=>new Intl.NumberFormat(lang==='ar'?'ar-EG':'en-GB',{style:'currency',currency:me?.organizations.find(x=>x.id===org)?.currency||'EGP',maximumFractionDigits:2}).format(Number(n||0));
 const display=(key,v)=>relations[key]?cache[relations[key]]?.find(x=>x.id===v)?.name||v:t(String(v??''));
 async function api(path,options={}){
- const res=await fetch('/api/'+path+(path.includes('?')?'&':'?')+'org='+encodeURIComponent(org),{...options,headers:{'Content-Type':'application/json',...options.headers},credentials:'same-origin'});
+ const q=org?(path.includes('?')?'&':'?')+'org='+encodeURIComponent(org):'';
+ const res=await fetch('/api/'+path+q,{...options,headers:{'Content-Type':'application/json',...options.headers},credentials:'same-origin'});
  const data=await res.json();if(!res.ok)throw new Error(data.error||res.statusText);return data;
 }
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';setTimeout(()=>$('#toast').style.display='none',4000);}
