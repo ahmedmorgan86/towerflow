@@ -104,7 +104,7 @@ class MainActivity : Activity() {
     private fun scaffold(heading: String, showBack: Boolean = false, onBack: (() -> Unit)? = null) {
         val scroll = ScrollView(this).apply {
             isFillViewport = true
-            setBackgroundColor(Color.parseColor(if (dark) "#0B132B" else "#F8FAFC"))
+            setBackgroundColor(Color.parseColor(if (dark) "#090A0F" else "#F8FAFC"))
         }
 
         screen = LinearLayout(this).apply {
@@ -125,7 +125,7 @@ class MainActivity : Activity() {
         if (showBack && onBack != null) {
             val backBtn = Button(this).apply {
                 text = if (arabic) "‹ عودة" else "‹ Back"
-                setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#0D9488"))
+                setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#4F46E5"))
                 textSize = 14f
                 background = roundedDrawable(Color.TRANSPARENT, 10f)
                 setOnClickListener { onBack() }
@@ -192,9 +192,9 @@ class MainActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(18), dp(18), dp(18), dp(18))
             background = roundedDrawable(
-                if (dark) Color.parseColor("#131C38") else Color.WHITE,
+                if (dark) Color.parseColor("#11131A") else Color.WHITE,
                 16f,
-                if (dark) Color.parseColor("#202D4E") else Color.parseColor("#E2E8F0")
+                if (dark) Color.parseColor("#1E2330") else Color.parseColor("#E2E8F0")
             )
             val lp = LinearLayout.LayoutParams(-1, -2).apply {
                 topMargin = dp(8)
@@ -221,7 +221,7 @@ class MainActivity : Activity() {
             text = titleText
             textSize = 12f
             setTypeface(typeface, Typeface.BOLD)
-            setTextColor(Color.parseColor(if (dark) "#38BDF8" else "#0D9488"))
+            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             setPadding(dp(4), dp(16), dp(4), dp(8))
         }
         screen.addView(tv)
@@ -253,7 +253,7 @@ class MainActivity : Activity() {
             textSize = 14f
             setTypeface(typeface, Typeface.BOLD)
             isAllCaps = false
-            background = roundedDrawable(Color.parseColor("#0D9488"), 12f)
+            background = roundedDrawable(Color.parseColor("#4F46E5"), 12f)
             setOnClickListener { fn() }
         }
         val lp = LinearLayout.LayoutParams(-1, dp(48)).apply {
@@ -266,7 +266,7 @@ class MainActivity : Activity() {
     private fun outlineButton(value: String, fn: () -> Unit) {
         val btn = Button(this).apply {
             text = value
-            setTextColor(Color.parseColor(if (dark) "#38BDF8" else "#0D9488"))
+            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             textSize = 13f
             setTypeface(typeface, Typeface.BOLD)
             isAllCaps = false
@@ -289,9 +289,9 @@ class MainActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL
             setPadding(dp(16), dp(14), dp(16), dp(14))
             background = roundedDrawable(
-                if (dark) Color.parseColor("#131C38") else Color.WHITE,
+                if (dark) Color.parseColor("#11131A") else Color.WHITE,
                 12f,
-                if (dark) Color.parseColor("#202D4E") else Color.parseColor("#E2E8F0")
+                if (dark) Color.parseColor("#1E2330") else Color.parseColor("#E2E8F0")
             )
             gravity = Gravity.CENTER_VERTICAL
             val lp = LinearLayout.LayoutParams(-1, -2).apply {
@@ -462,7 +462,7 @@ class MainActivity : Activity() {
                     text = text("المؤسسة / البرج النشط", "Active Workspace / Tower")
                     textSize = 11f
                     setTypeface(typeface, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#38BDF8" else "#0D9488"))
+                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                 }
                 addView(h)
 
@@ -503,9 +503,9 @@ class MainActivity : Activity() {
                 text = roleName
                 textSize = 11f
                 setTypeface(typeface, Typeface.BOLD)
-                setTextColor(Color.parseColor("#0D9488"))
+                setTextColor(Color.parseColor("#4F46E5"))
                 setPadding(dp(8), dp(3), dp(8), dp(3))
-                background = roundedDrawable(Color.parseColor(if (dark) "#134E48" else "#CCFBF1"), 99f)
+                background = roundedDrawable(Color.parseColor(if (dark) "#1E1B4B" else "#EEF2FF"), 99f)
             }
             addView(roleBadge)
         }
@@ -522,7 +522,7 @@ class MainActivity : Activity() {
             setTextColor(Color.WHITE)
             textSize = 12f
             setTypeface(typeface, Typeface.BOLD)
-            background = roundedDrawable(Color.parseColor("#0D9488"), 12f)
+            background = roundedDrawable(Color.parseColor("#4F46E5"), 12f)
             layoutParams = LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginEnd = dp(4) }
             setOnClickListener { if (role == "resident") proofForm() else listing("invoices") }
         }
@@ -530,7 +530,7 @@ class MainActivity : Activity() {
 
         val q2 = Button(this).apply {
             text = text("🔧 بلاغ صيانة", "Ticket")
-            setTextColor(Color.parseColor(if (dark) "#38BDF8" else "#0D9488"))
+            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             textSize = 12f
             setTypeface(typeface, Typeface.BOLD)
             background = roundedDrawable(
@@ -692,7 +692,7 @@ class MainActivity : Activity() {
                         val editBtn = Button(this@MainActivity).apply {
                             text = text("تعديل", "Edit")
                             textSize = 12f
-                            setTextColor(Color.parseColor(if (dark) "#38BDF8" else "#0D9488"))
+                            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                             background = roundedDrawable(Color.TRANSPARENT, 8f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
                             setOnClickListener { recordForm(entity, row) }
                         }
@@ -737,7 +737,7 @@ class MainActivity : Activity() {
                                 text = text("إصدار وترحيل", "Issue & Post")
                                 textSize = 12f
                                 setTextColor(Color.WHITE)
-                                background = roundedDrawable(Color.parseColor("#0D9488"), 8f)
+                                background = roundedDrawable(Color.parseColor("#4F46E5"), 8f)
                                 setOnClickListener { call("invoices/$id/issue", "POST", JSONObject()) { listing(entity) } }
                             }
                             actionsRow.addView(issueBtn, LinearLayout.LayoutParams(-2, dp(36)).apply { marginEnd = dp(8) })
