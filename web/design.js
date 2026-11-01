@@ -20,7 +20,8 @@ export function icon(name='building',size=20){
     logout:'M9 5H3v14h6m5-14 7 7-7 7m-7-7h14',
     search:'M21 21l-5-5M18 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0',
     check:'m5 12 4 4L19 6',
-    clock:'M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0'
+    clock:'M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0',
+    android:'M4 10v6M20 10v6M7 9h10v8a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1zM7 9a5 5 0 0 1 10 0M8 3l1 2M16 3l-1 2M9 18v3M15 18v3M9 12h.01M15 12h.01'
   };
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name]||paths.file}"/></svg>`;
 }
