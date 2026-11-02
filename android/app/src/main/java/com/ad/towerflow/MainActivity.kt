@@ -263,10 +263,15 @@ class MainActivity : Activity() {
             val backBtn = Button(this).apply {
                 text = text("‹ عودة", "‹ Back")
                 setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#4F46E5"))
-                textSize = 13.5f
+                textSize = 13f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                isAllCaps = false
+                includeFontPadding = false
+                minHeight = 0
+                minimumHeight = 0
+                setPadding(dp(8), dp(6), dp(8), dp(6))
                 background = roundedDrawable(Color.TRANSPARENT, 10f)
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(36)).apply {
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                     if (arabic) marginStart = dp(2) else marginEnd = dp(6)
                 }
                 setOnClickListener { onBack() }
@@ -332,6 +337,11 @@ class MainActivity : Activity() {
             textSize = 12f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+            isAllCaps = false
+            includeFontPadding = false
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(10), dp(6), dp(10), dp(6))
             background = roundedDrawable(
                 if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"),
                 10f,
@@ -343,7 +353,7 @@ class MainActivity : Activity() {
                 if (token.isEmpty()) login() else home()
             }
         }
-        val langParams = LinearLayout.LayoutParams(dp(54), dp(36)).apply { marginEnd = dp(6) }
+        val langParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { marginEnd = dp(6) }
         actionsGroup.addView(langBtn, langParams)
 
         val themeBtn = Button(this).apply {
@@ -351,6 +361,11 @@ class MainActivity : Activity() {
             textSize = 14f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             setTextColor(Color.parseColor(if (dark) "#FCD34D" else "#1E293B"))
+            isAllCaps = false
+            includeFontPadding = false
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(10), dp(6), dp(10), dp(6))
             background = roundedDrawable(
                 if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"),
                 10f,
@@ -362,7 +377,7 @@ class MainActivity : Activity() {
                 if (token.isEmpty()) login() else home()
             }
         }
-        actionsGroup.addView(themeBtn, LinearLayout.LayoutParams(dp(42), dp(36)))
+        actionsGroup.addView(themeBtn, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
 
         topBar.addView(actionsGroup)
         screen.addView(topBar)
@@ -432,13 +447,17 @@ class MainActivity : Activity() {
         val btn = Button(this).apply {
             text = value
             setTextColor(Color.WHITE)
-            textSize = 14f
+            textSize = 13.5f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             isAllCaps = false
+            includeFontPadding = false
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(12), dp(11), dp(12), dp(11))
             background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
             setOnClickListener { fn() }
         }
-        val lp = LinearLayout.LayoutParams(-1, dp(48)).apply {
+        val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
             topMargin = dp(8)
             bottomMargin = dp(4)
         }
@@ -452,6 +471,10 @@ class MainActivity : Activity() {
             textSize = 13f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             isAllCaps = false
+            includeFontPadding = false
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(12), dp(10), dp(12), dp(10))
             background = roundedDrawable(
                 Color.TRANSPARENT,
                 12f,
@@ -459,7 +482,7 @@ class MainActivity : Activity() {
             )
             setOnClickListener { fn() }
         }
-        val lp = LinearLayout.LayoutParams(-1, dp(44)).apply {
+        val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
             topMargin = dp(6)
             bottomMargin = dp(4)
         }
@@ -598,11 +621,23 @@ class MainActivity : Activity() {
                 val urlStr = base + "/api/" + path + (if (hasOrg) (if (path.contains('?')) "&" else "?") + "org=" + org else "")
                 val connection = URL(urlStr).openConnection() as HttpURLConnection
                 try {
-                    connection.requestMethod = method
+                    if (method == "PATCH") {
+                        try {
+                            connection.requestMethod = "PATCH"
+                        } catch (_: Exception) {
+                            connection.requestMethod = "POST"
+                            connection.setRequestProperty("X-HTTP-Method-Override", "PATCH")
+                        }
+                    } else {
+                        connection.requestMethod = method
+                    }
                     connection.connectTimeout = 15000
                     connection.readTimeout = 20000
                     connection.setRequestProperty("Content-Type", "application/json")
                     connection.setRequestProperty("X-TowerFlow-Client", "android")
+                    if (method == "PATCH") {
+                        connection.setRequestProperty("X-HTTP-Method-Override", "PATCH")
+                    }
                     if (token.isNotEmpty()) connection.setRequestProperty("Authorization", "Bearer $token")
                     if (data != null) {
                         connection.doOutput = true
@@ -622,7 +657,9 @@ class MainActivity : Activity() {
                     val raw = (if (code in 200..299) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { it.readText() } ?: "{}"
                     if (code !in 200..299) {
                         val errMsg = try {
-                            JSONObject(raw).optString("error", "HTTP $code")
+                            val json = JSONObject(raw)
+                            val e = json.optString("error", "")
+                            if (e.isNotEmpty()) e else json.optString("message", "HTTP $code")
                         } catch (_: Exception) {
                             "HTTP $code"
                         }
@@ -747,11 +784,15 @@ class MainActivity : Activity() {
                 if (register) "Create Account  $arrow" else "Sign In  $arrow"
             )
             setTextColor(Color.WHITE)
-            textSize = 14.5f
+            textSize = 14f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             isAllCaps = false
+            includeFontPadding = false
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(12), dp(12), dp(12), dp(12))
             background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(48)).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 topMargin = dp(14)
                 bottomMargin = dp(4)
             }
@@ -809,12 +850,16 @@ class MainActivity : Activity() {
             textSize = 13.5f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             isAllCaps = false
+            includeFontPadding = false
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(12), dp(11), dp(12), dp(11))
             background = roundedDrawable(
                 if (dark) Color.parseColor("#151824") else Color.WHITE,
                 12f,
                 if (dark) Color.parseColor("#27324A") else Color.parseColor("#CBD5E1")
             )
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(46)).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 bottomMargin = dp(10)
             }
             setOnClickListener { googleLogin() }
@@ -927,39 +972,43 @@ class MainActivity : Activity() {
                 val pill = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
-                    setPadding(dp(12), dp(10), dp(12), dp(10))
+                    setPadding(dp(10), dp(8), dp(10), dp(8))
                     background = roundedDrawable(
                         if (dark) Color.parseColor("#17243B") else Color.parseColor("#F8FAFC"),
                         12f,
                         if (dark) Color.parseColor("#27394E") else Color.parseColor("#E2E8F0")
                     )
-                    val lp = LinearLayout.LayoutParams(0, dp(46), 1f).apply {
+                    val lp = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                         if (index == 0 && chunk.size == 2) marginEnd = dp(4)
                         else if (index == 1) marginStart = dp(4)
                     }
                     layoutParams = lp
+                    minimumHeight = dp(50)
                     isClickable = true
                     isFocusable = true
                     setOnClickListener { listing(key) }
                     addView(TextView(this@MainActivity).apply {
                         text = glyph
                         textSize = 16f
-                        setPadding(0, 0, dp(8), 0)
+                        includeFontPadding = false
+                        setPadding(if (arabic) dp(6) else 0, 0, if (arabic) 0 else dp(6), 0)
                     })
                     addView(TextView(this@MainActivity).apply {
                         text = titleText
                         textSize = 12f
-                        maxLines = 1
+                        maxLines = 2
+                        includeFontPadding = false
                         ellipsize = TextUtils.TruncateAt.END
                         typeface = Typeface.create(cairoFont, Typeface.BOLD)
                         setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#1E293B"))
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                     })
                 }
                 row.addView(pill)
             }
             if (chunk.size == 1) {
                 row.addView(View(this).apply {
-                    layoutParams = LinearLayout.LayoutParams(0, dp(46), 1f).apply { marginStart = dp(4) }
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(4) }
                 })
             }
             container.addView(row)
@@ -1163,8 +1212,13 @@ class MainActivity : Activity() {
             setTextColor(Color.WHITE)
             textSize = 12f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            isAllCaps = false
+            includeFontPadding = false
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(8), dp(10), dp(8), dp(10))
             background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
-            layoutParams = LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginEnd = dp(4) }
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(4) }
             setOnClickListener { if (role == "resident") proofForm() else listing("invoices") }
         }
         quickGrid.addView(q1)
@@ -1174,12 +1228,17 @@ class MainActivity : Activity() {
             setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             textSize = 12f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            isAllCaps = false
+            includeFontPadding = false
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(8), dp(10), dp(8), dp(10))
             background = roundedDrawable(
                 Color.TRANSPARENT,
                 12f,
                 Color.parseColor(if (dark) "#334155" else "#CBD5E1")
             )
-            layoutParams = LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginStart = dp(4) }
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(4) }
             setOnClickListener { ticketForm() }
         }
         quickGrid.addView(q2)
@@ -1448,31 +1507,49 @@ class MainActivity : Activity() {
                     if (entity in forms.keys && entity !in listOf("invoices", "expenses", "payment_proofs", "fines") && role in listOf("admin", "manager", "accountant", "technician")) {
                         val editBtn = Button(this@MainActivity).apply {
                             text = text("تعديل", "Edit")
-                            textSize = 12f
+                            textSize = 11.5f
+                            typeface = Typeface.create(cairoFont, Typeface.BOLD)
                             setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                            isAllCaps = false
+                            includeFontPadding = false
+                            minHeight = 0
+                            minimumHeight = 0
+                            setPadding(dp(4), dp(8), dp(4), dp(8))
                             background = roundedDrawable(Color.TRANSPARENT, 8f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
                             setOnClickListener { recordForm(entity, row) }
                         }
-                        actionsRow.addView(editBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
+                        actionsRow.addView(editBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(3); marginEnd = dp(3) })
                     }
 
                     // Payment Proofs Review (Approve / Reject)
                     if (entity == "payment_proofs" && row.optString("status") == "pending" && role in listOf("admin", "manager")) {
                         val approveBtn = Button(this@MainActivity).apply {
                             text = text("اعتماد السداد", "Approve")
-                            textSize = 12f
+                            textSize = 11.5f
+                            typeface = Typeface.create(cairoFont, Typeface.BOLD)
                             setTextColor(Color.WHITE)
+                            isAllCaps = false
+                            includeFontPadding = false
+                            minHeight = 0
+                            minimumHeight = 0
+                            setPadding(dp(4), dp(8), dp(4), dp(8))
                             background = roundedDrawable(Color.parseColor("#059669"), 8f)
                             setOnClickListener {
                                 call("payment_proofs/" + row.getString("id") + "/review", "POST", JSONObject().put("decision", "approved")) { listing(entity) }
                             }
                         }
-                        actionsRow.addView(approveBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
+                        actionsRow.addView(approveBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(3); marginEnd = dp(3) })
 
                         val rejectBtn = Button(this@MainActivity).apply {
                             text = text("رفض", "Reject")
-                            textSize = 12f
+                            textSize = 11.5f
+                            typeface = Typeface.create(cairoFont, Typeface.BOLD)
                             setTextColor(Color.parseColor("#E11D48"))
+                            isAllCaps = false
+                            includeFontPadding = false
+                            minHeight = 0
+                            minimumHeight = 0
+                            setPadding(dp(4), dp(8), dp(4), dp(8))
                             background = roundedDrawable(Color.parseColor("#FFF1F2"), 8f)
                             setOnClickListener {
                                 val reasonInput = EditText(this@MainActivity).apply {
@@ -1489,19 +1566,25 @@ class MainActivity : Activity() {
                                     .show()
                             }
                         }
-                        actionsRow.addView(rejectBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
+                        actionsRow.addView(rejectBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(3); marginEnd = dp(3) })
                     }
 
                     // Fines Exemption
                     if (entity == "fines" && row.optString("status") == "pending" && role in listOf("admin", "manager")) {
                         val exemptBtn = Button(this@MainActivity).apply {
                             text = text("إعفاء مسبب", "Exempt")
-                            textSize = 12f
+                            textSize = 11.5f
+                            typeface = Typeface.create(cairoFont, Typeface.BOLD)
                             setTextColor(Color.parseColor("#D97706"))
+                            isAllCaps = false
+                            includeFontPadding = false
+                            minHeight = 0
+                            minimumHeight = 0
+                            setPadding(dp(4), dp(8), dp(4), dp(8))
                             background = roundedDrawable(Color.parseColor("#FEF3C7"), 8f)
                             setOnClickListener { fineExemptForm(row.getString("id")) }
                         }
-                        actionsRow.addView(exemptBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
+                        actionsRow.addView(exemptBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(3); marginEnd = dp(3) })
                     }
 
                     // Invoices Issue & Collect
@@ -1510,22 +1593,34 @@ class MainActivity : Activity() {
                         if (row.optString("status") == "draft") {
                             val issueBtn = Button(this@MainActivity).apply {
                                 text = text("إصدار وترحيل", "Issue & Post")
-                                textSize = 12f
+                                textSize = 11.5f
+                                typeface = Typeface.create(cairoFont, Typeface.BOLD)
                                 setTextColor(Color.WHITE)
+                                isAllCaps = false
+                                includeFontPadding = false
+                                minHeight = 0
+                                minimumHeight = 0
+                                setPadding(dp(4), dp(8), dp(4), dp(8))
                                 background = roundedDrawable(Color.parseColor("#4F46E5"), 8f)
                                 setOnClickListener { call("invoices/$id/issue", "POST", JSONObject()) { listing(entity) } }
                             }
-                            actionsRow.addView(issueBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
+                            actionsRow.addView(issueBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(3); marginEnd = dp(3) })
                         }
                         if (row.optString("status") == "issued") {
                             val collectBtn = Button(this@MainActivity).apply {
                                 text = text("تسجيل تحصيل", "Collect")
-                                textSize = 12f
+                                textSize = 11.5f
+                                typeface = Typeface.create(cairoFont, Typeface.BOLD)
                                 setTextColor(Color.WHITE)
+                                isAllCaps = false
+                                includeFontPadding = false
+                                minHeight = 0
+                                minimumHeight = 0
+                                setPadding(dp(4), dp(8), dp(4), dp(8))
                                 background = roundedDrawable(Color.parseColor("#059669"), 8f)
                                 setOnClickListener { collectForm(id) }
                             }
-                            actionsRow.addView(collectBtn, LinearLayout.LayoutParams(0, dp(36), 1f).apply { marginStart = dp(2); marginEnd = dp(2) })
+                            actionsRow.addView(collectBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(3); marginEnd = dp(3) })
                         }
                     }
 
@@ -1768,7 +1863,14 @@ class MainActivity : Activity() {
                 fun select(items: List<Pair<String, String>>) {
                     val spinner = Spinner(this)
                     spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items.map { it.second })
-                    spinner.setSelection(items.indexOfFirst { it.first == initial }.coerceAtLeast(0))
+                    val defaultIdx = if (initial.isNotEmpty()) {
+                        items.indexOfFirst { it.first == initial }.coerceAtLeast(0)
+                    } else if (key == "property_id" && items.size > 1) {
+                        1
+                    } else {
+                        0
+                    }
+                    spinner.setSelection(defaultIdx)
                     screen.addView(spinner)
                     values[key] = { items.getOrNull(spinner.selectedItemPosition)?.first ?: "" }
                     addField(index + 1)
@@ -1778,7 +1880,14 @@ class MainActivity : Activity() {
                         val rows = JSONArray(raw)
                         select(listOf("" to "—") + (0 until rows.length()).map {
                             val row = rows.getJSONObject(it)
-                            row.getString("id") to row.optString("name")
+                            val label = when {
+                                row.has("name") && row.optString("name").isNotEmpty() -> row.optString("name")
+                                row.has("unit_number") && row.optString("unit_number").isNotEmpty() -> row.optString("unit_number")
+                                row.has("title") && row.optString("title").isNotEmpty() -> row.optString("title")
+                                row.has("ticket_number") && row.optString("ticket_number").isNotEmpty() -> row.optString("ticket_number")
+                                else -> row.optString("id")
+                            }
+                            row.getString("id") to label
                         })
                     }
                 } else {

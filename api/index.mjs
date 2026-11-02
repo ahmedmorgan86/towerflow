@@ -19,7 +19,7 @@ export default async function handler(req,res){
  const send=(value,status=200)=>{res.statusCode=status;res.end(JSON.stringify(value));};
  const isHttps = !!process.env.VERCEL || (process.env.APP_ORIGIN || '').startsWith('https:') || req.headers['x-forwarded-proto'] === 'https';
  try{
- const u=new URL(req.url,'http://localhost');const route=u.pathname.replace(/^\/api\/?/,'').replace(/\/$/,'');const method=req.method;
+ const u=new URL(req.url,'http://localhost');const route=u.pathname.replace(/^\/api\/?/,'').replace(/\/$/,'');const method=(req.headers['x-http-method-override']||req.method).toUpperCase();
  if(route==='health'){if(method!=='GET')throw fail('Method not allowed',405);const configured=!!(process.env.DATABASE_URL||globalThis.towerflowLocalDB);if(configured)await database().transaction(c=>c.query('select 1'));return send({service:'TowerFlow',database:configured?'ready':'unconfigured',ai:false},configured?200:503);}
  if(route==='auth/providers'&&method==='GET')return send({google:googleReady(),password:true});
  if(route==='auth/google/start'&&method==='GET'){const location=await googleStart(req,u,res);res.statusCode=302;res.setHeader('Location',location);return res.end();}
@@ -60,7 +60,7 @@ export default async function handler(req,res){
  if(route==='me/profile'&&method==='PATCH')return send({user:await updateProfile(user,await body(req))});
  if(route==='me/security'&&method==='GET')return send(await database().transaction(async c=>({googleLinked:!!(await c.query("select 1 from private.oauth_accounts where provider='google' and user_id=$1",[user.id])).rows.length,passwordEnabled:!!(await c.query('select 1 from private.users where id=$1 and password_hash is not null',[user.id])).rows.length,googleAvailable:googleReady()})));
  if(route==='me'&&method==='GET'){const orgs=await database().transaction(c=>c.query('select o.*,m.role from organizations o join private.memberships m on m.org_id=o.id where m.user_id=$1 order by o.created_at',[user.id]));return send({user,organizations:orgs.rows});}
- if(route==='support_tickets'&&method==='POST'){const b=await body(req);return send(await database().transaction(c=>createSupportTicket(c,user.id,b)),201);}
+ if(route==='support_tickets'&&method==='POST'){const b=await body(req);const targetOrg=b.org_id||u.searchParams.get('org')||null;return send(await database().transaction(async c=>{let validOrg=targetOrg;if(validOrg){const exists=(await c.query('select 1 from organizations where id=$1',[validOrg])).rows.length>0;if(!exists)validOrg=null;}if(!validOrg){const userOrg=(await c.query('select org_id from private.memberships where user_id=$1 limit 1',[user.id])).rows[0];validOrg=userOrg?.org_id||null;}b.org_id=validOrg;return createSupportTicket(c,user.id,b);}),201);}
  if(route.startsWith('support_tickets/')&&route.endsWith('/messages')&&method==='POST'){const tid=route.split('/')[1];const b=await body(req);return send(await database().transaction(c=>addSupportMessage(c,user.id,tid,b.message)),201);}
  if(route==='organizations'&&method==='POST'){const b=await body(req);if(!String(b.name||'').trim())throw fail('Name required');return send(await context(user,async c=>{const o=(await c.query('insert into organizations(name) values($1) returning *',[String(b.name).slice(0,160)])).rows[0];await c.query("insert into private.memberships values($1,$2,'admin')",[o.id,user.id]);for(const a of [['1100','Cash','asset'],['1200','Receivables','asset'],['4000','Rental income','income'],['5000','Operating expenses','expense']])await c.query('insert into accounts(org_id,code,name,kind) values($1,$2,$3,$4)',[o.id,...a]);return o;}),201);}
  const org=u.searchParams.get('org');if(!/^[a-f0-9-]{36}$/.test(org||''))throw fail('Organization required');
@@ -123,6 +123,11 @@ export default async function handler(req,res){
  const data=clean(entity,raw,method==='PATCH');const keys=Object.keys(data);if(!keys.length)throw fail('No fields supplied');
  if(data.amount)cents(data.amount);
  const work=async c=>{
+ if(entity==='money_accounts'&&method==='POST'&&!data.account_id){
+ const defaultAcc=(await c.query("select id from accounts where org_id=$1 and kind='asset' order by code limit 1",[org])).rows[0];
+ if(defaultAcc){data.account_id=defaultAcc.id;}else{const newAcc=(await c.query("insert into accounts(org_id,code,name,kind) values($1,'1100','Cash','asset') returning id",[org])).rows[0];data.account_id=newAcc.id;}
+ keys.push('account_id');
+ }
  if(['invoices','expenses','recurring_charges','maintenance_plans'].includes(entity))await writePermission(c,org,entity,id?'update':'create');
  if(entity==='tickets'&&id&&data.status){
  const previous=(await c.query('select status from tickets where org_id=$1 and id=$2 for update',[org,id])).rows[0];
@@ -136,5 +141,5 @@ export default async function handler(req,res){
  return send(await (['invoices','expenses','recurring_charges','maintenance_plans'].includes(entity)?context(user,work):asUser(user.id,work)),id?200:201);
  }
  throw fail('Not found',404);
- }catch(e){const status=e.status||({'23505':409,'23503':400,'23514':400,'22P02':400,'22007':400,'42501':403,'P0001':400})[e.code]||500;if(status===500&&process.env.NODE_ENV!=='test')console.error('[API 500 Error]:', e);send({error:status===500?'Internal error':e.message,code:e.code||null},status);}
+ }catch(e){const status=e.status||({'23505':409,'23503':400,'23514':400,'23502':400,'22001':400,'22P02':400,'22007':400,'42501':403,'P0001':400})[e.code]||500;if(status===500&&process.env.NODE_ENV!=='test')console.error('[API 500 Error]:', e);send({error:(status===500&&process.env.NODE_ENV==='production')?(e.message||'Internal error'):e.message,code:e.code||null},status);}
 }
