@@ -77,11 +77,91 @@ class MainActivity : Activity() {
         "budgets" to Pair("الميزانيات التقديرية", "Annual Budgets"),
         "ownership_type" to Pair("نوع الحيازة والملكية", "Ownership Type"),
         "owned" to Pair("وحدة ملك (تمليك)", "Owned"),
-        "rental" to Pair("إيجار", "Rental")
+        "rental" to Pair("إيجار", "Rental"),
+        "recurring_charges" to Pair("الرسوم المتكررة والدورية", "Recurring Charges"),
+        "maintenance_plans" to Pair("خطط الصيانة الوقائية", "Maintenance Plans"),
+        "accounting_periods" to Pair("الفترات المالية والمحاسبية", "Accounting Periods"),
+        "members" to Pair("فريق العمل والأعضاء", "Team Members"),
+        "resident_messages" to Pair("رسائل واستفسارات السكان", "Resident Inquiries"),
+        "reports" to Pair("التقارير المالية والتشغيلية", "Financial & Operational Reports"),
+        "profile" to Pair("الملف الشخصي", "Profile"),
+        "settings" to Pair("الإعدادات العامة", "Settings")
     )
 
     private fun text(ar: String, en: String) = if (arabic) ar else en
     private fun title(k: String) = names[k]?.let { if (arabic) it.first else it.second } ?: k
+
+    private fun optionTitle(k: String): String {
+        return when (k) {
+            "admin" -> text("مدير النظام", "System Admin")
+            "manager" -> text("مدير البرج", "Building Manager")
+            "accountant" -> text("المحاسب المالي", "Accountant")
+            "technician" -> text("فني صيانة", "Technician")
+            "resident" -> text("ساكن / مالك / مستأجر", "Resident")
+            "viewer" -> text("مراقب ومستعرض", "Viewer")
+
+            "tenant" -> text("مستأجر", "Tenant")
+            "owner" -> text("مالك", "Owner")
+            "vendor" -> text("مورد / مقاول صيانة", "Vendor")
+
+            "asset" -> text("أصول", "Asset")
+            "liability" -> text("التزامات / خصوم", "Liability")
+            "equity" -> text("حقوق ملكية", "Equity")
+            "income" -> text("إيرادات", "Income")
+            "expense" -> text("مصروفات", "Expense")
+
+            "cash" -> text("خزينة نقدية (كاش)", "Cash")
+            "bank" -> text("حساب بنكي", "Bank")
+            "wallet" -> text("محفظة إلكترونية", "E-Wallet")
+            "card" -> text("بطاقة دفع إلكتروني", "Card")
+            "bank_transfer" -> text("تحويل بنكي", "Bank Transfer")
+            "other" -> text("طريقة أخرى", "Other")
+            "maintenance_fund" -> text("صندوق الصيانة والخدمات", "Maintenance Fund")
+            "fines_fund" -> text("صندوق الغرامات والجزاءات", "Fines Fund")
+
+            "vacant" -> text("شاغرة وغير مشغولة", "Vacant")
+            "occupied" -> text("مشغولة / مؤجرة", "Occupied")
+            "owned" -> text("وحدة ملك (تمليك)", "Owned")
+            "rental" -> text("إيجار", "Rental")
+            "maintenance" -> text("تحت أعمال الصيانة", "Under Maintenance")
+
+            "open" -> text("مفتوح", "Open")
+            "assigned" -> text("تم إسنادها للفني", "Assigned")
+            "in_progress" -> text("قيد التنفيذ والمتابعة", "In Progress")
+            "resolved" -> text("تم الحل والمعالجة", "Resolved")
+            "closed" -> text("مغلق", "Closed")
+            "active" -> text("نشط وسارٍ", "Active")
+            "ended" -> text("منتهٍ", "Ended")
+            "draft" -> text("مسودة غير معتمدة", "Draft")
+            "issued" -> text("صادرة للمطالبة", "Issued")
+            "paid" -> text("مدفوعة بالكامل", "Paid")
+            "pending" -> text("قيد المراجعة والتدقيق", "Pending")
+            "approved" -> text("معتمد ومسدد", "Approved")
+            "rejected" -> text("مرفوض", "Rejected")
+            "exempted" -> text("معفى بقرار إداري", "Exempted")
+            "cancelled" -> text("ملغى", "Cancelled")
+
+            "normal" -> text("عادي", "Normal")
+            "low" -> text("منخفض", "Low")
+            "high" -> text("مرتفع", "High")
+            "urgent" -> text("عاجل وطارئ", "Urgent")
+            "critical" -> text("حرج للغاية", "Critical")
+
+            "technical" -> text("دعم فني وتقني", "Technical")
+            "billing" -> text("فواتير ومدفوعات", "Billing")
+            "accounting" -> text("استفسار مالي ومحاسبي", "Accounting")
+            "security" -> text("أمن وحراسة", "Security")
+            "general" -> text("استفسار عام", "General")
+
+            "monthly" -> text("شهري", "Monthly")
+            "quarterly" -> text("ربع سنوي (كل 3 أشهر)", "Quarterly")
+            "yearly" -> text("سنوي", "Yearly")
+            "annual" -> text("سنوي", "Annual")
+            "one_time" -> text("مرة واحدة", "One-Time")
+
+            else -> k.replace('_', ' ')
+        }
+    }
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
 
     // --- Executive Design System & Cairo Typography ---
@@ -957,11 +1037,13 @@ class MainActivity : Activity() {
 
             val roleBadge = TextView(this@MainActivity).apply {
                 val roleName = when (role) {
-                    "admin" -> text("مدير النظام (Admin)", "System Admin")
-                    "manager" -> text("مدير البرج (Manager)", "Building Manager")
-                    "accountant" -> text("المحاسب (Accountant)", "Accountant")
-                    "resident" -> text("ساكن / مستأجر (Resident)", "Resident")
-                    else -> role
+                    "admin" -> text("مدير النظام", "System Admin")
+                    "manager" -> text("مدير البرج", "Building Manager")
+                    "accountant" -> text("المحاسب المالي", "Accountant")
+                    "technician" -> text("فني الصيانة", "Technician")
+                    "resident" -> text("ساكن / مالك / مستأجر", "Resident")
+                    "viewer" -> text("مراقب ومستعرض", "Viewer")
+                    else -> optionTitle(role)
                 }
                 text = roleName
                 textSize = 11f
@@ -1256,7 +1338,7 @@ class MainActivity : Activity() {
 
             for (i in 0 until records.length()) {
                 val row = records.getJSONObject(i)
-                val heading = listOf("name", "title", "number", "description", "message", "entity", "reference", "reason").map { row.optString(it) }.firstOrNull { it.isNotEmpty() } ?: "Record #${i + 1}"
+                val heading = listOf("name", "title", "number", "description", "message", "entity", "reference", "reason").map { row.optString(it) }.firstOrNull { it.isNotEmpty() } ?: text("سجل رقم #${i + 1}", "Record #${i + 1}")
                 val status = row.optString("status", "")
 
                 card {
@@ -1291,7 +1373,7 @@ class MainActivity : Activity() {
                                 "occupied" -> text("مؤجرة", "Rented")
                                 "owned" -> text("ملك (تمليك)", "Owned")
                                 "maintenance" -> text("صيانة", "Maintenance")
-                                else -> status
+                                else -> optionTitle(status)
                             }
                             textSize = 11f
                             typeface = Typeface.create(cairoFont, Typeface.BOLD)
@@ -1312,11 +1394,15 @@ class MainActivity : Activity() {
 
                     // Secondary Details Grid
                     val detailsList = mutableListOf<Pair<String, String>>()
-                    if (row.has("amount")) detailsList.add(Pair(text("المبلغ:", "Amount:"), row.optString("amount") + " EGP"))
-                    if (row.has("balance")) detailsList.add(Pair(text("الرصيد:", "Balance:"), row.optString("balance") + " EGP"))
+                    if (row.has("amount")) detailsList.add(Pair(text("المبلغ:", "Amount:"), row.optString("amount") + text(" ج.م", " EGP")))
+                    if (row.has("balance")) detailsList.add(Pair(text("الرصيد:", "Balance:"), row.optString("balance") + text(" ج.م", " EGP")))
                     if (row.has("due_date")) detailsList.add(Pair(text("الاستحقاق:", "Due:"), row.optString("due_date")))
                     if (row.has("reference")) detailsList.add(Pair(text("المرجع:", "Ref:"), row.optString("reference")))
-                    if (row.has("priority")) detailsList.add(Pair(text("الأولوية:", "Priority:"), row.optString("priority")))
+                    if (row.has("payment_method")) detailsList.add(Pair(text("طريقة السداد:", "Payment Method:"), optionTitle(row.optString("payment_method"))))
+                    if (row.has("priority")) detailsList.add(Pair(text("الأولوية:", "Priority:"), optionTitle(row.optString("priority"))))
+                    if (row.has("category")) detailsList.add(Pair(text("التصنيف:", "Category:"), optionTitle(row.optString("category"))))
+                    if (row.has("ownership_type")) detailsList.add(Pair(text("نوع الملكية:", "Ownership:"), optionTitle(row.optString("ownership_type"))))
+                    if (row.has("kind") && entity in listOf("parties", "accounts", "money_accounts")) detailsList.add(Pair(text("النوع:", "Type:"), optionTitle(row.optString("kind"))))
                     if (row.has("created_at")) detailsList.add(Pair(text("التاريخ:", "Date:"), row.optString("created_at").take(10)))
 
                     if (detailsList.isNotEmpty()) {
@@ -1611,7 +1697,22 @@ class MainActivity : Activity() {
         "period" to Pair("الفترة المالية", "Financial Period"),
         "destination" to Pair("الصندوق المحول إليه", "Destination Fund"),
         "bank_name" to Pair("اسم البنك", "Bank Name"),
-        "account_number" to Pair("رقم الحساب", "Account Number")
+        "account_number" to Pair("رقم الحساب", "Account Number"),
+        "reference" to Pair("رقم المرجع / الحوالة", "Reference"),
+        "payment_method" to Pair("طريقة السداد", "Payment Method"),
+        "rejection_reason" to Pair("سبب الرفض", "Rejection Reason"),
+        "decision" to Pair("القرار الإداري", "Decision"),
+        "amount_to_pay" to Pair("المبلغ المستحق للدفع", "Amount to Pay"),
+        "balance" to Pair("الرصيد المتبقي", "Remaining Balance"),
+        "entry_date" to Pair("تاريخ القيد", "Entry Date"),
+        "debit" to Pair("مدين", "Debit"),
+        "credit" to Pair("دائن", "Credit"),
+        "received_on" to Pair("تاريخ الاستلام", "Received On"),
+        "organization" to Pair("المنشأة أو المؤسسة", "Organization"),
+        "floors_count" to Pair("عدد الطوابق", "Floors Count"),
+        "units_per_floor" to Pair("عدد الوحدات بكل طابق", "Units Per Floor"),
+        "prefix" to Pair("بادئة الترقيم", "Prefix"),
+        "invoice_id" to Pair("رقم الفاتورة", "Invoice ID")
     )
 
     private fun fieldTitle(k: String) = fieldNames[k]?.let { if (arabic) it.first else it.second } ?: k.replace('_', ' ')
@@ -1681,7 +1782,7 @@ class MainActivity : Activity() {
                         })
                     }
                 } else {
-                    select(options.map { it to it })
+                    select(options.map { it to optionTitle(it) })
                 }
             } else {
                 val control = input(fieldTitle(key)).apply {
