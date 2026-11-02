@@ -9,7 +9,7 @@ if (existsSync('release/TowerFlow-latest.apk')) {
 }
 
 // Refresh sql-bundle.mjs to keep runtime migrations self-contained
-const files = ['schema.sql','002_workflows.sql','003_read_permissions.sql','004_platform.sql','005_identity.sql','006_owner_push.sql','007_master_system.sql'];
+const files = ['schema.sql','002_workflows.sql','003_read_permissions.sql','004_platform.sql','005_identity.sql','006_owner_push.sql','007_master_system.sql','008_units_ownership_and_fixes.sql'];
 const bundle = {};
 for (const f of files) {
   bundle[f] = await readFile(new URL('../db/'+f, import.meta.url), 'utf8');

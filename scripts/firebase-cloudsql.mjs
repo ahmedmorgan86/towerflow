@@ -60,9 +60,9 @@ try {
   await client.connect();
   console.log('✓ Successfully connected to PostgreSQL engine.');
 
-  console.log('Applying all migrations (schema.sql -> 007_master_system.sql)...');
+  console.log('Applying all migrations (schema.sql -> 008_units_ownership_and_fixes.sql)...');
   await migrate(client);
-  console.log('✓ All 7 migrations installed and verified.');
+  console.log('✓ All 8 migrations installed and verified.');
 
   const res = await client.query(`
     select 

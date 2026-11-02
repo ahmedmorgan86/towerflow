@@ -24,6 +24,7 @@ import android.text.TextUtils
 import android.text.TextWatcher
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import android.widget.FrameLayout
 import org.json.JSONArray
@@ -396,7 +397,12 @@ class MainActivity : Activity() {
         screen.addView(topBar)
     }
 
-    private fun card(fn: LinearLayout.() -> Unit): LinearLayout {
+    private fun safeAddView(parent: ViewGroup, child: View, params: ViewGroup.LayoutParams? = null) {
+        (child.parent as? ViewGroup)?.removeView(child)
+        if (params != null) parent.addView(child, params) else parent.addView(child)
+    }
+
+    private fun card(addToScreen: Boolean = true, fn: LinearLayout.() -> Unit): LinearLayout {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(16), dp(16), dp(16))
@@ -411,7 +417,9 @@ class MainActivity : Activity() {
             }
         }
         layout.fn()
-        screen.addView(layout)
+        if (addToScreen) {
+            safeAddView(screen, layout)
+        }
         return layout
     }
 
@@ -619,11 +627,14 @@ class MainActivity : Activity() {
     private fun error(e: Exception) {
         if (isFinishing || isDestroyed) return
         try {
-            AlertDialog.Builder(this)
-                .setTitle(text("تنبيه", "Notice"))
-                .setMessage(e.message ?: text("حدث خطأ غير متوقع", "An unexpected error occurred"))
-                .setPositiveButton(text("حسناً", "OK"), null)
-                .show()
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                AlertDialog.Builder(this)
+                    .setTitle(text("تنبيه", "Notice"))
+                    .setMessage(e.message ?: text("حدث خطأ غير متوقع", "An unexpected error occurred"))
+                    .setPositiveButton(text("حسناً", "OK"), null)
+                    .show()
+            }
         } catch (_: Exception) {}
     }
 
@@ -1439,20 +1450,20 @@ class MainActivity : Activity() {
         }
         searchRow.addView(searchInput)
         searchRow.addView(countBadge)
-        screen.addView(searchRow)
+        safeAddView(screen, searchRow)
 
         val recordsContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         }
-        screen.addView(recordsContainer)
+        safeAddView(screen, recordsContainer)
 
         fun renderCards(records: List<JSONObject>, relCaches: Map<String, Map<String, String>>) {
             recordsContainer.removeAllViews()
             countBadge.text = "${records.size} " + text("سجل", "items")
 
             if (records.isEmpty()) {
-                val emptyCard = card {
+                val emptyCard = card(addToScreen = false) {
                     addView(TextView(this@MainActivity).apply {
                         text = text("لا توجد سجلات مطابقة في هذا القسم", "No matching records found")
                         textSize = 13f
@@ -1462,7 +1473,7 @@ class MainActivity : Activity() {
                         setPadding(0, dp(24), 0, dp(24))
                     })
                 }
-                recordsContainer.addView(emptyCard)
+                safeAddView(recordsContainer, emptyCard)
                 return
             }
 
@@ -1501,7 +1512,7 @@ class MainActivity : Activity() {
                 }
                 val status = row.optString("status", "")
 
-                val itemCard = card {
+                val itemCard = card(addToScreen = false) {
                     // Top row: Title and Status badge
                     val topRow = LinearLayout(this@MainActivity).apply {
                         orientation = LinearLayout.HORIZONTAL
@@ -1682,6 +1693,7 @@ class MainActivity : Activity() {
                                 val reasonInput = EditText(this@MainActivity).apply {
                                     hint = text("سبب الرفض الإلزامي", "Rejection Reason")
                                 }
+                                (reasonInput.parent as? ViewGroup)?.removeView(reasonInput)
                                 AlertDialog.Builder(this@MainActivity)
                                     .setTitle(text("رفض إثبات السداد", "Reject Proof"))
                                     .setView(reasonInput)
@@ -1755,7 +1767,7 @@ class MainActivity : Activity() {
                         addView(actionsRow)
                     }
                 }
-                recordsContainer.addView(itemCard)
+                safeAddView(recordsContainer, itemCard)
             }
         }
 
@@ -1844,7 +1856,7 @@ class MainActivity : Activity() {
                 }
                 unitSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, if (unitNames.isEmpty()) listOf(text("لا توجد وحدات متاحة", "No units available")) else unitNames)
                 label(text("الوحدة السكنية", "Unit"), 13, true)
-                screen.addView(unitSpinner)
+                safeAddView(screen, unitSpinner)
 
                 call("parties", onError = { /* residents have restricted access to parties table */ }) { partyRaw ->
                     val parties = try { JSONArray(partyRaw) } catch (_: Exception) { JSONArray() }
@@ -1855,7 +1867,7 @@ class MainActivity : Activity() {
                             p.optString("name", p.optString("id"))
                         })
                         label(text("الساكن / المسدد", "Resident / Payer"), 13, true)
-                        screen.addView(partySpinner)
+                        safeAddView(screen, partySpinner)
                     }
 
                     primaryButton(text("إرسال الإثبات", "Submit Proof")) {
@@ -1885,7 +1897,7 @@ class MainActivity : Activity() {
         val heading = input(text("عنوان المشكلة", "Issue Title"))
         val description = input(text("تفاصيل المشكلة", "Detailed Description")).apply { setSingleLine(false); maxLines = 4 }
         val spinner = Spinner(this)
-        screen.addView(spinner)
+        safeAddView(screen, spinner)
         call("units") { raw ->
             val units = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
             spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until units.length()).map {
@@ -2055,7 +2067,7 @@ class MainActivity : Activity() {
                             setTextColor(Color.parseColor("#E11D48"))
                             setPadding(dp(4), dp(4), dp(4), dp(8))
                         }
-                        screen.addView(notice)
+                        safeAddView(screen, notice)
                         values[key] = { "" }
                     } else {
                         val spinner = Spinner(this)
@@ -2066,7 +2078,7 @@ class MainActivity : Activity() {
                             0
                         }
                         spinner.setSelection(defaultIdx)
-                        screen.addView(spinner)
+                        safeAddView(screen, spinner)
                         values[key] = { items.getOrNull(spinner.selectedItemPosition)?.first ?: "" }
                     }
                 } else if (options.isNotEmpty()) {
@@ -2075,7 +2087,7 @@ class MainActivity : Activity() {
                     spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, options.map { optionTitle(it) })
                     val defaultIdx = if (initial.isNotEmpty()) options.indexOf(initial).coerceAtLeast(0) else 0
                     spinner.setSelection(defaultIdx)
-                    screen.addView(spinner)
+                    safeAddView(screen, spinner)
                     values[key] = { options.getOrNull(spinner.selectedItemPosition) ?: "" }
                 } else {
                     val control = input(fieldTitle(key)).apply {

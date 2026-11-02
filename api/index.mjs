@@ -136,7 +136,31 @@ export default async function handler(req,res){
  if(data.status!==previous.status&&!next[previous.status].includes(data.status))throw fail('Invalid ticket status transition',409);
  if(data.status==='closed')await permission(c,org,'manage');
  }
- const r=id?await c.query(`update public.${entity} set ${keys.map((k,i)=>`${k}=$${i+3}`).join(',')} where org_id=$1 and id=$2 returning *`,[org,id,...Object.values(data)]):await c.query(`insert into public.${entity}(org_id,${keys.join(',')}) values($1,${keys.map((_,i)=>'$'+(i+2)).join(',')}) returning *`,[org,...Object.values(data)]);
+  const writeRecord=async(recordData)=>{
+    let currentKeys=Object.keys(recordData);
+    while(currentKeys.length>0){
+      try{
+        const vals=currentKeys.map(k=>recordData[k]);
+        return id
+          ? await c.query(`update public.${entity} set ${currentKeys.map((k,i)=>`${k}=$${i+3}`).join(',')} where org_id=$1 and id=$2 returning *`,[org,id,...vals])
+          : await c.query(`insert into public.${entity}(org_id,${currentKeys.join(',')}) values($1,${currentKeys.map((_,i)=>'$'+(i+2)).join(',')}) returning *`,[org,...vals]);
+      }catch(err){
+        if(err.code==='42703'){
+          const m=err.message.match(/column "([^"]+)"/);
+          const col=m?m[1]:null;
+          if(col&&currentKeys.includes(col)){
+            console.warn(`[Auto-Schema Fallback]: Table public.${entity} lacks column "${col}". Retrying write without it...`);
+            currentKeys=currentKeys.filter(k=>k!==col);
+            delete recordData[col];
+            continue;
+          }
+        }
+        throw err;
+      }
+    }
+    throw fail('No valid fields could be persisted',400);
+  };
+  const r=await writeRecord({...data});
  if(!r.rows.length)throw fail('Record not found or permission denied',404);return r.rows[0];};
  return send(await (['invoices','expenses','recurring_charges','maintenance_plans'].includes(entity)?context(user,work):asUser(user.id,work)),id?200:201);
  }
