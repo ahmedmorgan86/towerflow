@@ -269,75 +269,104 @@ class MainActivity : Activity() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-            setPadding(dp(2), 0, dp(2), dp(14))
+            setPadding(0, 0, 0, dp(14))
             layoutDirection = if (arabic) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
         }
 
         if (showBack && onBack != null) {
-            val backBtn = Button(this).apply {
-                text = text("‹ عودة", "‹ Back")
-                setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#4F46E5"))
-                textSize = 13f
+            // Sub-screen Navigation Header: [Back Button] + [Breadcrumb / Title Column]
+            val navGroup = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+
+            val backBtn = TextView(this).apply {
+                text = if (arabic) "› عودة" else "‹ Back"
+                textSize = 13.5f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                isAllCaps = false
-                includeFontPadding = false
-                minHeight = 0
-                minimumHeight = 0
-                setPadding(dp(8), dp(6), dp(8), dp(6))
-                background = roundedDrawable(Color.TRANSPARENT, 10f)
-                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                    if (arabic) marginStart = dp(2) else marginEnd = dp(6)
+                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                gravity = Gravity.CENTER
+                background = roundedDrawable(
+                    if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"),
+                    10f,
+                    if (dark) Color.parseColor("#312E81") else Color.parseColor("#C7D2FE")
+                )
+                setPadding(dp(12), dp(6), dp(12), dp(6))
+                isClickable = true
+                isFocusable = true
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(36)).apply {
+                    marginEnd = dp(10)
                 }
                 setOnClickListener { onBack() }
             }
-            topBar.addView(backBtn)
-        }
+            navGroup.addView(backBtn)
 
-        // Brand Layout: [Logo] + [Column: TowerFlow & Subtitle] (Right in Arabic, Left in English)
-        val brandLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-        }
-
-        val logoView = ImageView(this).apply {
-            setImageResource(R.drawable.towerflow_logo)
-            layoutParams = LinearLayout.LayoutParams(dp(38), dp(38)).apply {
-                marginEnd = dp(10)
+            val titleCol = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
-        }
+            titleCol.addView(TextView(this).apply {
+                text = "TowerFlow"
+                textSize = 10.5f
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#6366F1"))
+                gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
+            })
+            titleCol.addView(TextView(this).apply {
+                text = heading
+                textSize = 16f
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
+                gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
+            })
+            navGroup.addView(titleCol)
 
-        val brandCol = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-        }
-        brandCol.addView(TextView(this).apply {
-            text = "TowerFlow"
-            textSize = 18f
-            typeface = Typeface.create(cairoFont, Typeface.BOLD)
-            gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
-            setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
-        })
-        brandCol.addView(TextView(this).apply {
-            text = heading
-            textSize = 11.5f
-            typeface = cairoFont
-            maxLines = 1
-            ellipsize = TextUtils.TruncateAt.END
-            gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
-            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
-        })
+            topBar.addView(navGroup)
+        } else {
+            // Root Screen Brand Header: [Logo] + [TowerFlow & Subtitle Column]
+            val brandLayout = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
 
-        brandLayout.addView(logoView)
-        brandLayout.addView(brandCol)
-        topBar.addView(brandLayout)
+            val logoView = ImageView(this).apply {
+                setImageResource(R.drawable.towerflow_logo)
+                layoutParams = LinearLayout.LayoutParams(dp(36), dp(36)).apply {
+                    marginEnd = dp(10)
+                }
+            }
+            brandLayout.addView(logoView)
 
-        // Spacer pushing action buttons to the opposite edge
-        val spacer = View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(0, 0, 1f)
+            val brandCol = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            brandCol.addView(TextView(this).apply {
+                text = "TowerFlow"
+                textSize = 18f
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
+                setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+            })
+            brandCol.addView(TextView(this).apply {
+                text = heading
+                textSize = 11.5f
+                typeface = cairoFont
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
+                gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
+                setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+            })
+            brandLayout.addView(brandCol)
+
+            topBar.addView(brandLayout)
         }
-        topBar.addView(spacer)
 
         // Actions Group: [Language] [Dark Mode]
         val actionsGroup = LinearLayout(this).apply {
@@ -346,52 +375,51 @@ class MainActivity : Activity() {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
         }
 
-        val langBtn = Button(this).apply {
+        val langBtn = TextView(this).apply {
             text = if (arabic) "EN" else "عربي"
             textSize = 12f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
-            isAllCaps = false
-            includeFontPadding = false
-            minHeight = 0
-            minimumHeight = 0
-            setPadding(dp(10), dp(6), dp(10), dp(6))
+            gravity = Gravity.CENTER
+            isClickable = true
+            isFocusable = true
             background = roundedDrawable(
                 if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"),
                 10f,
                 if (dark) Color.parseColor("#27394E") else Color.parseColor("#E2E8F0")
             )
+            layoutParams = LinearLayout.LayoutParams(dp(44), dp(36)).apply {
+                marginEnd = dp(6)
+            }
             setOnClickListener {
                 arabic = !arabic
                 getPreferences(0).edit().putBoolean("arabic", arabic).apply()
                 if (token.isEmpty()) login() else home()
             }
         }
-        val langParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { marginEnd = dp(6) }
-        actionsGroup.addView(langBtn, langParams)
+        actionsGroup.addView(langBtn)
 
-        val themeBtn = Button(this).apply {
+        val themeBtn = TextView(this).apply {
             text = if (dark) "☀" else "☾"
-            textSize = 14f
+            textSize = 15f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             setTextColor(Color.parseColor(if (dark) "#FCD34D" else "#1E293B"))
-            isAllCaps = false
-            includeFontPadding = false
-            minHeight = 0
-            minimumHeight = 0
-            setPadding(dp(10), dp(6), dp(10), dp(6))
+            gravity = Gravity.CENTER
+            isClickable = true
+            isFocusable = true
             background = roundedDrawable(
                 if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"),
                 10f,
                 if (dark) Color.parseColor("#27394E") else Color.parseColor("#E2E8F0")
             )
+            layoutParams = LinearLayout.LayoutParams(dp(36), dp(36))
             setOnClickListener {
                 dark = !dark
                 getPreferences(0).edit().putBoolean("dark", dark).apply()
                 if (token.isEmpty()) login() else home()
             }
         }
-        actionsGroup.addView(themeBtn, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+        actionsGroup.addView(themeBtn)
 
         topBar.addView(actionsGroup)
         screen.addView(topBar)
