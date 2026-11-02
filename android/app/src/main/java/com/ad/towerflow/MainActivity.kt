@@ -510,7 +510,7 @@ class MainActivity : Activity() {
         screen.addView(btn, lp)
     }
 
-    private fun navTile(key: String, titleText: String, subtitleText: String = "", badgeCount: Int = 0) {
+    private fun navTile(key: String, titleText: String, subtitleText: String = "", badgeCount: Int = 0, onClick: (() -> Unit)? = null) {
         val navIcons = mapOf(
             "properties" to "🏢",
             "units" to "🚪",
@@ -555,7 +555,7 @@ class MainActivity : Activity() {
             layoutParams = lp
             isClickable = true
             isFocusable = true
-            setOnClickListener { listing(key) }
+            setOnClickListener { onClick?.invoke() ?: listing(key) }
         }
 
         // Squircle Item Icon Badge
@@ -1223,16 +1223,19 @@ class MainActivity : Activity() {
             }
         }
 
-        // Quick Actions Row
-        sectionHeader(text("إجراءات سريعة", "Quick Actions"))
+        // 1. Streamlined Quick Action Bar (3 Core Fast Action Pills)
+        sectionHeader(text("⚡ إجراءات سريعة", "⚡ Quick Actions"))
         val quickGrid = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-            weightSum = 2f
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(2)
+                bottomMargin = dp(6)
+            }
+            weightSum = 3f
         }
 
         val q1 = Button(this).apply {
-            text = text(if (role == "resident") "📤 إثبات سداد" else "⚡ تحصيل", if (role == "resident") "Proof" else "Collect")
+            text = text(if (role == "resident") "📤 إثبات سداد" else "＋ إضافة وحدة", if (role == "resident") "Proof" else "＋ Add Unit")
             setTextColor(Color.WHITE)
             textSize = 12f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
@@ -1240,14 +1243,30 @@ class MainActivity : Activity() {
             includeFontPadding = false
             minHeight = 0
             minimumHeight = 0
-            setPadding(dp(8), dp(10), dp(8), dp(10))
+            setPadding(dp(4), dp(10), dp(4), dp(10))
             background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(4) }
-            setOnClickListener { if (role == "resident") proofForm() else listing("invoices") }
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(3) }
+            setOnClickListener { if (role == "resident") proofForm() else recordForm("units") }
         }
         quickGrid.addView(q1)
 
         val q2 = Button(this).apply {
+            text = text(if (role == "resident") "💳 فواتيري" else "⚡ الفواتير", if (role == "resident") "My Dues" else "Billing")
+            setTextColor(Color.WHITE)
+            textSize = 12f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            isAllCaps = false
+            includeFontPadding = false
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(4), dp(10), dp(4), dp(10))
+            background = gradientDrawable(Color.parseColor("#059669"), Color.parseColor("#10B981"), 12f)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(3) }
+            setOnClickListener { listing("invoices") }
+        }
+        quickGrid.addView(q2)
+
+        val q3 = Button(this).apply {
             text = text("🔧 بلاغ صيانة", "Ticket")
             setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             textSize = 12f
@@ -1256,136 +1275,60 @@ class MainActivity : Activity() {
             includeFontPadding = false
             minHeight = 0
             minimumHeight = 0
-            setPadding(dp(8), dp(10), dp(8), dp(10))
+            setPadding(dp(4), dp(10), dp(4), dp(10))
             background = roundedDrawable(
                 Color.TRANSPARENT,
                 12f,
                 Color.parseColor(if (dark) "#334155" else "#CBD5E1")
             )
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(4) }
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             setOnClickListener { ticketForm() }
         }
-        quickGrid.addView(q2)
+        quickGrid.addView(q3)
         screen.addView(quickGrid)
 
-        // Organized Hub Cards (Simplified for Superior Mobile Usability)
+        // 2. Simplified, Elegantly Organized Hubs (Clear Visual Hierarchy)
         if (role != "resident") {
-            card {
-                addView(TextView(this@MainActivity).apply {
-                    text = text("🏢 المحفظة العقارية", "Property & Units")
-                    textSize = 13.5f
-                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
-                    setPadding(0, 0, 0, dp(6))
-                })
-                addView(hubGrid(listOf(
-                    "properties" to Pair("🏢", title("properties")),
-                    "units" to Pair("🚪", title("units")),
-                    "parties" to Pair("👥", title("parties")),
-                    "leases" to Pair("📑", title("leases"))
-                )))
-            }
+            sectionHeader(text("🏢 المحفظة والوحدات", "Properties & Units"))
+            navTile("units", title("units"), text("حصر الشقق، أرقام الوحدات، وحالة الإشغال", "Apartments, unit numbers and occupancy"))
+            navTile("properties", title("properties"), text("سجل المباني والأبراج والمجمعات", "Towers and buildings directory"))
+            navTile("parties", title("parties"), text("سجل السكان، الملاك، وجهات التواصل", "Residents, owners and contacts registry"))
+            navTile("leases", title("leases"), text("عقود الإيجار السارية ومواعيد التجديد", "Active lease contracts and renewals"))
+            navTile("ownerships", title("ownerships"), text("سجلات وحصص الملكية والتمليك", "Ownership shares and deeds"))
 
-            card {
-                addView(TextView(this@MainActivity).apply {
-                    text = text("💳 المالية والتحصيل", "Finance & Cash Flow")
-                    textSize = 13.5f
-                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
-                    setPadding(0, 0, 0, dp(6))
-                })
-                addView(hubGrid(listOf(
-                    "invoices" to Pair("💳", title("invoices")),
-                    "receipts" to Pair("🧾", title("receipts")),
-                    "payment_proofs" to Pair("📤", title("payment_proofs")),
-                    "money_accounts" to Pair("🏦", title("money_accounts")),
-                    "expenses" to Pair("📉", title("expenses")),
-                    "fines" to Pair("⚠️", title("fines"))
-                )))
-            }
+            sectionHeader(text("💳 المالية والتحصيل", "Finance & Cash Flow"))
+            navTile("invoices", title("invoices"), text("الفواتير الشهرية والخدمات والمطالبات", "Issued invoices and dues"))
+            navTile("receipts", title("receipts"), text("سندات القبض والتحصيل المسددة", "Payment receipts and collections"))
+            navTile("payment_proofs", title("payment_proofs"), text("مراجعة واعتماد إيصالات التحويل البنكي", "Review transfer payment slips"))
+            navTile("money_accounts", title("money_accounts"), text("الخزينة والحسابات البنكية وصناديق الصيانة", "Cash, bank and reserve funds"))
+            navTile("expenses", title("expenses"), text("أوامر الصرف ومصروفات التشغيل", "Operational and maintenance expenses"))
 
-            card {
-                addView(TextView(this@MainActivity).apply {
-                    text = text("🛠️ الصيانة والتشغيل", "Maintenance & Operations")
-                    textSize = 13.5f
-                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
-                    setPadding(0, 0, 0, dp(6))
-                })
-                addView(hubGrid(listOf(
-                    "tickets" to Pair("🛠️", title("tickets")),
-                    "technicians" to Pair("👷", title("technicians")),
-                    "assets" to Pair("🛗", title("assets")),
-                    "vendor_contracts" to Pair("📝", title("vendor_contracts"))
-                )))
-            }
+            sectionHeader(text("🛠️ الصيانة والتشغيل", "Maintenance & Operations"))
+            navTile("tickets", title("tickets"), text("طلبات وبلاغات الصيانة وتتبع إنجازها", "Maintenance tickets tracking"))
+            navTile("technicians", title("technicians"), text("فنيو الصيانة والموردون المعتمدون", "Approved service technicians"))
+            navTile("assets", title("assets"), text("سجل المصاعد والمضخات ومعدات البرج", "Elevators, pumps and equipment"))
+            navTile("vendor_contracts", title("vendor_contracts"), text("عقود الصيانة الدورية والنظافة والأمن", "Periodic service contracts"))
 
-            card {
-                addView(TextView(this@MainActivity).apply {
-                    text = text("📢 التواصل والدعم", "Workspace & Support")
-                    textSize = 13.5f
-                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
-                    setPadding(0, 0, 0, dp(6))
-                })
-                addView(hubGrid(listOf(
-                    "announcements" to Pair("📢", title("announcements")),
-                    "notifications" to Pair("🔔", title("notifications")),
-                    "support_tickets" to Pair("🎫", title("support_tickets")),
-                    "audit_logs" to Pair("📜", title("audit_logs"))
-                )))
-            }
+            sectionHeader(text("⚙️ الإدارة والمنصة", "Management & Settings"))
+            navTile("announcements", title("announcements"), text("نشر التعميمات والإعلانات للسكان", "Resident announcements"))
+            navTile("notifications", title("notifications"), text("التنبيهات والإشعارات اللحظية", "App alerts and notifications"))
+            navTile("support_tickets", title("support_tickets"), text("تذاكر الدعم الفني لمشرفي النظام", "Technical support tickets"))
+            navTile("journals", title("journals"), text("دفتر اليومية العامة وسجل التدقيق", "General journal and audit trail"))
+            navTile("profile", text("الملف الشخصي والإعدادات", "My Profile & Settings"), text("بيانات حسابك وتفضيلات التطبيق", "Account details and app preferences")) { profile() }
+            navTile("logout", text("تسجيل الخروج", "Sign Out"), text("الخروج الآمن من الحساب الحالي", "Sign out of your account")) { disablePushAndLogout() }
         } else {
-            card {
-                addView(TextView(this@MainActivity).apply {
-                    text = text("🏠 وحدتي وعقدي السكني", "My Home & Lease")
-                    textSize = 13.5f
-                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
-                    setPadding(0, 0, 0, dp(6))
-                })
-                addView(hubGrid(listOf(
-                    "units" to Pair("🚪", title("units")),
-                    "leases" to Pair("📑", title("leases"))
-                )))
-            }
-
-            card {
-                addView(TextView(this@MainActivity).apply {
-                    text = text("💳 فواتيري وإثباتات السداد", "Invoices & Payments")
-                    textSize = 13.5f
-                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
-                    setPadding(0, 0, 0, dp(6))
-                })
-                addView(hubGrid(listOf(
-                    "invoices" to Pair("💳", title("invoices")),
-                    "payment_proofs" to Pair("📤", title("payment_proofs")),
-                    "credit_balances" to Pair("💰", title("credit_balances")),
-                    "fines" to Pair("⚠️", title("fines"))
-                )))
-            }
-
-            card {
-                addView(TextView(this@MainActivity).apply {
-                    text = text("🛠️ الصيانة والتواصل", "Maintenance & Notices")
-                    textSize = 13.5f
-                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
-                    setPadding(0, 0, 0, dp(6))
-                })
-                addView(hubGrid(listOf(
-                    "tickets" to Pair("🛠️", title("tickets")),
-                    "announcements" to Pair("📢", title("announcements")),
-                    "notifications" to Pair("🔔", title("notifications")),
-                    "support_tickets" to Pair("🎫", title("support_tickets"))
-                )))
-            }
+            sectionHeader(text("خدماتي السكنية", "My Resident Services"))
+            navTile("units", title("units"), text("بيانات وحدتي السكنية ورقم الشقة", "My apartment details"))
+            navTile("leases", title("leases"), text("عقد الإيجار النشط ومواعيده", "My active lease contract"))
+            navTile("invoices", title("invoices"), text("الفواتير والمستحقات الشهرية", "My invoices and dues"))
+            navTile("payment_proofs", title("payment_proofs"), text("إرسال إثبات تحويل بنكي للمراجعة", "Submit bank transfer slip"))
+            navTile("credit_balances", title("credit_balances"), text("رصيدي الدائن المتاح للتسوية", "My available credit balance"))
+            navTile("tickets", title("tickets"), text("طلب صيانة أو إصلاح داخل الوحدة", "Maintenance requests"))
+            navTile("announcements", title("announcements"), text("إعلانات وتعليمات إدارة البرج", "Building announcements"))
+            navTile("support_tickets", title("support_tickets"), text("تواصل مع الدعم الفني", "Customer support"))
+            navTile("profile", text("الملف الشخصي والإعدادات", "My Profile & Settings"), text("بيانات حسابك واللغة والمظهر", "Account details and preferences")) { profile() }
+            navTile("logout", text("تسجيل الخروج", "Sign Out"), text("الخروج الآمن من التطبيق", "Sign out of account")) { disablePushAndLogout() }
         }
-
-        sectionHeader(text("حسابي", "My Profile"))
-        outlineButton(text("الملف الشخصي والإعدادات", "My Profile & Settings")) { profile() }
-        outlineButton(text("تسجيل الخروج", "Sign Out")) { disablePushAndLogout() }
     }
 
     private fun listing(entity: String) {
@@ -1496,7 +1439,10 @@ class MainActivity : Activity() {
                         unitName.isNotEmpty() -> text("ملكية: $unitName", "Ownership: $unitName")
                         else -> text("سجل ملكية #${i + 1}", "Ownership #${i + 1}")
                     }
-                    "units" -> text("شقة / وحدة ", "Unit ") + row.optString("name", row.optString("id").take(6))
+                    "units" -> {
+                        val num = row.optString("unit_number").ifEmpty { row.optString("name", row.optString("id").take(6)) }
+                        text("شقة / وحدة ", "Unit ") + num
+                    }
                     "invoices" -> text("فاتورة #", "Invoice #") + row.optString("number", "${i + 1}")
                     "payment_proofs" -> text("إثبات سداد: ", "Payment Proof: ") + (if (unitName.isNotEmpty()) unitName else row.optString("reference", "#${i + 1}"))
                     "fines" -> text("غرامة: ", "Fine: ") + row.optString("title", "#${i + 1}")
@@ -1570,6 +1516,8 @@ class MainActivity : Activity() {
                     if (techName.isNotEmpty()) detailsList.add(Pair(text("الفني المعتمد:", "Technician:"), techName))
                     if (vendorName.isNotEmpty()) detailsList.add(Pair(text("المورد / المقاول:", "Vendor:"), vendorName))
 
+                    if (row.has("unit_number") && row.optString("unit_number").isNotEmpty()) detailsList.add(Pair(text("رقم الوحدة:", "Unit Number:"), row.optString("unit_number")))
+                    if (row.has("name") && row.optString("name") != row.optString("unit_number") && row.optString("name").isNotEmpty()) detailsList.add(Pair(text("اسم ومسمى الوحدة:", "Unit Label:"), row.optString("name")))
                     if (row.has("floor") && entity == "units") detailsList.add(Pair(text("الطابق:", "Floor:"), text("الطابق ", "Floor ") + row.optString("floor")))
                     if (row.has("area") && entity == "units") detailsList.add(Pair(text("المساحة:", "Area:"), row.optString("area") + text(" م²", " m²")))
                     if (row.has("phone") && row.optString("phone").isNotEmpty()) detailsList.add(Pair(text("الهاتف:", "Phone:"), row.optString("phone")))
@@ -1943,7 +1891,7 @@ class MainActivity : Activity() {
 
     private val forms = mapOf(
         "properties" to listOf("name", "address"),
-        "units" to listOf("property_id", "name", "floor", "area", "status", "ownership_type"),
+        "units" to listOf("property_id", "unit_number", "name", "floor", "area", "status", "ownership_type"),
         "parties" to listOf("name", "kind", "email", "phone"),
         "leases" to listOf("unit_id", "party_id", "start_date", "end_date", "rent", "status"),
         "ownerships" to listOf("unit_id", "party_id", "share"),
@@ -1962,7 +1910,8 @@ class MainActivity : Activity() {
     )
 
     private val fieldNames = mapOf(
-        "name" to Pair("الاسم", "Name"),
+        "unit_number" to Pair("رقم الوحدة / الشقة", "Unit Number"),
+        "name" to Pair("اسم ومسمى الوحدة (اختياري)", "Unit Name / Label (Optional)"),
         "address" to Pair("العنوان", "Address"),
         "property_id" to Pair("العقار", "Property"),
         "unit_id" to Pair("الوحدة", "Unit"),
@@ -2105,6 +2054,12 @@ class MainActivity : Activity() {
                 values.forEach { (key, getter) ->
                     val value = getter()
                     if (value.isNotBlank()) payload.put(key, value)
+                }
+                if (entity == "units") {
+                    val uNum = payload.optString("unit_number").trim()
+                    val uName = payload.optString("name").trim()
+                    if (uNum.isNotEmpty() && uName.isEmpty()) payload.put("name", uNum)
+                    if (uName.isNotEmpty() && uNum.isEmpty()) payload.put("unit_number", uName)
                 }
                 call(entity + (record?.let { "/" + it.optString("id") } ?: ""), if (record == null) "POST" else "PATCH", payload) {
                     listing(entity)
