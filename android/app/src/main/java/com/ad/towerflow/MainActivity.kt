@@ -540,6 +540,7 @@ class MainActivity : Activity() {
 
     private fun navTile(key: String, titleText: String, subtitleText: String = "", badgeCount: Int = 0, onClick: (() -> Unit)? = null) {
         val navIcons = mapOf(
+            "monthly_collections" to "⚡",
             "properties" to "🏢",
             "units" to "🚪",
             "parties" to "👥",
@@ -1251,7 +1252,55 @@ class MainActivity : Activity() {
             }
         }
 
-        // 1. Streamlined Quick Action Bar (3 Core Fast Action Pills)
+        // 1. Featured Monthly Collection Hero Card (For Managers/Admins)
+        if (role != "resident") {
+            card {
+                val heroCollect = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(16), dp(16), dp(16), dp(16))
+                    background = gradientDrawable(Color.parseColor("#4338CA"), Color.parseColor("#312E81"), 16f)
+                    isClickable = true
+                    isFocusable = true
+                    setOnClickListener { monthlyCollections() }
+                }
+                val topRow = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+                topRow.addView(TextView(this@MainActivity).apply {
+                    text = "⚡"
+                    textSize = 22f
+                    setPadding(0, 0, dp(8), 0)
+                })
+                val titleWrap = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                }
+                titleWrap.addView(TextView(this@MainActivity).apply {
+                    text = text("التحصيل الشهري للشقق والوحدات", "Monthly Collections")
+                    textSize = 16f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.WHITE)
+                })
+                titleWrap.addView(TextView(this@MainActivity).apply {
+                    text = text("متابعة وسداد اشتراكات وإيجارات الشهر للشقق فورياً", "Track dues & collect rent for all apartments")
+                    textSize = 11.5f
+                    typeface = cairoFont
+                    setTextColor(Color.parseColor("#C7D2FE"))
+                })
+                topRow.addView(titleWrap)
+                topRow.addView(TextView(this@MainActivity).apply {
+                    text = if (arabic) "‹" else "›"
+                    textSize = 22f
+                    setTextColor(Color.parseColor("#A5B4FC"))
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                })
+                heroCollect.addView(topRow)
+                addView(heroCollect)
+            }
+        }
+
+        // 2. Streamlined Fast Action Bar
         sectionHeader(text("⚡ إجراءات سريعة", "⚡ Quick Actions"))
         val quickGrid = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -1263,23 +1312,7 @@ class MainActivity : Activity() {
         }
 
         val q1 = Button(this).apply {
-            text = text(if (role == "resident") "📤 إثبات سداد" else "＋ إضافة وحدة", if (role == "resident") "Proof" else "＋ Add Unit")
-            setTextColor(Color.WHITE)
-            textSize = 12f
-            typeface = Typeface.create(cairoFont, Typeface.BOLD)
-            isAllCaps = false
-            includeFontPadding = false
-            minHeight = 0
-            minimumHeight = 0
-            setPadding(dp(4), dp(10), dp(4), dp(10))
-            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(3) }
-            setOnClickListener { if (role == "resident") proofForm() else recordForm("units") }
-        }
-        quickGrid.addView(q1)
-
-        val q2 = Button(this).apply {
-            text = text(if (role == "resident") "💳 فواتيري" else "⚡ الفواتير", if (role == "resident") "My Dues" else "Billing")
+            text = text(if (role == "resident") "📤 إثبات سداد" else "⚡ التحصيل", if (role == "resident") "Proof" else "⚡ Collect")
             setTextColor(Color.WHITE)
             textSize = 12f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
@@ -1290,7 +1323,23 @@ class MainActivity : Activity() {
             setPadding(dp(4), dp(10), dp(4), dp(10))
             background = gradientDrawable(Color.parseColor("#059669"), Color.parseColor("#10B981"), 12f)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(3) }
-            setOnClickListener { listing("invoices") }
+            setOnClickListener { if (role == "resident") proofForm() else monthlyCollections() }
+        }
+        quickGrid.addView(q1)
+
+        val q2 = Button(this).apply {
+            text = text(if (role == "resident") "💳 فواتيري" else "＋ إضافة وحدة", if (role == "resident") "My Dues" else "＋ Add Unit")
+            setTextColor(Color.WHITE)
+            textSize = 12f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            isAllCaps = false
+            includeFontPadding = false
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(4), dp(10), dp(4), dp(10))
+            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(3) }
+            setOnClickListener { if (role == "resident") listing("invoices") else recordForm("units") }
         }
         quickGrid.addView(q2)
 
@@ -1315,33 +1364,20 @@ class MainActivity : Activity() {
         quickGrid.addView(q3)
         screen.addView(quickGrid)
 
-        // 2. Simplified, Elegantly Organized Hubs (Clear Visual Hierarchy)
+        // 3. Essential, Useful Sections Only (No Empty Ghost Sections)
         if (role != "resident") {
-            sectionHeader(text("🏢 المحفظة والوحدات", "Properties & Units"))
+            sectionHeader(text("🏢 العمليات وإدارة البرج الأساسية", "Core Operations"))
+            navTile("monthly_collections", text("التحصيل الشهري للشقق", "Monthly Unit Collections"), text("سداد الاشتراكات الشهرية، الإيجارات، وتحصيل الشقق", "Apartment dues, subscriptions and collections")) { monthlyCollections() }
             navTile("units", title("units"), text("حصر الشقق، أرقام الوحدات، وحالة الإشغال", "Apartments, unit numbers and occupancy"))
-            navTile("properties", title("properties"), text("سجل المباني والأبراج والمجمعات", "Towers and buildings directory"))
             navTile("parties", title("parties"), text("سجل السكان، الملاك، وجهات التواصل", "Residents, owners and contacts registry"))
-            navTile("leases", title("leases"), text("عقود الإيجار السارية ومواعيد التجديد", "Active lease contracts and renewals"))
-            navTile("ownerships", title("ownerships"), text("سجلات وحصص الملكية والتمليك", "Ownership shares and deeds"))
-
-            sectionHeader(text("💳 المالية والتحصيل", "Finance & Cash Flow"))
             navTile("invoices", title("invoices"), text("الفواتير الشهرية والخدمات والمطالبات", "Issued invoices and dues"))
-            navTile("receipts", title("receipts"), text("سندات القبض والتحصيل المسددة", "Payment receipts and collections"))
-            navTile("payment_proofs", title("payment_proofs"), text("مراجعة واعتماد إيصالات التحويل البنكي", "Review transfer payment slips"))
-            navTile("money_accounts", title("money_accounts"), text("الخزينة والحسابات البنكية وصناديق الصيانة", "Cash, bank and reserve funds"))
-            navTile("expenses", title("expenses"), text("أوامر الصرف ومصروفات التشغيل", "Operational and maintenance expenses"))
-
-            sectionHeader(text("🛠️ الصيانة والتشغيل", "Maintenance & Operations"))
             navTile("tickets", title("tickets"), text("طلبات وبلاغات الصيانة وتتبع إنجازها", "Maintenance tickets tracking"))
-            navTile("technicians", title("technicians"), text("فنيو الصيانة والموردون المعتمدون", "Approved service technicians"))
-            navTile("assets", title("assets"), text("سجل المصاعد والمضخات ومعدات البرج", "Elevators, pumps and equipment"))
-            navTile("vendor_contracts", title("vendor_contracts"), text("عقود الصيانة الدورية والنظافة والأمن", "Periodic service contracts"))
 
-            sectionHeader(text("⚙️ الإدارة والمنصة", "Management & Settings"))
-            navTile("announcements", title("announcements"), text("نشر التعميمات والإعلانات للسكان", "Resident announcements"))
-            navTile("notifications", title("notifications"), text("التنبيهات والإشعارات اللحظية", "App alerts and notifications"))
-            navTile("support_tickets", title("support_tickets"), text("تذاكر الدعم الفني لمشرفي النظام", "Technical support tickets"))
-            navTile("journals", title("journals"), text("دفتر اليومية العامة وسجل التدقيق", "General journal and audit trail"))
+            sectionHeader(text("📂 السجلات والتقارير", "Records & Reports"))
+            navTile("leases", title("leases"), text("عقود الإيجار السارية ومواعيد التجديد", "Active lease contracts and renewals"))
+            navTile("receipts", title("receipts"), text("سندات القبض والتحصيل المسددة", "Payment receipts and collections"))
+            navTile("expenses", title("expenses"), text("أوامر الصرف ومصروفات التشغيل والصيانة", "Operational and maintenance expenses"))
+            navTile("reports", title("reports"), text("التقارير المالية والتحصيل وميزان الحركة", "Financial and collection reports"))
             navTile("profile", text("الملف الشخصي والإعدادات", "My Profile & Settings"), text("بيانات حسابك وتفضيلات التطبيق", "Account details and app preferences")) { profile() }
             navTile("logout", text("تسجيل الخروج", "Sign Out"), text("الخروج الآمن من الحساب الحالي", "Sign out of your account")) { disablePushAndLogout() }
         } else {
@@ -1350,13 +1386,501 @@ class MainActivity : Activity() {
             navTile("leases", title("leases"), text("عقد الإيجار النشط ومواعيده", "My active lease contract"))
             navTile("invoices", title("invoices"), text("الفواتير والمستحقات الشهرية", "My invoices and dues"))
             navTile("payment_proofs", title("payment_proofs"), text("إرسال إثبات تحويل بنكي للمراجعة", "Submit bank transfer slip"))
-            navTile("credit_balances", title("credit_balances"), text("رصيدي الدائن المتاح للتسوية", "My available credit balance"))
             navTile("tickets", title("tickets"), text("طلب صيانة أو إصلاح داخل الوحدة", "Maintenance requests"))
-            navTile("announcements", title("announcements"), text("إعلانات وتعليمات إدارة البرج", "Building announcements"))
-            navTile("support_tickets", title("support_tickets"), text("تواصل مع الدعم الفني", "Customer support"))
             navTile("profile", text("الملف الشخصي والإعدادات", "My Profile & Settings"), text("بيانات حسابك واللغة والمظهر", "Account details and preferences")) { profile() }
             navTile("logout", text("تسجيل الخروج", "Sign Out"), text("الخروج الآمن من التطبيق", "Sign out of account")) { disablePushAndLogout() }
         }
+    }
+
+    private fun monthlyCollections(targetMonth: String? = null) {
+        val path = "collections/monthly" + if (targetMonth != null) "?month=$targetMonth" else ""
+        scaffold(text("التحصيل الشهري للشقق", "Monthly Collections"), true) { home() }
+
+        val loading = TextView(this).apply {
+            text = text("جاري تحميل كشف التحصيل الشهري...", "Loading monthly collections...")
+            textSize = 14f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+            gravity = Gravity.CENTER
+            setPadding(dp(16), dp(40), dp(16), dp(40))
+        }
+        screen.addView(loading)
+
+        call(path) { raw ->
+            try {
+                val data = JSONObject(raw)
+                val currentMonth = data.optString("month", "")
+                val summary = data.optJSONObject("summary") ?: JSONObject()
+                val unitsArr = data.optJSONArray("units") ?: JSONArray()
+                renderMonthlyCollections(currentMonth, summary, unitsArr)
+            } catch (e: Exception) {
+                error(e)
+            }
+        }
+    }
+
+    private fun renderMonthlyCollections(currentMonth: String, summary: JSONObject, unitsArr: JSONArray) {
+        scaffold(text("التحصيل الشهري للشقق", "Monthly Collections"), true) { home() }
+
+        // 1. Month Switcher Card
+        card {
+            val monthRow = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            }
+
+            fun shiftMonth(offset: Int): String {
+                val parts = currentMonth.split("-")
+                var y = parts[0].toIntOrNull() ?: 2026
+                var m = parts[1].toIntOrNull() ?: 1
+                m += offset
+                if (m < 1) { m = 12; y-- }
+                if (m > 12) { m = 1; y++ }
+                return "$y-" + (if (m < 10) "0$m" else "$m")
+            }
+
+            val prevBtn = Button(this@MainActivity).apply {
+                text = text("‹ السابق", "‹ Prev")
+                textSize = 12f
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                isAllCaps = false
+                includeFontPadding = false
+                minHeight = 0
+                minimumHeight = 0
+                setPadding(dp(10), dp(6), dp(10), dp(6))
+                background = roundedDrawable(if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2FF"), 8f)
+                setOnClickListener { monthlyCollections(shiftMonth(if (arabic) 1 else -1)) }
+            }
+            monthRow.addView(prevBtn)
+
+            val monthTitle = TextView(this@MainActivity).apply {
+                val parts = currentMonth.split("-")
+                val mNum = parts.getOrNull(1)?.toIntOrNull() ?: 1
+                val yNum = parts.getOrNull(0) ?: ""
+                val monthNamesAr = listOf("", "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر")
+                val monthNamesEn = listOf("", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+                text = text(monthNamesAr.getOrElse(mNum) { currentMonth } + " $yNum", monthNamesEn.getOrElse(mNum) { currentMonth } + " $yNum")
+                textSize = 16f
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            monthRow.addView(monthTitle)
+
+            val nextBtn = Button(this@MainActivity).apply {
+                text = text("التالي ›", "Next ›")
+                textSize = 12f
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                isAllCaps = false
+                includeFontPadding = false
+                minHeight = 0
+                minimumHeight = 0
+                setPadding(dp(10), dp(6), dp(10), dp(6))
+                background = roundedDrawable(if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2FF"), 8f)
+                setOnClickListener { monthlyCollections(shiftMonth(if (arabic) -1 else 1)) }
+            }
+            monthRow.addView(nextBtn)
+
+            addView(monthRow)
+        }
+
+        // 2. Summary KPI Cards
+        val totalDue = summary.optString("total_due", "0.00")
+        val totalCollected = summary.optString("total_collected", "0.00")
+        val totalRemaining = summary.optString("total_remaining", "0.00")
+        val rate = summary.optInt("collection_rate", 0)
+
+        fun makeKpiBox(kpiTitle: String, kpiVal: String, valColor: Int, subText: String, isFirst: Boolean): LinearLayout {
+            return LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+                background = roundedDrawable(
+                    if (dark) Color.parseColor("#11131A") else Color.WHITE,
+                    12f,
+                    if (dark) Color.parseColor("#1E2330") else Color.parseColor("#E2E8F0")
+                )
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    if (isFirst) marginEnd = dp(4) else marginStart = dp(4)
+                }
+                addView(TextView(this@MainActivity).apply {
+                    text = kpiTitle
+                    textSize = 11f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+                })
+                addView(TextView(this@MainActivity).apply {
+                    text = kpiVal
+                    textSize = 17f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(valColor)
+                    setPadding(0, dp(2), 0, dp(2))
+                })
+                addView(TextView(this@MainActivity).apply {
+                    text = subText
+                    textSize = 9.5f
+                    typeface = cairoFont
+                    setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+                })
+            }
+        }
+
+        val kpiRow1 = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(4)
+            }
+            weightSum = 2f
+        }
+        kpiRow1.addView(makeKpiBox(text("إجمالي المطلوب", "Total Due"), "$totalDue ج.م", Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"), text("اشتراكات وإيجارات الشهر", "Monthly dues"), true))
+        kpiRow1.addView(makeKpiBox(text("المحصل فعلياً", "Collected"), "$totalCollected ج.م", Color.parseColor("#10B981"), text("نسبة التحصيل $rate%", "Collection rate $rate%"), false))
+        screen.addView(kpiRow1)
+
+        val kpiRow2 = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(6)
+                bottomMargin = dp(8)
+            }
+            weightSum = 2f
+        }
+        kpiRow2.addView(makeKpiBox(text("المتبقي للتحصيل", "Remaining"), "$totalRemaining ج.م", Color.parseColor("#EF4444"), text("مستحقات معلقة", "Pending dues"), true))
+        kpiRow2.addView(makeKpiBox(text("حالة الإشغال", "Occupancy"), summary.optInt("occupied_units", 0).toString() + " / " + summary.optInt("total_units", 0), Color.parseColor("#4F46E5"), text("شقة مأهولة", "Occupied units"), false))
+        screen.addView(kpiRow2)
+
+        // 3. Batch Generate Monthly Dues Button
+        val batchBtn = Button(this).apply {
+            text = text("⚡ توليد مطالبات شهر $currentMonth لجميع الشقق", "⚡ Generate $currentMonth Dues for All Units")
+            textSize = 12.5f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            setTextColor(Color.WHITE)
+            isAllCaps = false
+            includeFontPadding = false
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = gradientDrawable(Color.parseColor("#4338CA"), Color.parseColor("#3730A3"), 12f)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = dp(10)
+            }
+            setOnClickListener {
+                val input = EditText(this@MainActivity).apply {
+                    hint = text("قيمة الاشتراك الافتراضي (مثال: 500)", "Default fee (e.g. 500)")
+                    inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+                    setText("500")
+                }
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle(text("توليد مطالبات الشهر", "Generate Monthly Dues"))
+                    .setMessage(text("سيتم إنشاء مطالبات اشتراك شهر $currentMonth لكافة الشقق التي لم يُنشأ لها مطالبة بعد.", "Generate monthly invoices for all unbilled units for $currentMonth."))
+                    .setView(input)
+                    .setPositiveButton(text("توليد الآن", "Generate")) { _, _ ->
+                        val fee = input.text.toString().trim()
+                        if (fee.isNotEmpty()) {
+                            call("collections/generate-month", "POST", JSONObject().put("month", currentMonth).put("default_fee", fee)) { raw ->
+                                val res = JSONObject(raw)
+                                val count = res.optInt("generated_count", 0)
+                                Toast.makeText(this@MainActivity, text("تم توليد $count مطالبة بنجاح", "Generated $count dues successfully"), Toast.LENGTH_SHORT).show()
+                                monthlyCollections(currentMonth)
+                            }
+                        }
+                    }
+                    .setNegativeButton(text("إلغاء", "Cancel"), null)
+                    .show()
+            }
+        }
+        screen.addView(batchBtn)
+
+        // 4. Units Filter Bar & Container
+        val filterRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                bottomMargin = dp(8)
+            }
+            weightSum = 3f
+        }
+
+        var activeFilter = "all"
+        val unitsContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+
+        fun refreshUnitsList() {
+            unitsContainer.removeAllViews()
+            var count = 0
+            for (i in 0 until unitsArr.length()) {
+                val u = unitsArr.getJSONObject(i)
+                val isPaid = u.optBoolean("is_paid", false)
+                val fee = u.optDouble("monthly_fee", 0.0)
+
+                if (activeFilter == "paid" && !isPaid) continue
+                if (activeFilter == "unpaid" && isPaid) continue
+                count++
+
+                // Unit Card
+                val uCard = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(14), dp(12), dp(14), dp(12))
+                    background = roundedDrawable(
+                        if (dark) Color.parseColor("#11131A") else Color.WHITE,
+                        14f,
+                        if (isPaid) Color.parseColor("#059669") else (if (dark) Color.parseColor("#1E2330") else Color.parseColor("#CBD5E1"))
+                    )
+                    layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                        bottomMargin = dp(8)
+                    }
+                }
+
+                // Header Line: Unit Number + Floor + Status Badge
+                val topRow = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+
+                val unitNumber = u.optString("unit_number", u.optString("unit_name", ""))
+                val titleTv = TextView(this@MainActivity).apply {
+                    text = text("شقة / وحدة $unitNumber", "Unit $unitNumber")
+                    textSize = 15.5f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                }
+                topRow.addView(titleTv)
+
+                val badgeTv = TextView(this@MainActivity).apply {
+                    text = if (isPaid) text("✅ تم السداد", "✅ Paid") else (if (fee > 0) text("⏳ بانتظار السداد", "⏳ Pending") else text("⚪ بدون اشتراك", "⚪ No Dues"))
+                    textSize = 10.5f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (isPaid) "#10B981" else (if (fee > 0) "#F59E0B" else "#94A3B8")))
+                    setPadding(dp(8), dp(3), dp(8), dp(3))
+                    background = roundedDrawable(
+                        Color.parseColor(if (isPaid) (if (dark) "#064E3B" else "#ECFDF5") else (if (fee > 0) (if (dark) "#78350F" else "#FEF3C7") else (if (dark) "#1E293B" else "#F1F5F9"))),
+                        8f
+                    )
+                }
+                topRow.addView(badgeTv)
+                uCard.addView(topRow)
+
+                // Subtitle: Resident Info & Kind
+                val resName = u.optString("resident_name", "ساكن الوحدة")
+                val resKind = if (u.optString("resident_kind") == "owner") text("مالك", "Owner") else text("مستأجر", "Tenant")
+                val resPhone = u.optString("resident_phone", "")
+
+                val resTv = TextView(this@MainActivity).apply {
+                    text = "👤 $resName · $resKind" + (if (resPhone.isNotEmpty()) " · 📞 $resPhone" else "")
+                    textSize = 11.5f
+                    typeface = cairoFont
+                    setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+                    setPadding(0, dp(4), 0, dp(4))
+                }
+                uCard.addView(resTv)
+
+                // Financial Line: Monthly Fee & Status
+                val feeRow = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(0, dp(2), 0, dp(6))
+                }
+                feeRow.addView(TextView(this@MainActivity).apply {
+                    text = text("المطلوب لشهر $currentMonth: ", "Due for $currentMonth: ")
+                    textSize = 12f
+                    typeface = cairoFont
+                    setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+                })
+                feeRow.addView(TextView(this@MainActivity).apply {
+                    text = u.optString("monthly_fee", "0.00") + " ج.م"
+                    textSize = 13f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                })
+                uCard.addView(feeRow)
+
+                // Action Row
+                if (isPaid) {
+                    val recRef = u.optString("receipt_reference", "")
+                    val colAt = u.optString("collected_at", "")
+                    val paidInfo = TextView(this@MainActivity).apply {
+                        text = "🧾 " + text("مسدد بسند رقم: $recRef", "Receipt: $recRef") + (if (colAt.isNotEmpty()) " ($colAt)" else "")
+                        textSize = 11f
+                        typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                        setTextColor(Color.parseColor("#10B981"))
+                        setPadding(0, dp(4), 0, 0)
+                    }
+                    uCard.addView(paidInfo)
+                } else {
+                    val collectBtn = Button(this@MainActivity).apply {
+                        text = text("⚡ تحصيل فوري", "⚡ Collect Now")
+                        textSize = 12f
+                        typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                        setTextColor(Color.WHITE)
+                        isAllCaps = false
+                        includeFontPadding = false
+                        minHeight = 0
+                        minimumHeight = 0
+                        setPadding(dp(12), dp(8), dp(12), dp(8))
+                        background = gradientDrawable(Color.parseColor("#059669"), Color.parseColor("#10B981"), 10f)
+                        setOnClickListener {
+                            showQuickCollectDialog(u, currentMonth)
+                        }
+                    }
+                    uCard.addView(collectBtn)
+                }
+
+                unitsContainer.addView(uCard)
+            }
+
+            if (count == 0) {
+                unitsContainer.addView(TextView(this@MainActivity).apply {
+                    text = text("لا توجد وحدات مطابقة للفلتر المحدد", "No units match this filter")
+                    textSize = 13f
+                    typeface = cairoFont
+                    setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+                    gravity = Gravity.CENTER
+                    setPadding(0, dp(24), 0, dp(24))
+                })
+            }
+        }
+
+        fun makeFilterBtn(fKey: String, fLabel: String): Button {
+            return Button(this).apply {
+                text = fLabel
+                textSize = 11.5f
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                isAllCaps = false
+                includeFontPadding = false
+                minHeight = 0
+                minimumHeight = 0
+                setPadding(dp(4), dp(8), dp(4), dp(8))
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginEnd = dp(4)
+                }
+                fun updateStyle() {
+                    if (activeFilter == fKey) {
+                        setTextColor(Color.WHITE)
+                        background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 10f)
+                    } else {
+                        setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+                        background = roundedDrawable(if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"), 10f)
+                    }
+                }
+                updateStyle()
+                setOnClickListener {
+                    activeFilter = fKey
+                    for (k in 0 until filterRow.childCount) {
+                        val b = filterRow.getChildAt(k) as? Button
+                        if (b != null) {
+                            val isActive = (k == 0 && fKey == "all") || (k == 1 && fKey == "unpaid") || (k == 2 && fKey == "paid")
+                            b.setTextColor(if (isActive) Color.WHITE else Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+                            b.background = if (isActive) gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 10f)
+                                           else roundedDrawable(if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"), 10f)
+                        }
+                    }
+                    refreshUnitsList()
+                }
+            }
+        }
+
+        filterRow.addView(makeFilterBtn("all", text("الكل (" + unitsArr.length() + ")", "All (" + unitsArr.length() + ")")))
+        filterRow.addView(makeFilterBtn("unpaid", text("غير مسدد ⏳", "Unpaid ⏳")))
+        filterRow.addView(makeFilterBtn("paid", text("تم السداد ✅", "Paid ✅")))
+
+        screen.addView(filterRow)
+        screen.addView(unitsContainer)
+        refreshUnitsList()
+    }
+
+    private fun showQuickCollectDialog(u: JSONObject, currentMonth: String) {
+        val unitNumber = u.optString("unit_number", u.optString("unit_name", ""))
+        val resName = u.optString("resident_name", "الساكن")
+        val fee = u.optString("monthly_fee", "500.00")
+
+        val dialogView = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(12), dp(20), dp(12))
+        }
+
+        dialogView.addView(TextView(this).apply {
+            text = text("شقة: $unitNumber · الساكن: $resName", "Unit: $unitNumber · Resident: $resName")
+            textSize = 13f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+            setPadding(0, 0, 0, dp(10))
+        })
+
+        dialogView.addView(TextView(this).apply {
+            text = text("المبلغ المراد تحصيله (ج.م)", "Amount to Collect")
+            textSize = 11.5f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+        })
+        val amountInput = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setText(if (fee == "0.00" || fee.isEmpty()) "500" else fee)
+        }
+        dialogView.addView(amountInput)
+
+        dialogView.addView(TextView(this).apply {
+            text = text("طريقة الدفع", "Payment Method")
+            textSize = 11.5f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+            setPadding(0, dp(8), 0, 0)
+        })
+        val methods = listOf(
+            Pair("نقدي / كاش", "cash"),
+            Pair("فودافون كاش / محفظة", "vodafone_cash"),
+            Pair("إنستاباي / تحويل بنكي", "bank_transfer"),
+            Pair("شيك بنكي", "cheque")
+        )
+        val methodSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, methods.map { it.first })
+        }
+        dialogView.addView(methodSpinner)
+
+        dialogView.addView(TextView(this).apply {
+            text = text("رقم المرجع / الإيصال (اختياري)", "Reference / Receipt No (Optional)")
+            textSize = 11.5f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+            setPadding(0, dp(8), 0, 0)
+        })
+        val refInput = EditText(this).apply {
+            hint = text("تلقائي (مثل: REC-2026-001)", "Auto generated if blank")
+        }
+        dialogView.addView(refInput)
+
+        AlertDialog.Builder(this)
+            .setTitle(text("⚡ تسجيل تحصيل فوري", "⚡ Quick Collection"))
+            .setView(dialogView)
+            .setPositiveButton(text("تأكيد واستلام المبلغ ✓", "Confirm Receipt ✓")) { _, _ ->
+                val amt = amountInput.text.toString().trim()
+                if (amt.isEmpty() || (amt.toDoubleOrNull() ?: 0.0) <= 0.0) {
+                    Toast.makeText(this, text("يرجى إدخال مبلغ صحيح", "Please enter a valid amount"), Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                val selectedMethod = methods[methodSpinner.selectedItemPosition].second
+                val ref = refInput.text.toString().trim()
+
+                val payload = JSONObject().apply {
+                    put("unit_id", u.optString("unit_id"))
+                    put("party_id", u.optString("party_id"))
+                    put("amount", amt)
+                    put("method", selectedMethod)
+                    put("reference", ref)
+                    put("month", currentMonth)
+                }
+
+                call("collections/quick-collect", "POST", payload) { raw ->
+                    val resp = JSONObject(raw)
+                    val recNo = resp.optString("receipt_reference", "")
+                    Toast.makeText(this, text("تم التحصيل بنجاح! سند رقم: $recNo", "Collection successful! Receipt: $recNo"), Toast.LENGTH_LONG).show()
+                    monthlyCollections(currentMonth)
+                }
+            }
+            .setNegativeButton(text("إلغاء", "Cancel"), null)
+            .show()
     }
 
     private fun listing(entity: String) {

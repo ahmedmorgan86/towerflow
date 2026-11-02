@@ -9,6 +9,7 @@ import {permission,journal,issue,collect,approve} from '../lib/finance.mjs';
 import {permissions,createPeriod,closePeriod,reverse,detailedInvoice,generate,generateMaintenance,reports,writePermission,isoDate} from '../lib/platform.mjs';
 import {googleReady,googleStart,googleCallback,mobileExchange,updateProfile} from '../lib/identity.mjs';
 import {createTowerWithZeroBalance,generateUnitsBatch,transferWithinTower,submitPaymentProof,reviewPaymentProof,createExpenseDistribution,collectMulti,applyCreditToInvoice,exemptFine,initiateTowerTransfer,respondTowerTransfer,archiveTower,deleteTowerSafely,exportTowerBackup,importTowerBackup,reconcileMoneyAccount,reopenPeriod} from '../lib/tower-operations.mjs';
+import {getMonthlyCollections,quickCollect,generateMonthDues} from '../lib/monthly-collections.mjs';
 import {createSupportTicket,addSupportMessage,requestSupportAccess,approveSupportAccess,revokeSupportAccess} from '../lib/support-system.mjs';
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
 async function body(req){if(req.body&&typeof req.body==='object')return req.body;let data='';for await(const chunk of req){data+=chunk;if(Buffer.byteLength(data)>750000)throw fail('Request too large',413);}try{return data?JSON.parse(data):{};}catch{throw fail('Invalid JSON');}}
@@ -95,6 +96,9 @@ export default async function handler(req,res){
  if(entity==='invoices'&&id&&action&&method==='POST'){const b=await body(req);return send(await context(user,c=>action==='issue'?issue(c,org,user.id,id):action==='collect'?collect(c,org,user.id,id,b.amount,b.reference):Promise.reject(fail('Unknown action',404))));}
  if(entity==='expenses'&&id&&action==='decide'&&method==='POST'){const b=await body(req);return send(await context(user,c=>approve(c,org,user.id,id,b.decision)));}
  if(route==='properties/create-tower'&&method==='POST'){const b=await body(req);return send(await context(user,c=>createTowerWithZeroBalance(c,org,user.id,b)),201);}
+ if(route==='collections/monthly'&&method==='GET'){const m=u.searchParams.get('month');return send(await context(user,c=>getMonthlyCollections(c,org,user.id,m)));}
+ if(route==='collections/quick-collect'&&method==='POST'){const b=await body(req);return send(await context(user,c=>quickCollect(c,org,user.id,b)),200);}
+ if(route==='collections/generate-month'&&method==='POST'){const b=await body(req);return send(await context(user,c=>generateMonthDues(c,org,user.id,b)),200);}
  if(route==='collections/multi'&&method==='POST'){const b=await body(req);return send(await context(user,c=>collectMulti(c,org,user.id,b)),200);}
  if(route==='expense_distributions'&&method==='POST'){const b=await body(req);return send(await context(user,c=>createExpenseDistribution(c,org,user.id,b)),201);}
  if(entity==='properties'&&id&&action==='units_batch'&&method==='POST'){const b=await body(req);return send(await context(user,c=>generateUnitsBatch(c,org,user.id,id,b)),201);}
