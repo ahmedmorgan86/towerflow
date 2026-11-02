@@ -81,23 +81,51 @@ try {
       const dump = JSON.parse(await readFile(backupPath, 'utf8'));
       const schemas = dump.schemas || {};
 
+      const tableOrder = [
+        'private.users', 'public.organizations', 'private.memberships', 'private.platform_owners',
+        'public.accounts', 'public.properties', 'public.money_accounts', 'public.parties', 'public.units',
+        'public.leases', 'public.ownerships', 'public.assets', 'public.technicians', 'public.tickets',
+        'public.ticket_comments', 'public.maintenance_plans', 'public.recurring_charges',
+        'public.journals', 'public.journal_lines', 'public.invoices', 'public.invoice_lines',
+        'public.receipts', 'public.expenses', 'public.payment_proofs', 'public.fines',
+        'public.credit_balances', 'public.credit_transactions', 'public.vendor_contracts',
+        'public.contract_versions', 'public.budgets', 'public.budget_items', 'public.expense_distributions',
+        'public.distribution_shares', 'public.account_reconciliations', 'public.management_transfers',
+        'public.delegations', 'public.support_tickets', 'public.support_messages', 'public.support_grants',
+        'public.announcements', 'public.notifications', 'public.audit_logs', 'private.sessions',
+        'private.login_limits', 'private.oauth_accounts', 'private.oauth_states', 'private.push_devices',
+        'private.push_outbox', 'private.document_sequences'
+      ];
+
+      // Flatten and sort by dependency order
+      const allEntries = [];
       for (const [schemaName, tables] of Object.entries(schemas)) {
         for (const [tableName, rows] of Object.entries(tables)) {
           if (Array.isArray(rows) && rows.length > 0) {
-            console.log(`- Importing ${rows.length} records into ${schemaName}.${tableName}...`);
-            for (const row of rows) {
-              const cols = Object.keys(row);
-              const vals = Object.values(row);
-              const placeholders = cols.map((_, i) => '$' + (i + 1)).join(',');
-              try {
-                await client.query(
-                  `insert into ${schemaName}.${tableName} (${cols.map(c => '"' + c + '"').join(',')}) values (${placeholders}) on conflict do nothing`,
-                  vals
-                );
-              } catch (e) {
-                console.warn(`  [Warning on ${schemaName}.${tableName}]:`, e.message);
-              }
-            }
+            allEntries.push({ fullName: `${schemaName}.${tableName}`, schemaName, tableName, rows });
+          }
+        }
+      }
+
+      allEntries.sort((a, b) => {
+        const idxA = tableOrder.indexOf(a.fullName);
+        const idxB = tableOrder.indexOf(b.fullName);
+        return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+      });
+
+      for (const { fullName, schemaName, tableName, rows } of allEntries) {
+        console.log(`- Importing ${rows.length} records into ${fullName}...`);
+        for (const row of rows) {
+          const cols = Object.keys(row);
+          const vals = Object.values(row);
+          const placeholders = cols.map((_, i) => '$' + (i + 1)).join(',');
+          try {
+            await client.query(
+              `insert into ${schemaName}.${tableName} (${cols.map(c => '"' + c + '"').join(',')}) values (${placeholders}) on conflict do nothing`,
+              vals
+            );
+          } catch (e) {
+            console.warn(`  [Warning on ${fullName}]:`, e.message);
           }
         }
       }

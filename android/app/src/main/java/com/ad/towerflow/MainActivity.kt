@@ -18,8 +18,10 @@ import com.google.firebase.messaging.FirebaseMessaging
 import android.app.Activity
 import android.app.AlertDialog
 import android.os.Bundle
+import android.text.Editable
 import android.text.InputType
 import android.text.TextUtils
+import android.text.TextWatcher
 import android.view.Gravity
 import android.view.View
 import android.widget.*
@@ -199,6 +201,17 @@ class MainActivity : Activity() {
         dark = getPreferences(0).getBoolean("dark", false)
         token = getPreferences(0).getString("session_token", "") ?: ""
         if (token.isNotEmpty()) {
+            scaffold(text("جاري التحميل...", "Loading..."))
+            card {
+                addView(TextView(this@MainActivity).apply {
+                    text = text("جاري مزامنة مساحة العمل وتحديث البيانات...", "Syncing workspace data...")
+                    textSize = 13.5f
+                    typeface = cairoFont
+                    gravity = Gravity.CENTER
+                    setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+                    setPadding(0, dp(32), 0, dp(32))
+                })
+            }
             loadMe()
         } else {
             login()
@@ -1381,60 +1394,147 @@ class MainActivity : Activity() {
             primaryButton(text("💬 تذكرة دعم فني جديدة", "💬 New Support Ticket")) { supportTicketForm() }
         }
 
-        call(entity) { raw ->
-            val records = JSONArray(raw)
-            if (records.length() == 0) {
-                card {
+        val relationMap = mapOf(
+            "units" to listOf("properties"),
+            "leases" to listOf("units", "parties", "properties"),
+            "ownerships" to listOf("units", "parties", "properties"),
+            "invoices" to listOf("units", "parties", "properties"),
+            "payment_proofs" to listOf("units", "parties", "properties"),
+            "fines" to listOf("units", "parties", "properties"),
+            "tickets" to listOf("units", "technicians"),
+            "assets" to listOf("properties"),
+            "money_accounts" to listOf("properties"),
+            "vendor_contracts" to listOf("properties", "parties"),
+            "budgets" to listOf("properties"),
+            "credit_balances" to listOf("parties", "properties", "units")
+        )
+        val neededRels = relationMap[entity] ?: emptyList()
+
+        // Search Bar & Counter Header
+        val searchRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dp(8)
+                bottomMargin = dp(4)
+            }
+        }
+        val searchInput = EditText(this).apply {
+            hint = text("🔍 ابحث في السجلات...", "🔍 Search records...")
+            textSize = 13f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+            setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+            background = roundedDrawable(if (dark) Color.parseColor("#11131A") else Color.WHITE, 12f, Color.parseColor(if (dark) "#1E2330" else "#E2E8F0"))
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+            layoutParams = LinearLayout.LayoutParams(0, dp(42), 1f).apply { marginEnd = dp(6) }
+        }
+        val countBadge = TextView(this).apply {
+            text = text("0 سجل", "0 items")
+            textSize = 11.5f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            setTextColor(Color.parseColor("#4F46E5"))
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+            background = roundedDrawable(Color.parseColor(if (dark) "#1E1B4B" else "#EEF2FF"), 10f)
+        }
+        searchRow.addView(searchInput)
+        searchRow.addView(countBadge)
+        screen.addView(searchRow)
+
+        val recordsContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+        screen.addView(recordsContainer)
+
+        fun renderCards(records: List<JSONObject>, relCaches: Map<String, Map<String, String>>) {
+            recordsContainer.removeAllViews()
+            countBadge.text = "${records.size} " + text("سجل", "items")
+
+            if (records.isEmpty()) {
+                val emptyCard = card {
                     addView(TextView(this@MainActivity).apply {
-                        text = text("لا توجد سجلات بعد في هذا القسم", "No records found in this section")
+                        text = text("لا توجد سجلات مطابقة في هذا القسم", "No matching records found")
                         textSize = 13f
+                        typeface = cairoFont
                         setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                         gravity = Gravity.CENTER
                         setPadding(0, dp(24), 0, dp(24))
                     })
                 }
+                recordsContainer.addView(emptyCard)
+                return
             }
 
-            for (i in 0 until records.length()) {
-                val row = records.getJSONObject(i)
-                val heading = listOf("name", "title", "number", "description", "message", "entity", "reference", "reason").map { row.optString(it) }.firstOrNull { it.isNotEmpty() } ?: text("سجل رقم #${i + 1}", "Record #${i + 1}")
+            for (i in records.indices) {
+                val row = records[i]
+                val propName = relCaches["properties"]?.get(row.optString("property_id")) ?: ""
+                val unitName = relCaches["units"]?.get(row.optString("unit_id")) ?: ""
+                val partyName = relCaches["parties"]?.get(row.optString("party_id")) ?: ""
+                val vendorName = relCaches["parties"]?.get(row.optString("vendor_id")) ?: ""
+                val techName = relCaches["technicians"]?.get(row.optString("technician_id")) ?: ""
+
+                val heading = when (entity) {
+                    "leases" -> when {
+                        unitName.isNotEmpty() && partyName.isNotEmpty() -> text("عقد: $unitName · $partyName", "Lease: $unitName · $partyName")
+                        unitName.isNotEmpty() -> text("عقد: $unitName", "Lease: $unitName")
+                        else -> text("عقد إيجار #${i + 1}", "Lease #${i + 1}")
+                    }
+                    "ownerships" -> when {
+                        unitName.isNotEmpty() && partyName.isNotEmpty() -> text("ملكية: $unitName · $partyName", "Ownership: $unitName · $partyName")
+                        unitName.isNotEmpty() -> text("ملكية: $unitName", "Ownership: $unitName")
+                        else -> text("سجل ملكية #${i + 1}", "Ownership #${i + 1}")
+                    }
+                    "units" -> text("شقة / وحدة ", "Unit ") + row.optString("name", row.optString("id").take(6))
+                    "invoices" -> text("فاتورة #", "Invoice #") + row.optString("number", "${i + 1}")
+                    "payment_proofs" -> text("إثبات سداد: ", "Payment Proof: ") + (if (unitName.isNotEmpty()) unitName else row.optString("reference", "#${i + 1}"))
+                    "fines" -> text("غرامة: ", "Fine: ") + row.optString("title", "#${i + 1}")
+                    "vendor_contracts" -> text("عقد: ", "Contract: ") + row.optString("title")
+                    "budgets" -> text("موازنة: ", "Budget: ") + row.optString("name")
+                    "support_tickets" -> {
+                        val num = row.optString("ticket_number")
+                        (if (num.isNotEmpty()) "$num · " else "") + row.optString("title")
+                    }
+                    else -> listOf("name", "title", "number", "description", "message", "entity", "reference", "reason")
+                        .map { row.optString(it) }
+                        .firstOrNull { it.isNotEmpty() } ?: text("سجل #${i + 1}", "Record #${i + 1}")
+                }
                 val status = row.optString("status", "")
 
-                card {
-                    // Card Top: Title & Status Badge
+                val itemCard = card {
+                    // Top row: Title and Status badge
                     val topRow = LinearLayout(this@MainActivity).apply {
                         orientation = LinearLayout.HORIZONTAL
                         gravity = Gravity.CENTER_VERTICAL
                     }
-                    val titleView = TextView(this@MainActivity).apply {
+                    topRow.addView(TextView(this@MainActivity).apply {
                         text = heading
                         textSize = 15f
                         typeface = Typeface.create(cairoFont, Typeface.BOLD)
                         setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
                         layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
-                    }
-                    topRow.addView(titleView)
+                    })
 
                     if (status.isNotEmpty()) {
                         val badge = TextView(this@MainActivity).apply {
                             text = when (status) {
-                                "active" -> text("نشط", "Active")
-                                "issued" -> text("صادرة", "Issued")
-                                "paid" -> text("مدفوعة", "Paid")
+                                "active" -> text("نشط وسارٍ", "Active")
+                                "issued" -> text("صادرة للمطالبة", "Issued")
+                                "paid" -> text("مدفوعة بالكامل", "Paid")
                                 "draft" -> text("مسودة", "Draft")
                                 "pending" -> text("قيد المراجعة", "Pending")
-                                "approved" -> text("معتمد", "Approved")
+                                "approved" -> text("معتمد ومسدد", "Approved")
                                 "rejected" -> text("مرفوض", "Rejected")
-                                "exempted" -> text("معفى", "Exempted")
+                                "exempted" -> text("معفى مسبب", "Exempted")
                                 "open" -> text("مفتوح", "Open")
                                 "closed" -> text("مغلق", "Closed")
-                                "vacant" -> text("شاغرة", "Vacant")
-                                "occupied" -> text("مؤجرة", "Rented")
-                                "owned" -> text("ملك (تمليك)", "Owned")
+                                "vacant" -> text("شاغرة وغير مشغولة", "Vacant")
+                                "occupied" -> text("مؤجرة / مشغولة", "Rented")
+                                "owned" -> text("وحدة ملك (تمليك)", "Owned")
                                 "maintenance" -> text("صيانة", "Maintenance")
                                 else -> optionTitle(status)
                             }
-                            textSize = 11f
+                            textSize = 10.5f
                             typeface = Typeface.create(cairoFont, Typeface.BOLD)
                             setPadding(dp(8), dp(3), dp(8), dp(3))
                             val (bgColor, textColor) = when (status) {
@@ -1453,16 +1553,43 @@ class MainActivity : Activity() {
 
                     // Secondary Details Grid
                     val detailsList = mutableListOf<Pair<String, String>>()
+                    if (propName.isNotEmpty()) detailsList.add(Pair(text("العقار / البرج:", "Property:"), propName))
+                    if (unitName.isNotEmpty()) detailsList.add(Pair(text("الوحدة السكنية:", "Unit:"), unitName))
+                    if (partyName.isNotEmpty()) detailsList.add(Pair(text("الطرف المعني:", "Resident / Party:"), partyName))
+                    if (techName.isNotEmpty()) detailsList.add(Pair(text("الفني المعتمد:", "Technician:"), techName))
+                    if (vendorName.isNotEmpty()) detailsList.add(Pair(text("المورد / المقاول:", "Vendor:"), vendorName))
+
+                    if (row.has("floor") && entity == "units") detailsList.add(Pair(text("الطابق:", "Floor:"), text("الطابق ", "Floor ") + row.optString("floor")))
+                    if (row.has("area") && entity == "units") detailsList.add(Pair(text("المساحة:", "Area:"), row.optString("area") + text(" م²", " m²")))
+                    if (row.has("phone") && row.optString("phone").isNotEmpty()) detailsList.add(Pair(text("الهاتف:", "Phone:"), row.optString("phone")))
+                    if (row.has("email") && row.optString("email").isNotEmpty()) detailsList.add(Pair(text("البريد:", "Email:"), row.optString("email")))
+                    if (row.has("rent")) detailsList.add(Pair(text("قيمة الإيجار:", "Rent:"), row.optString("rent") + text(" ج.م", " EGP")))
+                    if (row.has("share")) detailsList.add(Pair(text("نسبة الملكية:", "Share:"), row.optString("share") + "%"))
                     if (row.has("amount")) detailsList.add(Pair(text("المبلغ:", "Amount:"), row.optString("amount") + text(" ج.م", " EGP")))
-                    if (row.has("balance")) detailsList.add(Pair(text("الرصيد:", "Balance:"), row.optString("balance") + text(" ج.م", " EGP")))
-                    if (row.has("due_date")) detailsList.add(Pair(text("الاستحقاق:", "Due:"), row.optString("due_date")))
-                    if (row.has("reference")) detailsList.add(Pair(text("المرجع:", "Ref:"), row.optString("reference")))
-                    if (row.has("payment_method")) detailsList.add(Pair(text("طريقة السداد:", "Payment Method:"), optionTitle(row.optString("payment_method"))))
-                    if (row.has("priority")) detailsList.add(Pair(text("الأولوية:", "Priority:"), optionTitle(row.optString("priority"))))
-                    if (row.has("category")) detailsList.add(Pair(text("التصنيف:", "Category:"), optionTitle(row.optString("category"))))
-                    if (row.has("ownership_type")) detailsList.add(Pair(text("نوع الملكية:", "Ownership:"), optionTitle(row.optString("ownership_type"))))
+                    if (row.has("balance")) detailsList.add(Pair(text("الرصيد المالي:", "Balance:"), row.optString("balance") + text(" ج.م", " EGP")))
+                    if (row.has("start_date") && row.optString("start_date").isNotEmpty()) detailsList.add(Pair(text("تاريخ البدء:", "Start Date:"), row.optString("start_date")))
+                    if (row.has("end_date") && row.optString("end_date").isNotEmpty()) detailsList.add(Pair(text("تاريخ الانتهاء:", "End Date:"), row.optString("end_date")))
+                    if (row.has("due_date") && row.optString("due_date").isNotEmpty()) detailsList.add(Pair(text("تاريخ الاستحقاق:", "Due Date:"), row.optString("due_date")))
+                    if (row.has("received_on") && row.optString("received_on").isNotEmpty()) detailsList.add(Pair(text("تاريخ الاستلام:", "Received On:"), row.optString("received_on")))
+                    if (row.has("reference") && row.optString("reference").isNotEmpty()) detailsList.add(Pair(text("المرجع البنكي:", "Ref:"), row.optString("reference")))
+                    if (row.has("payment_method") && row.optString("payment_method").isNotEmpty()) detailsList.add(Pair(text("طريقة السداد:", "Payment Method:"), optionTitle(row.optString("payment_method"))))
+                    if (row.has("bank_name") && row.optString("bank_name").isNotEmpty()) detailsList.add(Pair(text("اسم البنك:", "Bank:"), row.optString("bank_name")))
+                    if (row.has("account_number") && row.optString("account_number").isNotEmpty()) detailsList.add(Pair(text("رقم الحساب:", "Account No:"), row.optString("account_number")))
+                    if (row.has("serial") && row.optString("serial").isNotEmpty()) detailsList.add(Pair(text("الرقم التسلسلي:", "Serial:"), row.optString("serial")))
+                    if (row.has("next_service") && row.optString("next_service").isNotEmpty()) detailsList.add(Pair(text("الصيانة القادمة:", "Next Service:"), row.optString("next_service")))
+                    if (row.has("specialty") && row.optString("specialty").isNotEmpty()) detailsList.add(Pair(text("التخصص المهني:", "Specialty:"), row.optString("specialty")))
+                    if (row.has("service_type") && row.optString("service_type").isNotEmpty()) detailsList.add(Pair(text("نوع الخدمة:", "Service:"), row.optString("service_type")))
+                    if (row.has("frequency") && row.optString("frequency").isNotEmpty()) detailsList.add(Pair(text("الدورية:", "Frequency:"), optionTitle(row.optString("frequency"))))
+                    if (row.has("period") && row.optString("period").isNotEmpty()) detailsList.add(Pair(text("الفترة:", "Period:"), optionTitle(row.optString("period"))))
+                    if (row.has("destination") && row.optString("destination").isNotEmpty()) detailsList.add(Pair(text("الصندوق المحول إليه:", "Fund:"), optionTitle(row.optString("destination"))))
+                    if (row.has("priority") && row.optString("priority").isNotEmpty()) detailsList.add(Pair(text("الأولوية:", "Priority:"), optionTitle(row.optString("priority"))))
+                    if (row.has("category") && row.optString("category").isNotEmpty()) detailsList.add(Pair(text("التصنيف:", "Category:"), optionTitle(row.optString("category"))))
+                    if (row.has("ownership_type") && row.optString("ownership_type").isNotEmpty()) detailsList.add(Pair(text("نوع الملكية:", "Ownership:"), optionTitle(row.optString("ownership_type"))))
                     if (row.has("kind") && entity in listOf("parties", "accounts", "money_accounts")) detailsList.add(Pair(text("النوع:", "Type:"), optionTitle(row.optString("kind"))))
-                    if (row.has("created_at")) detailsList.add(Pair(text("التاريخ:", "Date:"), row.optString("created_at").take(10)))
+                    if (row.has("body") && row.optString("body").isNotEmpty()) detailsList.add(Pair(text("البيان:", "Content:"), row.optString("body")))
+                    if (row.has("description") && entity !in listOf("invoices", "expenses") && row.optString("description").isNotEmpty()) detailsList.add(Pair(text("الوصف:", "Description:"), row.optString("description")))
+                    if (row.has("action") && row.optString("action").isNotEmpty()) detailsList.add(Pair(text("الإجراء:", "Action:"), row.optString("action")))
+                    if (row.has("created_at") && row.optString("created_at").isNotEmpty()) detailsList.add(Pair(text("التاريخ:", "Date:"), row.optString("created_at").take(10)))
 
                     if (detailsList.isNotEmpty()) {
                         val detailsBox = LinearLayout(this@MainActivity).apply {
@@ -1482,7 +1609,7 @@ class MainActivity : Activity() {
                                 textSize = 11.5f
                                 typeface = cairoFont
                                 setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
-                                layoutParams = LinearLayout.LayoutParams(dp(75), -2)
+                                layoutParams = LinearLayout.LayoutParams(dp(95), -2)
                             })
                             r.addView(TextView(this@MainActivity).apply {
                                 text = value
@@ -1496,7 +1623,7 @@ class MainActivity : Activity() {
                         addView(detailsBox)
                     }
 
-                    // Action Buttons Row
+                    // Action buttons
                     val actionsRow = LinearLayout(this@MainActivity).apply {
                         orientation = LinearLayout.HORIZONTAL
                         layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -1535,7 +1662,7 @@ class MainActivity : Activity() {
                             setPadding(dp(4), dp(8), dp(4), dp(8))
                             background = roundedDrawable(Color.parseColor("#059669"), 8f)
                             setOnClickListener {
-                                call("payment_proofs/" + row.getString("id") + "/review", "POST", JSONObject().put("decision", "approved")) { listing(entity) }
+                                call("payment_proofs/" + row.optString("id") + "/review", "POST", JSONObject().put("decision", "approved")) { listing(entity) }
                             }
                         }
                         actionsRow.addView(approveBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(3); marginEnd = dp(3) })
@@ -1560,7 +1687,7 @@ class MainActivity : Activity() {
                                     .setView(reasonInput)
                                     .setPositiveButton(text("تأكيد الرفض", "Confirm Reject")) { _, _ ->
                                         val r = reasonInput.text.toString().trim()
-                                        call("payment_proofs/" + row.getString("id") + "/review", "POST", JSONObject().put("decision", "rejected").put("rejection_reason", r)) { listing(entity) }
+                                        call("payment_proofs/" + row.optString("id") + "/review", "POST", JSONObject().put("decision", "rejected").put("rejection_reason", r)) { listing(entity) }
                                     }
                                     .setNegativeButton(text("إلغاء", "Cancel"), null)
                                     .show()
@@ -1582,14 +1709,14 @@ class MainActivity : Activity() {
                             minimumHeight = 0
                             setPadding(dp(4), dp(8), dp(4), dp(8))
                             background = roundedDrawable(Color.parseColor("#FEF3C7"), 8f)
-                            setOnClickListener { fineExemptForm(row.getString("id")) }
+                            setOnClickListener { fineExemptForm(row.optString("id")) }
                         }
                         actionsRow.addView(exemptBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(3); marginEnd = dp(3) })
                     }
 
                     // Invoices Issue & Collect
                     if (entity == "invoices" && role in listOf("admin", "manager", "accountant")) {
-                        val id = row.getString("id")
+                        val id = row.optString("id")
                         if (row.optString("status") == "draft") {
                             val issueBtn = Button(this@MainActivity).apply {
                                 text = text("إصدار وترحيل", "Issue & Post")
@@ -1628,6 +1755,62 @@ class MainActivity : Activity() {
                         addView(actionsRow)
                     }
                 }
+                recordsContainer.addView(itemCard)
+            }
+        }
+
+        fun fetchAndRender(relCaches: Map<String, Map<String, String>>) {
+            call(entity) { raw ->
+                val jsonArr = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
+                val allList = (0 until jsonArr.length()).map { jsonArr.getJSONObject(it) }
+
+                fun applyFilter() {
+                    val q = searchInput.text.toString().trim().lowercase()
+                    val filtered = if (q.isEmpty()) allList else allList.filter { r ->
+                        r.toString().lowercase().contains(q)
+                    }
+                    renderCards(filtered, relCaches)
+                }
+
+                searchInput.addTextChangedListener(object : TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { applyFilter() }
+                    override fun afterTextChanged(s: Editable?) {}
+                })
+
+                applyFilter()
+            }
+        }
+
+        if (neededRels.isEmpty()) {
+            fetchAndRender(emptyMap())
+        } else {
+            val relCaches = mutableMapOf<String, Map<String, String>>()
+            var remaining = neededRels.size
+            neededRels.forEach { rel ->
+                call(rel, onError = {
+                    remaining--
+                    relCaches[rel] = emptyMap()
+                    if (remaining == 0) fetchAndRender(relCaches)
+                }) { raw ->
+                    val rows = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
+                    val map = mutableMapOf<String, String>()
+                    for (i in 0 until rows.length()) {
+                        val row = rows.getJSONObject(i)
+                        val id = row.optString("id")
+                        val label = when {
+                            row.has("name") && row.optString("name").isNotEmpty() -> row.optString("name")
+                            row.has("unit_number") && row.optString("unit_number").isNotEmpty() -> row.optString("unit_number")
+                            row.has("title") && row.optString("title").isNotEmpty() -> row.optString("title")
+                            row.has("ticket_number") && row.optString("ticket_number").isNotEmpty() -> row.optString("ticket_number")
+                            else -> id
+                        }
+                        if (id.isNotEmpty()) map[id] = label
+                    }
+                    relCaches[rel] = map
+                    remaining--
+                    if (remaining == 0) fetchAndRender(relCaches)
+                }
             }
         }
     }
@@ -1639,6 +1822,7 @@ class MainActivity : Activity() {
             addView(TextView(this@MainActivity).apply {
                 text = text("إرفاق بيانات التحويل البنكي أو المحفظة", "Attach Bank or Wallet Transfer Details")
                 textSize = 13f
+                typeface = cairoFont
                 setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                 setPadding(0, 0, 0, dp(12))
             })
@@ -1648,13 +1832,16 @@ class MainActivity : Activity() {
         val reference = input(text("رقم الحوالة / المرجع البنكي", "Transaction Reference"))
 
         call("properties") { propRaw ->
-            val props = JSONArray(propRaw)
-            val defaultPropId = if (props.length() > 0) props.getJSONObject(0).getString("id") else ""
+            val props = try { JSONArray(propRaw) } catch (_: Exception) { JSONArray() }
+            val defaultPropId = if (props.length() > 0) props.getJSONObject(0).optString("id") else ""
 
             call("units") { raw ->
-                val units = JSONArray(raw)
+                val units = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
                 val unitSpinner = Spinner(this)
-                val unitNames = (0 until units.length()).map { units.getJSONObject(it).getString("name") }
+                val unitNames = (0 until units.length()).map {
+                    val u = units.getJSONObject(it)
+                    u.optString("name", u.optString("unit_number", u.optString("id")))
+                }
                 unitSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, if (unitNames.isEmpty()) listOf(text("لا توجد وحدات متاحة", "No units available")) else unitNames)
                 label(text("الوحدة السكنية", "Unit"), 13, true)
                 screen.addView(unitSpinner)
@@ -1663,16 +1850,19 @@ class MainActivity : Activity() {
                     val parties = try { JSONArray(partyRaw) } catch (_: Exception) { JSONArray() }
                     val partySpinner = if (parties.length() > 0) Spinner(this) else null
                     if (partySpinner != null) {
-                        partySpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until parties.length()).map { parties.getJSONObject(it).getString("name") })
+                        partySpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until parties.length()).map {
+                            val p = parties.getJSONObject(it)
+                            p.optString("name", p.optString("id"))
+                        })
                         label(text("الساكن / المسدد", "Resident / Payer"), 13, true)
                         screen.addView(partySpinner)
                     }
 
                     primaryButton(text("إرسال الإثبات", "Submit Proof")) {
-                        val uId = if (units.length() > 0 && unitSpinner.selectedItemPosition in 0 until units.length()) units.getJSONObject(unitSpinner.selectedItemPosition).getString("id") else ""
-                        val pId = if (partySpinner != null && parties.length() > 0 && partySpinner.selectedItemPosition in 0 until parties.length()) parties.getJSONObject(partySpinner.selectedItemPosition).getString("id") else ""
+                        val uId = if (units.length() > 0 && unitSpinner.selectedItemPosition in 0 until units.length()) units.getJSONObject(unitSpinner.selectedItemPosition).optString("id") else ""
+                        val pId = if (partySpinner != null && parties.length() > 0 && partySpinner.selectedItemPosition in 0 until parties.length()) parties.getJSONObject(partySpinner.selectedItemPosition).optString("id") else ""
                         val pUnit = if (units.length() > 0 && unitSpinner.selectedItemPosition in 0 until units.length()) units.getJSONObject(unitSpinner.selectedItemPosition) else null
-                        val propId = if (pUnit != null && pUnit.has("property_id")) pUnit.getString("property_id") else defaultPropId
+                        val propId = if (pUnit != null && pUnit.has("property_id")) pUnit.optString("property_id") else defaultPropId
 
                         val payload = JSONObject()
                             .put("property_id", propId)
@@ -1697,11 +1887,16 @@ class MainActivity : Activity() {
         val spinner = Spinner(this)
         screen.addView(spinner)
         call("units") { raw ->
-            val units = JSONArray(raw)
-            spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until units.length()).map { units.getJSONObject(it).getString("name") })
+            val units = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
+            spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until units.length()).map {
+                val u = units.getJSONObject(it)
+                u.optString("name", u.optString("unit_number", u.optString("id")))
+            })
             primaryButton(text("إرسال البلاغ", "Submit Ticket")) {
                 val payload = JSONObject().put("title", heading.text.toString().trim()).put("description", description.text.toString().trim())
-                if (units.length() > 0) payload.put("unit_id", units.getJSONObject(spinner.selectedItemPosition).getString("id"))
+                if (units.length() > 0 && spinner.selectedItemPosition in 0 until units.length()) {
+                    payload.put("unit_id", units.getJSONObject(spinner.selectedItemPosition).optString("id"))
+                }
                 call("tickets", "POST", payload) { listing("tickets") }
             }
         }
@@ -1813,98 +2008,127 @@ class MainActivity : Activity() {
     private fun fieldTitle(k: String) = fieldNames[k]?.let { if (arabic) it.first else it.second } ?: k.replace('_', ' ')
 
     private fun recordForm(entity: String, record: JSONObject? = null) {
-        scaffold(title(entity), true) { listing(entity) }
-        val values = linkedMapOf<String, () -> String>()
         val keys = forms[entity] ?: return
+        scaffold(title(entity), true) { listing(entity) }
 
-        fun addField(index: Int) {
-            if (index >= keys.size) {
-                primaryButton(text("حفظ السجل", "Save Record")) {
-                    val payload = JSONObject()
-                    values.forEach { (key, getter) ->
-                        val value = getter()
-                        if (value.isNotBlank()) payload.put(key, value)
-                    }
-                    call(entity + (record?.let { "/" + it.getString("id") } ?: ""), if (record == null) "POST" else "PATCH", payload) {
-                        listing(entity)
-                    }
+        val relationMap = mapOf(
+            "property_id" to "properties",
+            "unit_id" to "units",
+            "party_id" to "parties",
+            "vendor_id" to "parties",
+            "asset_id" to "assets",
+            "technician_id" to "technicians"
+        )
+        val neededRels = keys.mapNotNull { relationMap[it] }.distinct()
+
+        fun renderForm(relData: Map<String, List<Pair<String, String>>>) {
+            val values = linkedMapOf<String, () -> String>()
+
+            keys.forEach { key ->
+                val initial = if (record?.isNull(key) == false) record.optString(key) else ""
+                val relEntity = relationMap[key]
+
+                val options = when {
+                    key == "kind" && entity == "parties" -> listOf("tenant", "owner", "vendor")
+                    key == "kind" && entity == "accounts" -> listOf("asset", "liability", "equity", "income", "expense")
+                    key == "kind" && entity == "money_accounts" -> listOf("cash", "bank", "wallet", "maintenance_fund")
+                    key == "destination" && entity == "fines" -> listOf("maintenance_fund", "fines_fund")
+                    key == "frequency" && entity == "vendor_contracts" -> listOf("monthly", "quarterly", "yearly", "one_time")
+                    key == "period" && entity == "budgets" -> listOf("monthly", "quarterly", "annual")
+                    key == "status" && entity == "units" -> listOf("vacant", "occupied", "owned", "maintenance")
+                    key == "ownership_type" && entity == "units" -> listOf("rental", "owned")
+                    key == "status" && entity == "leases" -> listOf("active", "ended")
+                    key == "priority" -> listOf("normal", "low", "urgent")
+                    key == "category" && entity == "support_tickets" -> listOf("technical", "billing", "accounting", "general")
+                    key == "status" -> listOf("open", "assigned", "in_progress", "resolved", "closed")
+                    else -> emptyList()
                 }
-                return
-            }
-            val key = keys[index]
-            val initial = if (record?.isNull(key) == false) record.optString(key) else ""
-            val relation = mapOf(
-                "property_id" to "properties",
-                "unit_id" to "units",
-                "party_id" to "parties",
-                "vendor_id" to "parties",
-                "asset_id" to "assets",
-                "technician_id" to "technicians"
-            )[key]
 
-            val options = when {
-                key == "kind" && entity == "parties" -> listOf("tenant", "owner", "vendor")
-                key == "kind" && entity == "accounts" -> listOf("asset", "liability", "equity", "income", "expense")
-                key == "kind" && entity == "money_accounts" -> listOf("cash", "bank", "wallet", "maintenance_fund")
-                key == "destination" && entity == "fines" -> listOf("maintenance_fund", "fines_fund")
-                key == "frequency" && entity == "vendor_contracts" -> listOf("monthly", "quarterly", "yearly", "one_time")
-                key == "period" && entity == "budgets" -> listOf("monthly", "quarterly", "annual")
-                key == "status" && entity == "units" -> listOf("vacant", "occupied", "owned", "maintenance")
-                key == "ownership_type" && entity == "units" -> listOf("rental", "owned")
-                key == "status" && entity == "leases" -> listOf("active", "ended")
-                key == "priority" -> listOf("normal", "low", "urgent")
-                key == "category" && entity == "support_tickets" -> listOf("technical", "billing", "accounting", "general")
-                key == "status" -> listOf("open", "assigned", "in_progress", "resolved", "closed")
-                else -> emptyList()
-            }
-
-            if (relation != null || options.isNotEmpty()) {
-                label(fieldTitle(key), 13, true)
-                fun select(items: List<Pair<String, String>>) {
-                    val spinner = Spinner(this)
-                    spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items.map { it.second })
-                    val defaultIdx = if (initial.isNotEmpty()) {
-                        items.indexOfFirst { it.first == initial }.coerceAtLeast(0)
-                    } else if (key == "property_id" && items.size > 1) {
-                        1
+                if (relEntity != null) {
+                    val items = relData[relEntity] ?: emptyList()
+                    label(fieldTitle(key), 13, true)
+                    if (items.isEmpty()) {
+                        val notice = TextView(this).apply {
+                            text = text("⚠️ لا توجد عناصر مسجلة بعد في هذا القسم. يرجى إضافة سجل أولاً.", "⚠️ No records available yet. Please add a record first.")
+                            textSize = 12f
+                            typeface = cairoFont
+                            setTextColor(Color.parseColor("#E11D48"))
+                            setPadding(dp(4), dp(4), dp(4), dp(8))
+                        }
+                        screen.addView(notice)
+                        values[key] = { "" }
                     } else {
-                        0
+                        val spinner = Spinner(this)
+                        spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items.map { it.second })
+                        val defaultIdx = if (initial.isNotEmpty()) {
+                            items.indexOfFirst { it.first == initial }.coerceAtLeast(0)
+                        } else {
+                            0
+                        }
+                        spinner.setSelection(defaultIdx)
+                        screen.addView(spinner)
+                        values[key] = { items.getOrNull(spinner.selectedItemPosition)?.first ?: "" }
                     }
+                } else if (options.isNotEmpty()) {
+                    label(fieldTitle(key), 13, true)
+                    val spinner = Spinner(this)
+                    spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, options.map { optionTitle(it) })
+                    val defaultIdx = if (initial.isNotEmpty()) options.indexOf(initial).coerceAtLeast(0) else 0
                     spinner.setSelection(defaultIdx)
                     screen.addView(spinner)
-                    values[key] = { items.getOrNull(spinner.selectedItemPosition)?.first ?: "" }
-                    addField(index + 1)
-                }
-                if (relation != null) {
-                    call(relation) { raw ->
-                        val rows = JSONArray(raw)
-                        select(listOf("" to "—") + (0 until rows.length()).map {
-                            val row = rows.getJSONObject(it)
-                            val label = when {
-                                row.has("name") && row.optString("name").isNotEmpty() -> row.optString("name")
-                                row.has("unit_number") && row.optString("unit_number").isNotEmpty() -> row.optString("unit_number")
-                                row.has("title") && row.optString("title").isNotEmpty() -> row.optString("title")
-                                row.has("ticket_number") && row.optString("ticket_number").isNotEmpty() -> row.optString("ticket_number")
-                                else -> row.optString("id")
-                            }
-                            row.getString("id") to label
-                        })
-                    }
+                    values[key] = { options.getOrNull(spinner.selectedItemPosition) ?: "" }
                 } else {
-                    select(options.map { it to optionTitle(it) })
-                }
-            } else {
-                val control = input(fieldTitle(key)).apply {
-                    setText(initial)
-                    if (key in listOf("amount", "rent", "area", "share", "floor")) {
-                        inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED
+                    val control = input(fieldTitle(key)).apply {
+                        setText(initial)
+                        if (key in listOf("amount", "rent", "area", "share", "floor")) {
+                            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED
+                        }
                     }
+                    values[key] = { control.text.toString().trim() }
                 }
-                values[key] = { control.text.toString().trim() }
-                addField(index + 1)
+            }
+
+            primaryButton(text(if (record == null) "حفظ السجل الجديد" else "حفظ التعديلات", if (record == null) "Save New Record" else "Save Changes")) {
+                val payload = JSONObject()
+                values.forEach { (key, getter) ->
+                    val value = getter()
+                    if (value.isNotBlank()) payload.put(key, value)
+                }
+                call(entity + (record?.let { "/" + it.optString("id") } ?: ""), if (record == null) "POST" else "PATCH", payload) {
+                    listing(entity)
+                }
             }
         }
-        addField(0)
+
+        if (neededRels.isEmpty()) {
+            renderForm(emptyMap())
+        } else {
+            val relResults = mutableMapOf<String, List<Pair<String, String>>>()
+            var remaining = neededRels.size
+            neededRels.forEach { rel ->
+                call(rel, onError = {
+                    remaining--
+                    relResults[rel] = emptyList()
+                    if (remaining == 0) renderForm(relResults)
+                }) { raw ->
+                    val rows = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
+                    val items = (0 until rows.length()).map { idx ->
+                        val row = rows.getJSONObject(idx)
+                        val lbl = when {
+                            row.has("name") && row.optString("name").isNotEmpty() -> row.optString("name")
+                            row.has("unit_number") && row.optString("unit_number").isNotEmpty() -> row.optString("unit_number")
+                            row.has("title") && row.optString("title").isNotEmpty() -> row.optString("title")
+                            row.has("ticket_number") && row.optString("ticket_number").isNotEmpty() -> row.optString("ticket_number")
+                            else -> row.optString("id")
+                        }
+                        row.optString("id") to lbl
+                    }
+                    relResults[rel] = items
+                    remaining--
+                    if (remaining == 0) renderForm(relResults)
+                }
+            }
+        }
     }
 
     private fun googleLogin() {
