@@ -45,7 +45,7 @@ const words={
  subtitle:['كل التفاصيل في مكان واحد. من أول عقد إلى آخر قيد.','Every detail in one place. From your first lease to your last entry.'],
  draft:['مسودة','Draft'],issued:['صادرة','Issued'],paid:['مدفوعة','Paid'],pending:['قيد المراجعة','Pending'],
  approved:['معتمدة','Approved'],rejected:['مرفوضة','Rejected'],exempt:['معفاة','Exempt'],
- vacant:['شاغرة (غير متأجرة)','Vacant'],occupied:['مؤجرة','Rented'],owned:['تمليك (ملك)','Owned'],maintenance:['صيانة','Maintenance'],
+ vacant:['شاغرة (غير متأجرة)','Vacant'],occupied:['مؤجرة','Rented'],owned:['تمليك','Owned'],maintenance:['صيانة','Maintenance'],
  active:['نشط','Active'],ended:['منتهٍ','Ended'],open:['مفتوح','Open'],assigned:['مسند','Assigned'],
  in_progress:['جارٍ العمل','In progress'],resolved:['تم الحل','Resolved'],closed:['مغلق','Closed'],
  normal:['عادية','Normal'],urgent:['عاجلة','Urgent'],low:['منخفضة','Low'],high:['مرتفعة','High'],critical:['حرجة','Critical'],
@@ -63,7 +63,7 @@ Object.assign(words,{
  collections:['التحصيل الشهري للشقق','Monthly Unit Collections'],resident_messages:['رسائل سكان الأبراج','Resident messages'],platform_owner:['مالك التطبيق','App owner'],
  recurring_charges:['المستحقات الدورية','Recurring charges'],maintenance_plans:['الصيانة الوقائية','Preventive maintenance'],
  accounting_periods:['الفترات المحاسبية','Accounting periods'],profile:['الملف الشخصي','My profile'],
- debit_account:['الحساب المدين','Debit account'],credit_account:['الحساب الدائن','Credit account'],tower:['برج','Tower'],ownership_type:['نوع الحيازة / الملكية','Ownership type'],rental:['إيجار','Rental'],owned_units:['وحدات ملك (تمليك)','Owned units'],rented_units:['وحدات مؤجرة','Rented units'],payer_responsibility:['المسؤول عن الدفع','Payer responsibility'],
+ debit_account:['الحساب المدين','Debit account'],credit_account:['الحساب الدائن','Credit account'],tower:['برج','Tower'],ownership_type:['نوع الحيازة / الملكية','Ownership type'],rental:['إيجار','Rental'],owned_units:['وحدات تمليك','Owned units'],rented_units:['وحدات مؤجرة','Rented units'],payer_responsibility:['المسؤول عن الدفع','Payer responsibility'],
  bank_transfer:['تحويل بنكي','Bank transfer'],card:['بطاقة دفع إلكتروني','Card'],other:['طريقة أخرى','Other'],
  monthly:['شهري','Monthly'],quarterly:['ربع سنوي','Quarterly'],yearly:['سنوي','Yearly'],annual:['سنوي','Annual'],one_time:['مرة واحدة','One-time'],
  general:['عام','General'],billing:['فواتير ومطالبات','Billing'],accounting:['محاسبة ومالية','Accounting'],technical:['فني وتقني','Technical'],security:['أمن وسلامة','Security'],
@@ -516,7 +516,7 @@ async function handleQuickAction(action){
  }else if(action==='units_batch'){
    const props=await rows('properties');
    const opts=props.map(p=>({value:p.id,label:p.name}));
-   const typeOpts=[{value:'rental',label:localText('وحدات إيجار','Rental units')},{value:'owned',label:localText('وحدات ملك (تمليك)','Owned units')}];
+   const typeOpts=[{value:'rental',label:localText('وحدات إيجار','Rental units')},{value:'owned',label:localText('وحدات تمليك','Owned units')}];
    modal(localText('توليد أدوار وشقق','Batch Generate Units'),field('property_id','',{choices:opts})+field('floors_count','5')+field('units_per_floor','4')+field('ownership_type','rental',{choices:typeOpts})+field('prefix',''),b=>api(`properties/${b.property_id}/units_batch`,{method:'POST',body:JSON.stringify({floors:b.floors_count,units_per_floor:b.units_per_floor,prefix:b.prefix,ownership_type:b.ownership_type})}));
  }
 }
@@ -617,7 +617,7 @@ async function collectionsView(){
                 resDisplay = localText('مالك الوحدة (تمليك)', 'Unit Owner (Owned)');
               }
               const kindBadge = isOwned
-                ? `<span class="badge" style="background:#e0f2fe;color:#0369a1">${localText('وحدة تمليك (ملك)','Owned Unit')}</span>`
+                ? `<span class="badge" style="background:#e0f2fe;color:#0369a1">${localText('وحدة تمليك','Owned Unit')}</span>`
                 : (u.resident_kind === 'tenant' ? `<span class="badge" style="background:#f1f5f9;color:#475569">${localText('مستأجر','Tenant')}</span>` : `<span class="badge" style="background:#fef3c7;color:#b45309">${localText('شاغرة للإيجار','Vacant Rental')}</span>`);
               return `
               <tr>

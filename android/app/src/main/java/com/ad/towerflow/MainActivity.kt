@@ -79,7 +79,7 @@ class MainActivity : Activity() {
         "vendor_contracts" to Pair("عقود الموردين والشركات", "Vendor Contracts"),
         "budgets" to Pair("الميزانيات التقديرية", "Annual Budgets"),
         "ownership_type" to Pair("نوع الحيازة والملكية", "Ownership Type"),
-        "owned" to Pair("وحدة ملك (تمليك)", "Owned"),
+        "owned" to Pair("وحدة تمليك", "Owned"),
         "rental" to Pair("إيجار", "Rental"),
         "recurring_charges" to Pair("الرسوم المتكررة والدورية", "Recurring Charges"),
         "maintenance_plans" to Pair("خطط الصيانة الوقائية", "Maintenance Plans"),
@@ -124,7 +124,7 @@ class MainActivity : Activity() {
 
             "vacant" -> text("شاغرة وغير مشغولة", "Vacant")
             "occupied" -> text("مشغولة / مؤجرة", "Occupied")
-            "owned" -> text("وحدة ملك (تمليك)", "Owned")
+            "owned" -> text("وحدة تمليك", "Owned")
             "rental" -> text("وحدة إيجار", "Rental")
             "maintenance" -> text("تحت أعمال الصيانة", "Under Maintenance")
 
@@ -1227,7 +1227,7 @@ class MainActivity : Activity() {
                     layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
                     weightSum = 2f
                 }
-                kpiRow.addView(makeKpi(text("إجمالي الشقق", "Total Units"), totalUnits.toString(), text("$rentedUnits مؤجرة · $ownedUnits ملك", "$rentedUnits rent · $ownedUnits own"), true))
+                kpiRow.addView(makeKpi(text("إجمالي الشقق", "Total Units"), totalUnits.toString(), text("$rentedUnits مؤجرة · $ownedUnits تمليك", "$rentedUnits rent · $ownedUnits own"), true))
                 kpiRow.addView(makeKpi(text("نسبة الإشغال", "Occupancy"), "$pct%", text("$vacantUnits شاغرة · $maintUnits صيانة", "$vacantUnits vacant"), false))
                 kpiContainer.addView(kpiRow)
 
@@ -1238,7 +1238,7 @@ class MainActivity : Activity() {
                     }
                     weightSum = 2f
                 }
-                kpiRow2.addView(makeKpi(text("وحدات تمليك (ملك)", "Owned Units"), ownedUnits.toString(), text("ملاك مقيمين", "Owner units"), true))
+                kpiRow2.addView(makeKpi(text("وحدات تمليك", "Owned Units"), ownedUnits.toString(), text("ملاك مقيمين", "Owner units"), true))
                 kpiRow2.addView(makeKpi(text("وحدات مؤجرة", "Rented Units"), rentedUnits.toString(), text("عقود إيجار نشطة", "Active leases"), false))
                 kpiContainer.addView(kpiRow2)
             }
@@ -1657,7 +1657,7 @@ class MainActivity : Activity() {
                     } else if (fee > 0) {
                         text("⏳ بانتظار السداد", "⏳ Pending")
                     } else {
-                        if (isOwnedUnit) text("🏢 وحدة تمليك (ملك)", "🏢 Owned Unit") else text("⚪ بدون اشتراك", "⚪ No Dues")
+                        if (isOwnedUnit) text("🏢 وحدة تمليك", "🏢 Owned Unit") else text("⚪ بدون اشتراك", "⚪ No Dues")
                     }
                     textSize = 10.5f
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
@@ -2169,7 +2169,7 @@ class MainActivity : Activity() {
                                 "closed" -> text("مغلق", "Closed")
                                 "vacant" -> text("شاغرة وغير مشغولة", "Vacant")
                                 "occupied" -> text("مؤجرة / مشغولة", "Rented")
-                                "owned" -> text("وحدة ملك (تمليك)", "Owned")
+                                "owned" -> text("وحدة تمليك", "Owned")
                                 "maintenance" -> text("صيانة", "Maintenance")
                                 else -> optionTitle(status)
                             }
