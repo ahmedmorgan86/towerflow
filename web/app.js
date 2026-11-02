@@ -143,7 +143,11 @@ const display=(key,v)=>relations[key]?cache[relations[key]]?.find(x=>x.id===v)?.
 async function api(path,options={}){
  const q=org?(path.includes('?')?'&':'?')+'org='+encodeURIComponent(org):'';
  const res=await fetch('/api/'+path+q,{...options,headers:{'Content-Type':'application/json',...options.headers},credentials:'same-origin'});
- const data=await res.json();if(!res.ok)throw new Error(data.error||res.statusText);return data;
+ const rawText=await res.text();
+ let data;
+ try{data=rawText?JSON.parse(rawText):{};}catch{data={error:'HTTP '+res.status+': '+(res.statusText||'Server Error')};}
+ if(!res.ok)throw new Error(data.error||res.statusText||('HTTP '+res.status));
+ return data;
 }
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';setTimeout(()=>$('#toast').style.display='none',4000);}
 function theme(){document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.documentElement.classList.toggle('dark',dark);localStorage.tfLang=lang;localStorage.tfDark=dark;}

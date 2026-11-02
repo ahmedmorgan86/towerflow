@@ -496,17 +496,22 @@ class MainActivity : Activity() {
     }
 
     private fun error(e: Exception) {
-        AlertDialog.Builder(this)
-            .setTitle(text("تنبيه", "Notice"))
-            .setMessage(e.message)
-            .setPositiveButton(text("حسناً", "OK"), null)
-            .show()
+        if (isFinishing || isDestroyed) return
+        try {
+            AlertDialog.Builder(this)
+                .setTitle(text("تنبيه", "Notice"))
+                .setMessage(e.message ?: text("حدث خطأ غير متوقع", "An unexpected error occurred"))
+                .setPositiveButton(text("حسناً", "OK"), null)
+                .show()
+        } catch (_: Exception) {}
     }
 
     private fun call(path: String, method: String = "GET", data: JSONObject? = null, onError: ((Exception) -> Unit)? = null, done: (String) -> Unit) {
         worker.execute {
             try {
-                val connection = URL(base + "/api/" + path + (if (path.contains('?')) "&" else "?") + "org=" + org).openConnection() as HttpURLConnection
+                val hasOrg = org.isNotEmpty() && !listOf("auth/", "me").any { path.startsWith(it) && !path.startsWith("me/profile") }
+                val urlStr = base + "/api/" + path + (if (hasOrg) (if (path.contains('?')) "&" else "?") + "org=" + org else "")
+                val connection = URL(urlStr).openConnection() as HttpURLConnection
                 try {
                     connection.requestMethod = method
                     connection.connectTimeout = 15000
@@ -520,13 +525,28 @@ class MainActivity : Activity() {
                     }
                     val code = connection.responseCode
                     val raw = (if (code in 200..299) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { it.readText() } ?: "{}"
-                    if (code !in 200..299) throw IllegalStateException(JSONObject(raw).optString("error", "HTTP $code"))
-                    runOnUiThread { try { done(raw) } catch (e: Exception) { onError?.invoke(e) ?: error(e) } }
+                    if (code !in 200..299) {
+                        val errMsg = try {
+                            JSONObject(raw).optString("error", "HTTP $code")
+                        } catch (_: Exception) {
+                            "HTTP $code"
+                        }
+                        throw IllegalStateException(errMsg)
+                    }
+                    runOnUiThread {
+                        if (!isFinishing && !isDestroyed) {
+                            try { done(raw) } catch (e: Exception) { onError?.invoke(e) ?: error(e) }
+                        }
+                    }
                 } finally {
                     connection.disconnect()
                 }
             } catch (e: Exception) {
-                runOnUiThread { onError?.invoke(e) ?: error(e) }
+                runOnUiThread {
+                    if (!isFinishing && !isDestroyed) {
+                        onError?.invoke(e) ?: error(e)
+                    }
+                }
             }
         }
     }
@@ -747,13 +767,45 @@ class MainActivity : Activity() {
                 val o = organizations.getJSONObject(0)
                 org = o.getString("id")
                 role = o.getString("role")
-            }
-            registerPush()
-            if (pendingNotifications) {
-                pendingNotifications = false
-                listing("notifications")
+                registerPush()
+                if (pendingNotifications) {
+                    pendingNotifications = false
+                    listing("notifications")
+                } else {
+                    home()
+                }
             } else {
-                home()
+                newOrgPrompt()
+            }
+        }
+    }
+
+    private fun newOrgPrompt() {
+        scaffold(text("إنشاء مساحة العمل الأولى", "Create First Workspace"))
+        card {
+            addView(TextView(this@MainActivity).apply {
+                text = text("مرحبًا بك في TowerFlow!", "Welcome to TowerFlow!")
+                textSize = 17f
+                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+            })
+            addView(TextView(this@MainActivity).apply {
+                text = text("ابدأ بتسمية مؤسستك أو برجك السكني لتفعيل حسابك وإدارته بسهولة.", "Start by naming your organization or residential tower to activate your workspace.")
+                textSize = 12.5f
+                typeface = cairoFont
+                setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+                setPadding(0, dp(6), 0, dp(14))
+            })
+        }
+        val orgInput = input(text("اسم المؤسسة أو البرج", "Organization / Tower Name"))
+        primaryButton(text("إنشاء والبدء الآن", "Create Workspace")) {
+            val name = orgInput.text.toString().trim()
+            if (name.isEmpty()) {
+                error(IllegalStateException(text("يرجى إدخال اسم المؤسسة", "Please enter a workspace name")))
+                return@primaryButton
+            }
+            call("organizations", "POST", JSONObject().put("name", name)) {
+                loadMe()
             }
         }
     }
@@ -1271,39 +1323,39 @@ class MainActivity : Activity() {
 
         call("properties") { propRaw ->
             val props = JSONArray(propRaw)
-            if (props.length() == 0) {
-                error(IllegalStateException(text("لا توجد عقارات مسجلة بعد", "No properties registered yet")))
-                return@call
-            }
-            val defaultPropId = props.getJSONObject(0).getString("id")
+            val defaultPropId = if (props.length() > 0) props.getJSONObject(0).getString("id") else ""
 
             call("units") { raw ->
                 val units = JSONArray(raw)
                 val unitSpinner = Spinner(this)
-                unitSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until units.length()).map { units.getJSONObject(it).getString("name") })
+                val unitNames = (0 until units.length()).map { units.getJSONObject(it).getString("name") }
+                unitSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, if (unitNames.isEmpty()) listOf(text("لا توجد وحدات متاحة", "No units available")) else unitNames)
                 label(text("الوحدة السكنية", "Unit"), 13, true)
                 screen.addView(unitSpinner)
 
-                call("parties") { partyRaw ->
-                    val parties = JSONArray(partyRaw)
-                    val partySpinner = Spinner(this)
-                    partySpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until parties.length()).map { parties.getJSONObject(it).getString("name") })
-                    label(text("الساكن / المسدد", "Resident / Payer"), 13, true)
-                    screen.addView(partySpinner)
+                call("parties", onError = { /* residents have restricted access to parties table */ }) { partyRaw ->
+                    val parties = try { JSONArray(partyRaw) } catch (_: Exception) { JSONArray() }
+                    val partySpinner = if (parties.length() > 0) Spinner(this) else null
+                    if (partySpinner != null) {
+                        partySpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until parties.length()).map { parties.getJSONObject(it).getString("name") })
+                        label(text("الساكن / المسدد", "Resident / Payer"), 13, true)
+                        screen.addView(partySpinner)
+                    }
 
                     primaryButton(text("إرسال الإثبات", "Submit Proof")) {
-                        val uId = if (units.length() > 0) units.getJSONObject(unitSpinner.selectedItemPosition).getString("id") else ""
-                        val pId = if (parties.length() > 0) parties.getJSONObject(partySpinner.selectedItemPosition).getString("id") else ""
-                        val pUnit = if (units.length() > 0) units.getJSONObject(unitSpinner.selectedItemPosition) else null
+                        val uId = if (units.length() > 0 && unitSpinner.selectedItemPosition in 0 until units.length()) units.getJSONObject(unitSpinner.selectedItemPosition).getString("id") else ""
+                        val pId = if (partySpinner != null && parties.length() > 0 && partySpinner.selectedItemPosition in 0 until parties.length()) parties.getJSONObject(partySpinner.selectedItemPosition).getString("id") else ""
+                        val pUnit = if (units.length() > 0 && unitSpinner.selectedItemPosition in 0 until units.length()) units.getJSONObject(unitSpinner.selectedItemPosition) else null
                         val propId = if (pUnit != null && pUnit.has("property_id")) pUnit.getString("property_id") else defaultPropId
 
                         val payload = JSONObject()
                             .put("property_id", propId)
                             .put("unit_id", uId)
-                            .put("party_id", pId)
                             .put("amount", amount.text.toString().trim())
                             .put("reference", reference.text.toString().trim())
                             .put("payment_method", "bank_transfer")
+
+                        if (pId.isNotEmpty()) payload.put("party_id", pId)
 
                         call("payment_proofs", "POST", payload) { listing("payment_proofs") }
                     }

@@ -12,7 +12,7 @@ import {createTowerWithZeroBalance,generateUnitsBatch,transferWithinTower,submit
 import {createSupportTicket,addSupportMessage,requestSupportAccess,approveSupportAccess,revokeSupportAccess} from '../lib/support-system.mjs';
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
 async function body(req){if(req.body&&typeof req.body==='object')return req.body;let data='';for await(const chunk of req){data+=chunk;if(Buffer.byteLength(data)>750000)throw fail('Request too large',413);}try{return data?JSON.parse(data):{};}catch{throw fail('Invalid JSON');}}
-const cookie=(token,secure)=>`tf_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${token?43200:0}${secure?'; Secure':''}`;
+const cookie=(token,secure)=>`tf_session=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${token?43200:0}${secure?'; Secure':''}`;
 async function context(user,fn){return database().transaction(async c=>{await c.query("select set_config('app.user_id',$1,true)",[user.id]);return fn(c);});}
 export default async function handler(req,res){
  res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
@@ -61,6 +61,7 @@ export default async function handler(req,res){
  if(route==='me'&&method==='GET'){const orgs=await database().transaction(c=>c.query('select o.*,m.role from organizations o join private.memberships m on m.org_id=o.id where m.user_id=$1 order by o.created_at',[user.id]));return send({user,organizations:orgs.rows});}
  if(route==='support_tickets'&&method==='POST'){const b=await body(req);return send(await database().transaction(c=>createSupportTicket(c,user.id,b)),201);}
  if(route.startsWith('support_tickets/')&&route.endsWith('/messages')&&method==='POST'){const tid=route.split('/')[1];const b=await body(req);return send(await database().transaction(c=>addSupportMessage(c,user.id,tid,b.message)),201);}
+ if(route==='organizations'&&method==='POST'){const b=await body(req);if(!String(b.name||'').trim())throw fail('Name required');return send(await context(user,async c=>{const o=(await c.query('insert into organizations(name) values($1) returning *',[String(b.name).slice(0,160)])).rows[0];await c.query("insert into private.memberships values($1,$2,'admin')",[o.id,user.id]);for(const a of [['1100','Cash','asset'],['1200','Receivables','asset'],['4000','Rental income','income'],['5000','Operating expenses','expense']])await c.query('insert into accounts(org_id,code,name,kind) values($1,$2,$3,$4)',[o.id,...a]);return o;}),201);}
  const org=u.searchParams.get('org');if(!/^[a-f0-9-]{36}$/.test(org||''))throw fail('Organization required');
  if(route==='reports'&&method==='GET'&&detailedKinds.includes(u.searchParams.get('kind'))){const from=isoDate(u.searchParams.get('from')||'0001-01-01'),to=isoDate(u.searchParams.get('to')||new Date().toISOString().slice(0,10));if(from>to)throw fail('Invalid date range');return send(await asUser(user.id,c=>detailedReport(c,org,u.searchParams.get('kind'),from,to,u.searchParams.get('property_id'),Number(u.searchParams.get('limit')||500),Number(u.searchParams.get('offset')||0))));}
  if(route==='broadcasts/recipients'&&method==='GET'){const unitIds=u.searchParams.get('scope')==='units'?(u.searchParams.get('unit_ids')||'').split(',').filter(Boolean):null;const r=await context(user,c=>recipients(c,org,u.searchParams.get('property_id'),unitIds));return send({registered:r.registered,unlinked:r.unlinked,pushConfigured:pushReady()});}
@@ -83,7 +84,7 @@ export default async function handler(req,res){
  if(b.party_id){const changed=await c.query('update parties set user_id=$1 where org_id=$2 and id=$3 returning id',[target.id,org,b.party_id]);if(!changed.rows.length)throw fail('Party not found',404);}
  await c.query("insert into audit_logs(org_id,actor_id,entity,entity_id,action) values($1,$2,'memberships',$3,$4)",[org,user.id,target.id,'role:'+b.role]);return {ok:true};}));
  }
- if(route==='organizations'&&method==='POST'){const b=await body(req);if(!String(b.name||'').trim())throw fail('Name required');return send(await context(user,async c=>{const o=(await c.query('insert into organizations(name) values($1) returning *',[String(b.name).slice(0,160)])).rows[0];await c.query("insert into private.memberships values($1,$2,'admin')",[o.id,user.id]);for(const a of [['1100','Cash','asset'],['1200','Receivables','asset'],['4000','Rental income','income'],['5000','Operating expenses','expense']])await c.query('insert into accounts(org_id,code,name,kind) values($1,$2,$3,$4)',[o.id,...a]);return o;}),201);}
+ 
  const [entity,id,action]=route.split('/');
  if(entity==='accounting_periods'&&id&&action==='close'&&method==='POST')return send(await context(user,c=>closePeriod(c,org,user.id,id)));
  if(entity==='journals'&&id&&action==='reverse'&&method==='POST'){const b=await body(req);return send(await context(user,c=>reverse(c,org,user.id,id,b)));}

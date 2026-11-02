@@ -39,7 +39,7 @@ create function private.audit() returns trigger language plpgsql security define
  begin insert into public.audit_logs(org_id,actor_id,entity,entity_id,action) values(new.org_id,private.uid(),tg_table_name,new.id,tg_op);return new;end $$;
 revoke all on function private.audit() from public;
 create function private.resident_party(o uuid,p uuid) returns boolean language sql stable security definer set search_path='' as $$select private.uid() is not null and exists(select 1 from public.parties where org_id=o and id=p and user_id=private.uid())$$;
-create function private.resident_unit(o uuid,u uuid) returns boolean language sql stable security definer set search_path='' as $$select private.uid() is not null and exists(select 1 from public.leases l join public.parties p on p.id=l.party_id and p.org_id=l.org_id where l.org_id=o and l.unit_id=u and l.status='active' and p.user_id=private.uid())$$;
+create function private.resident_unit(o uuid,u uuid) returns boolean language sql stable security definer set search_path='' as $$select private.uid() is not null and (exists(select 1 from public.leases l join public.parties p on p.id=l.party_id and p.org_id=l.org_id where l.org_id=o and l.unit_id=u and l.status='active' and p.user_id=private.uid()) or exists(select 1 from public.ownerships ow join public.parties p on p.id=ow.party_id and p.org_id=ow.org_id where ow.org_id=o and ow.unit_id=u and p.user_id=private.uid()))$$;
 revoke all on function private.resident_party(uuid,uuid),private.resident_unit(uuid,uuid) from public;
 grant execute on function private.resident_party(uuid,uuid),private.resident_unit(uuid,uuid) to towerflow_client;
 alter table organizations enable row level security;

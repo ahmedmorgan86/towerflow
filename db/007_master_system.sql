@@ -413,3 +413,6 @@ values
 on conflict(code) do nothing;
 
 commit;
+
+-- Ensure unit owners have full resident access to their owned apartments
+create or replace function private.resident_unit(o uuid,u uuid) returns boolean language sql stable security definer set search_path='' as $$select private.uid() is not null and (exists(select 1 from public.leases l join public.parties p on p.id=l.party_id and p.org_id=l.org_id where l.org_id=o and l.unit_id=u and l.status='active' and p.user_id=private.uid()) or exists(select 1 from public.ownerships ow join public.parties p on p.id=ow.party_id and p.org_id=ow.org_id where ow.org_id=o and ow.unit_id=u and p.user_id=private.uid()))$$;
