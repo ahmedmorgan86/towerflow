@@ -12,6 +12,8 @@
     "test": "node --test --test-concurrency=1 tests/*.test.mjs",
     "db:setup": "node --env-file-if-exists=.env.local scripts/database.mjs",
     "db:firebase": "node --env-file-if-exists=.env.local scripts/firebase-cloudsql.mjs",
+    "db:cloudsql": "node --env-file-if-exists=.env.local scripts/firebase-cloudsql.mjs",
+    "db:export": "node scripts/export-local-db.mjs",
     "local": "node scripts/local.mjs"
   },
   "dependencies": {

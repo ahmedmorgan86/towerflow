@@ -18,3 +18,4 @@ android/.kotlin/
 android/signing.properties
 
 release/
+data/

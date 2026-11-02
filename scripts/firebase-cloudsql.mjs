@@ -6,11 +6,16 @@
  *   # Verify connection and run migrations:
  *   node scripts/firebase-cloudsql.mjs
  * 
- *   # Migrate data from existing database:
+ *   # Migrate data from local PGlite backup:
+ *   TARGET_DB_URL=... node scripts/firebase-cloudsql.mjs --migrate-local
+ * 
+ *   # Migrate data from remote PostgreSQL URL:
  *   SOURCE_DB_URL=... TARGET_DB_URL=... node scripts/firebase-cloudsql.mjs --migrate-data
  */
 
 import pg from 'pg';
+import {existsSync} from 'node:fs';
+import {readFile} from 'node:fs/promises';
 import {migrate} from '../lib/migrations.mjs';
 
 const connectionString = (process.env.TARGET_DB_URL || process.env.DATABASE_URL || '').trim();
@@ -39,7 +44,7 @@ To connect TowerFlow to Google Cloud SQL for PostgreSQL under your Firebase proj
    DATABASE_URL=postgres://towerflow:<PASSWORD>@<CLOUD_SQL_PUBLIC_IP>:5432/towerflow?sslmode=require
 
 4. Run this script to automatically install all 7 migrations and verify:
-   npm run db:setup
+   npm run db:cloudsql
 ========================================================================
 `);
   process.exit(0);
@@ -68,7 +73,41 @@ try {
   `);
   console.log('Database Status:', res.rows[0]);
 
-  // Optional Data Migration from Source DB
+  // Data Migration from Local Backup JSON
+  if (process.argv.includes('--migrate-local') || process.argv.includes('--import-backup')) {
+    const backupPath = 'data/local-backup.json';
+    if (existsSync(backupPath)) {
+      console.log(`\nImporting local backup from ${backupPath} to Firebase Cloud SQL...`);
+      const dump = JSON.parse(await readFile(backupPath, 'utf8'));
+      const schemas = dump.schemas || {};
+
+      for (const [schemaName, tables] of Object.entries(schemas)) {
+        for (const [tableName, rows] of Object.entries(tables)) {
+          if (Array.isArray(rows) && rows.length > 0) {
+            console.log(`- Importing ${rows.length} records into ${schemaName}.${tableName}...`);
+            for (const row of rows) {
+              const cols = Object.keys(row);
+              const vals = Object.values(row);
+              const placeholders = cols.map((_, i) => '$' + (i + 1)).join(',');
+              try {
+                await client.query(
+                  `insert into ${schemaName}.${tableName} (${cols.map(c => '"' + c + '"').join(',')}) values (${placeholders}) on conflict do nothing`,
+                  vals
+                );
+              } catch (e) {
+                console.warn(`  [Warning on ${schemaName}.${tableName}]:`, e.message);
+              }
+            }
+          }
+        }
+      }
+      console.log('✓ Local data migration to Firebase Cloud SQL complete.');
+    } else {
+      console.warn(`⚠ ${backupPath} not found. Run 'node scripts/export-local-db.mjs' first.`);
+    }
+  }
+
+  // Data Migration from Source DB URL
   if (process.argv.includes('--migrate-data') && process.env.SOURCE_DB_URL) {
     console.log('\nMigrating data from SOURCE_DB_URL to Firebase Cloud SQL...');
     const sourceClient = new pg.Client({
