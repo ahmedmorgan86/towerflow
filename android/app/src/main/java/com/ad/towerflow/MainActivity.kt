@@ -400,7 +400,7 @@ class MainActivity : Activity() {
         actionsGroup.addView(langBtn)
 
         val themeBtn = TextView(this).apply {
-            text = if (dark) "☀" else "☾"
+            text = if (dark) "☀️" else "🌙"
             textSize = 15f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             setTextColor(Color.parseColor(if (dark) "#FCD34D" else "#1E293B"))
@@ -1096,6 +1096,48 @@ class MainActivity : Activity() {
                     }
                 }
                 addView(spinner)
+
+                if (role in listOf("admin", "manager")) {
+                    val propActionsRow = LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                            topMargin = dp(8)
+                        }
+                        weightSum = 2f
+                    }
+                    val addTowerQuick = Button(this@MainActivity).apply {
+                        text = text("＋ إضافة برج جديد", "＋ Add Tower")
+                        textSize = 11.5f
+                        typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                        setTextColor(Color.parseColor("#4F46E5"))
+                        isAllCaps = false
+                        includeFontPadding = false
+                        minHeight = 0
+                        minimumHeight = 0
+                        setPadding(dp(4), dp(7), dp(4), dp(7))
+                        background = roundedDrawable(if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"), 8f, Color.parseColor(if (dark) "#312E81" else "#C7D2FE"))
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(4) }
+                        setOnClickListener { showTowerDialog(null) { loadMe() } }
+                    }
+                    propActionsRow.addView(addTowerQuick)
+
+                    val manageTowersQuick = Button(this@MainActivity).apply {
+                        text = text("🏢 إدارة الأبراج", "🏢 Manage Towers")
+                        textSize = 11.5f
+                        typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                        setTextColor(Color.parseColor(if (dark) "#CBD5E1" else "#475569"))
+                        isAllCaps = false
+                        includeFontPadding = false
+                        minHeight = 0
+                        minimumHeight = 0
+                        setPadding(dp(4), dp(7), dp(4), dp(7))
+                        background = roundedDrawable(if (dark) Color.parseColor("#1E2330") else Color.parseColor("#F1F5F9"), 8f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                        setOnClickListener { manageTowers() }
+                    }
+                    propActionsRow.addView(manageTowersQuick)
+                    addView(propActionsRow)
+                }
             }
         }
 
@@ -1277,13 +1319,13 @@ class MainActivity : Activity() {
                     layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 }
                 titleWrap.addView(TextView(this@MainActivity).apply {
-                    text = text("التحصيل الشهري للشقق والوحدات", "Monthly Collections")
+                    text = text("⚡ التحصيل الشهري لاشتراكات صيانة البرج", "Monthly Tower Maintenance Collections")
                     textSize = 16f
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
                     setTextColor(Color.WHITE)
                 })
                 titleWrap.addView(TextView(this@MainActivity).apply {
-                    text = text("متابعة وسداد اشتراكات وإيجارات الشهر للشقق فورياً", "Track dues & collect rent for all apartments")
+                    text = text("متابعة وسداد اشتراكات الصيانة والخدمات الشهرية للشقق فورياً", "Track & collect apartment monthly maintenance dues")
                     textSize = 11.5f
                     typeface = cairoFont
                     setTextColor(Color.parseColor("#C7D2FE"))
@@ -1312,7 +1354,7 @@ class MainActivity : Activity() {
         }
 
         val q1 = Button(this).apply {
-            text = text(if (role == "resident") "📤 إثبات سداد" else "⚡ التحصيل", if (role == "resident") "Proof" else "⚡ Collect")
+            text = text(if (role == "resident") "📤 إثبات سداد" else "⚡ تحصيل الصيانة", if (role == "resident") "Proof" else "⚡ Maintenance")
             setTextColor(Color.WHITE)
             textSize = 12f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
@@ -1367,7 +1409,8 @@ class MainActivity : Activity() {
         // 3. Essential, Useful Sections Only (No Empty Ghost Sections)
         if (role != "resident") {
             sectionHeader(text("🏢 العمليات وإدارة البرج الأساسية", "Core Operations"))
-            navTile("monthly_collections", text("التحصيل الشهري للشقق", "Monthly Unit Collections"), text("سداد الاشتراكات الشهرية، الإيجارات، وتحصيل الشقق", "Apartment dues, subscriptions and collections")) { monthlyCollections() }
+            navTile("properties", text("الأبراج والعقارات", "Towers & Properties"), text("إضافة وتعديل وحذف الأبراج السكنية ومباني الإدارة", "Manage residential towers")) { manageTowers() }
+            navTile("monthly_collections", text("التحصيل الشهري لاشتراكات الصيانة", "Monthly Maintenance Collections"), text("تحصيل وسداد اشتراكات الصيانة والخدمات للبرج", "Apartment maintenance subscriptions & collections")) { monthlyCollections() }
             navTile("units", title("units"), text("حصر الشقق، أرقام الوحدات، وحالة الإشغال", "Apartments, unit numbers and occupancy"))
             navTile("parties", title("parties"), text("سجل السكان، الملاك، وجهات التواصل", "Residents, owners and contacts registry"))
             navTile("invoices", title("invoices"), text("الفواتير الشهرية والخدمات والمطالبات", "Issued invoices and dues"))
@@ -1392,9 +1435,262 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun manageTowers() {
+        scaffold(text("الأبراج والعقارات", "Towers & Properties"), true) { home() }
+
+        if (role in listOf("admin", "manager")) {
+            primaryButton(text("＋ إضافة برج سكني جديد", "＋ Add New Tower")) {
+                showTowerDialog(null) { manageTowers() }
+            }
+        }
+
+        val loading = TextView(this).apply {
+            text = text("جاري تحميل قائمة الأبراج...", "Loading towers...")
+            textSize = 13.5f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+            gravity = Gravity.CENTER
+            setPadding(0, dp(30), 0, dp(30))
+        }
+        screen.addView(loading)
+
+        call("properties") { propRaw ->
+            val props = try { JSONArray(propRaw) } catch (_: Exception) { JSONArray() }
+            call("units") { unitRaw ->
+                val units = try { JSONArray(unitRaw) } catch (_: Exception) { JSONArray() }
+                val unitsByProp = mutableMapOf<String, Int>()
+                for (i in 0 until units.length()) {
+                    val pId = units.getJSONObject(i).optString("property_id")
+                    unitsByProp[pId] = (unitsByProp[pId] ?: 0) + 1
+                }
+
+                loading.visibility = View.GONE
+                if (props.length() == 0) {
+                    val empty = TextView(this@MainActivity).apply {
+                        text = text("لا توجد أبراج مسجلة حالياً. اضغط على الزر أعلاه لإضافة برجك الأول.", "No towers registered yet. Tap above to add your first tower.")
+                        textSize = 13f
+                        typeface = cairoFont
+                        setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+                        gravity = Gravity.CENTER
+                        setPadding(dp(16), dp(40), dp(16), dp(40))
+                    }
+                    screen.addView(empty)
+                    return@call
+                }
+
+                for (i in 0 until props.length()) {
+                    val prop = props.getJSONObject(i)
+                    val pId = prop.optString("id")
+                    val pName = prop.optString("name", text("برج بدون اسم", "Unnamed Tower"))
+                    val pAddr = prop.optString("address", "")
+                    val count = unitsByProp[pId] ?: 0
+
+                    card {
+                        val headerRow = LinearLayout(this@MainActivity).apply {
+                            orientation = LinearLayout.HORIZONTAL
+                            gravity = Gravity.CENTER_VERTICAL
+                        }
+                        val iconView = TextView(this@MainActivity).apply {
+                            text = "🏢"
+                            textSize = 24f
+                            setPadding(0, 0, dp(10), 0)
+                        }
+                        headerRow.addView(iconView)
+
+                        val infoCol = LinearLayout(this@MainActivity).apply {
+                            orientation = LinearLayout.VERTICAL
+                            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                        }
+                        val titleView = TextView(this@MainActivity).apply {
+                            text = pName
+                            textSize = 16f
+                            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                            setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+                        }
+                        infoCol.addView(titleView)
+
+                        if (pAddr.isNotEmpty()) {
+                            val addrView = TextView(this@MainActivity).apply {
+                                text = "📍 $pAddr"
+                                textSize = 11.5f
+                                typeface = cairoFont
+                                setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+                            }
+                            infoCol.addView(addrView)
+                        }
+
+                        val countBadge = TextView(this@MainActivity).apply {
+                            text = text("$count شقة مسجلة", "$count units registered")
+                            textSize = 11f
+                            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                            setTextColor(Color.parseColor("#4F46E5"))
+                            setPadding(dp(8), dp(2), dp(8), dp(2))
+                            background = roundedDrawable(Color.parseColor(if (dark) "#1E1B4B" else "#EEF2FF"), 8f)
+                            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                                topMargin = dp(4)
+                            }
+                        }
+                        infoCol.addView(countBadge)
+                        headerRow.addView(infoCol)
+                        addView(headerRow)
+
+                        if (role in listOf("admin", "manager")) {
+                            val btnRow = LinearLayout(this@MainActivity).apply {
+                                orientation = LinearLayout.HORIZONTAL
+                                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                                    topMargin = dp(12)
+                                }
+                                weightSum = 3f
+                            }
+
+                            val editBtn = Button(this@MainActivity).apply {
+                                text = text("✏️ تعديل", "✏️ Edit")
+                                textSize = 12f
+                                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                                isAllCaps = false
+                                includeFontPadding = false
+                                minHeight = 0
+                                minimumHeight = 0
+                                setPadding(dp(4), dp(8), dp(4), dp(8))
+                                background = roundedDrawable(if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"), 10f, Color.parseColor(if (dark) "#312E81" else "#C7D2FE"))
+                                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(4) }
+                                setOnClickListener { showTowerDialog(prop) { manageTowers() } }
+                            }
+                            btnRow.addView(editBtn)
+
+                            val unitsBtn = Button(this@MainActivity).apply {
+                                text = text("🏢 الشقق", "🏢 Units")
+                                textSize = 12f
+                                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                                setTextColor(Color.parseColor(if (dark) "#34D399" else "#059669"))
+                                isAllCaps = false
+                                includeFontPadding = false
+                                minHeight = 0
+                                minimumHeight = 0
+                                setPadding(dp(4), dp(8), dp(4), dp(8))
+                                background = roundedDrawable(if (dark) Color.parseColor("#064E3B") else Color.parseColor("#ECFDF5"), 10f, Color.parseColor(if (dark) "#047857" else "#A7F3D0"))
+                                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(4) }
+                                setOnClickListener { listing("units") }
+                            }
+                            btnRow.addView(unitsBtn)
+
+                            val delBtn = Button(this@MainActivity).apply {
+                                text = text("🗑️ حذف", "🗑️ Delete")
+                                textSize = 12f
+                                typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                                setTextColor(Color.parseColor("#EF4444"))
+                                isAllCaps = false
+                                includeFontPadding = false
+                                minHeight = 0
+                                minimumHeight = 0
+                                setPadding(dp(4), dp(8), dp(4), dp(8))
+                                background = roundedDrawable(if (dark) Color.parseColor("#450A0A") else Color.parseColor("#FEF2F2"), 10f, Color.parseColor(if (dark) "#991B1B" else "#FECACA"))
+                                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                                setOnClickListener { confirmDeleteTower(prop) { manageTowers() } }
+                            }
+                            btnRow.addView(delBtn)
+
+                            addView(btnRow)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showTowerDialog(prop: JSONObject? = null, onSaved: (() -> Unit)? = null) {
+        val isEdit = prop != null
+        val dlgTitle = if (isEdit) text("تعديل بيانات البرج", "Edit Tower") else text("إضافة برج سكني جديد", "Add Residential Tower")
+        val formLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(10), dp(20), dp(10))
+        }
+
+        val nameLabel = TextView(this).apply {
+            text = text("اسم البرج السكني *", "Tower Name *")
+            textSize = 12f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            setTextColor(Color.parseColor(if (dark) "#CBD5E1" else "#334155"))
+            setPadding(0, 0, 0, dp(4))
+        }
+        formLayout.addView(nameLabel)
+
+        val nameInput = EditText(this).apply {
+            hint = text("مثال: برج عبد الرازق، برج الصفوة", "e.g. Tower 1")
+            setText(prop?.optString("name", "") ?: "")
+            textSize = 14f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+            setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+            background = roundedDrawable(if (dark) Color.parseColor("#1E2330") else Color.WHITE, 10f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+        }
+        formLayout.addView(nameInput)
+
+        val addrLabel = TextView(this).apply {
+            text = text("العنوان / الموقع", "Address / Location")
+            textSize = 12f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            setTextColor(Color.parseColor(if (dark) "#CBD5E1" else "#334155"))
+            setPadding(0, dp(12), 0, dp(4))
+        }
+        formLayout.addView(addrLabel)
+
+        val addrInput = EditText(this).apply {
+            hint = text("مثال: شارع الجمهورية، الحي الأول", "e.g. Main Street")
+            setText(prop?.optString("address", "") ?: "")
+            textSize = 14f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+            setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+            background = roundedDrawable(if (dark) Color.parseColor("#1E2330") else Color.WHITE, 10f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+        }
+        formLayout.addView(addrInput)
+
+        AlertDialog.Builder(this)
+            .setTitle(dlgTitle)
+            .setView(formLayout)
+            .setPositiveButton(text("حفظ البيانات", "Save")) { _, _ ->
+                val tName = nameInput.text.toString().trim()
+                if (tName.isEmpty()) {
+                    Toast.makeText(this, text("يرجى إدخال اسم البرج", "Please enter tower name"), Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                val payload = JSONObject().apply {
+                    put("name", tName)
+                    put("address", addrInput.text.toString().trim())
+                }
+                val path = if (isEdit) "properties/" + prop!!.optString("id") else "properties"
+                val method = if (isEdit) "PATCH" else "POST"
+                call(path, method, payload) {
+                    Toast.makeText(this, text("تم حفظ بيانات البرج بنجاح", "Tower saved successfully"), Toast.LENGTH_SHORT).show()
+                    onSaved?.invoke() ?: home()
+                }
+            }
+            .setNegativeButton(text("إلغاء", "Cancel"), null)
+            .show()
+    }
+
+    private fun confirmDeleteTower(prop: JSONObject, onDeleted: (() -> Unit)? = null) {
+        val pName = prop.optString("name", text("البرج", "Tower"))
+        AlertDialog.Builder(this)
+            .setTitle(text("حذف البرج نهائياً", "Delete Tower"))
+            .setMessage(text("تحذير أمني:\nهل أنت متأكد من حذف \"$pName\" نهائياً؟\nسيتم حذف كافة الوحدات والشقق وسجلات الحسابات والاشتراكات التابعة لهذا البرج بشكل كامل ولا يمكن التراجع.", "Security Warning:\nAre you sure you want to permanently delete \"$pName\"?\nAll associated units, records, and dues will be permanently removed."))
+            .setPositiveButton(text("نعم، حذف نهائي", "Yes, Delete")) { _, _ ->
+                call("properties/" + prop.optString("id") + "?force=true", "DELETE") {
+                    Toast.makeText(this, text("تم حذف البرج بنجاح", "Tower deleted successfully"), Toast.LENGTH_SHORT).show()
+                    onDeleted?.invoke() ?: home()
+                }
+            }
+            .setNegativeButton(text("إلغاء", "Cancel"), null)
+            .show()
+    }
+
     private fun monthlyCollections(targetMonth: String? = null) {
         val path = "collections/monthly" + if (targetMonth != null) "?month=$targetMonth" else ""
-        scaffold(text("التحصيل الشهري للشقق", "Monthly Collections"), true) { home() }
+        scaffold(text("التحصيل الشهري لاشتراكات الصيانة", "Monthly Maintenance Collections"), true) { home() }
 
         val loading = TextView(this).apply {
             text = text("جاري تحميل كشف التحصيل الشهري...", "Loading monthly collections...")
@@ -1535,7 +1831,7 @@ class MainActivity : Activity() {
             }
             weightSum = 2f
         }
-        kpiRow1.addView(makeKpiBox(text("إجمالي المطلوب", "Total Due"), "$totalDue ج.م", Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"), text("اشتراكات وإيجارات الشهر", "Monthly dues"), true))
+        kpiRow1.addView(makeKpiBox(text("إجمالي المطلوب", "Total Due"), "$totalDue ج.م", Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"), text("اشتراكات الصيانة والخدمات", "Monthly maintenance dues"), true))
         kpiRow1.addView(makeKpiBox(text("المحصل فعلياً", "Collected"), "$totalCollected ج.م", Color.parseColor("#10B981"), text("نسبة التحصيل $rate%", "Collection rate $rate%"), false))
         screen.addView(kpiRow1)
 
@@ -1568,13 +1864,13 @@ class MainActivity : Activity() {
             }
             setOnClickListener {
                 val input = EditText(this@MainActivity).apply {
-                    hint = text("قيمة الاشتراك الافتراضي (مثال: 500)", "Default fee (e.g. 500)")
+                    hint = text("قيمة اشتراك الصيانة والخدمات للبرج (مثال: 500)", "Default maintenance fee (e.g. 500)")
                     inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
                     setText("500")
                 }
                 AlertDialog.Builder(this@MainActivity)
                     .setTitle(text("توليد مطالبات الشهر", "Generate Monthly Dues"))
-                    .setMessage(text("سيتم إنشاء مطالبات اشتراك شهر $currentMonth لكافة الشقق التي لم يُنشأ لها مطالبة بعد.", "Generate monthly invoices for all unbilled units for $currentMonth."))
+                    .setMessage(text("سيتم إنشاء مطالبات اشتراك صيانة شهر $currentMonth لكافة الشقق (خدمات، أمن، نظافة، مصعد).", "Generate monthly tower maintenance invoices for all unbilled units for $currentMonth."))
                     .setView(input)
                     .setPositiveButton(text("توليد الآن", "Generate")) { _, _ ->
                         val fee = input.text.toString().trim()
@@ -1711,7 +2007,7 @@ class MainActivity : Activity() {
                     setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                 })
                 feeRow.addView(TextView(this@MainActivity).apply {
-                    text = "  (" + (if (isOwnedUnit) text("اشتراك تمليك", "Owner Dues") else text("إيجار / خدمات", "Rent/Services")) + ")"
+                    text = "  (" + text("اشتراك صيانة البرج", "Tower Maintenance") + ")"
                     textSize = 10f
                     typeface = cairoFont
                     setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))

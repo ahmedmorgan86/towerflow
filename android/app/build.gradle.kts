@@ -4,7 +4,7 @@ val signingProps = Properties().apply { val source = rootProject.file("signing.p
 android {
     namespace = "com.ad.towerflow"
     compileSdk = 35
-    defaultConfig { applicationId = "com.ad.towerflow"; minSdk = 26; targetSdk = 35; versionCode = 19; versionName = "0.7.1" }
+    defaultConfig { applicationId = "com.ad.towerflow"; minSdk = 26; targetSdk = 35; versionCode = 20; versionName = "0.7.2" }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
         signingConfigs {

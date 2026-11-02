@@ -105,7 +105,7 @@ export default async function handler(req,res){
  if(entity==='properties'&&id&&action==='units_batch'&&method==='POST'){const b=await body(req);return send(await context(user,c=>generateUnitsBatch(c,org,user.id,id,b)),201);}
  if(entity==='properties'&&id&&action==='transfer_funds'&&method==='POST'){const b=await body(req);return send(await context(user,c=>transferWithinTower(c,org,user.id,id,b.from_account_id,b.to_account_id,b.amount,b.note)),200);}
  if(entity==='properties'&&id&&action==='archive'&&method==='POST')return send(await context(user,c=>archiveTower(c,org,user.id,id)),200);
- if(entity==='properties'&&id&&!action&&method==='DELETE')return send(await context(user,c=>deleteTowerSafely(c,org,user.id,id)),200);
+ if(entity==='properties'&&id&&!action&&method==='DELETE')return send(await context(user,c=>deleteTowerSafely(c,org,user.id,id,u.searchParams.get('force')==='true')),200);
  if(entity==='properties'&&id&&action==='backup'&&method==='GET')return send(await context(user,c=>exportTowerBackup(c,org,user.id,id)),200);
  if(entity==='properties'&&id&&action==='transfer_management'&&method==='POST'){const b=await body(req);return send(await context(user,c=>initiateTowerTransfer(c,org,user.id,id,b.target_email,b.notes)),201);}
  if(entity==='management_transfers'&&id&&action==='respond'&&method==='POST'){const b=await body(req);return send(await context(user,c=>respondTowerTransfer(c,org,user.id,id,b.accept)),200);}

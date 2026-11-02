@@ -11,7 +11,7 @@ http.createServer(async(req,res)=>{
  const file=path===root?resolve(root,'index.html'):path;
  if(file.endsWith('.apk')){
   res.setHeader('Content-Type','application/vnd.android.package-archive');
-  res.setHeader('Content-Disposition','attachment; filename="TowerFlow-v0.7.1.apk"');
+  res.setHeader('Content-Disposition','attachment; filename="TowerFlow-v0.7.2.apk"');
   res.setHeader('Cache-Control','public, max-age=3600');
  }else{
   res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'})[extname(file)]||'application/octet-stream');
