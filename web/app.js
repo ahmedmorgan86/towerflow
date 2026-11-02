@@ -202,12 +202,13 @@ function head(title,action=''){
 function sidebar(){
  const available=allowed(),groups=[
    ['portfolio',localText('المحفظة العقارية','Portfolio'),['properties','units','parties','leases','ownerships']],
-   ['finance',localText('الإدارة المالية','Finance'),['invoices','receipts','expenses','payment_proofs','credit_balances','fines','money_accounts','journals','accounts','recurring_charges','accounting_periods','reports']],
-   ['operations',localText('التشغيل والصيانة','Operations'),['tickets','assets','technicians','vendor_contracts','budgets','maintenance_plans']],
-   ['workspace',localText('المؤسسة والدعم','Workspace & Support'),['resident_messages','announcements','notifications','support_tickets','members','audit_logs']]
+   ['finance',localText('المالية والتحصيل','Finance & Billing'),['invoices','receipts','expenses','payment_proofs','money_accounts','reports']],
+   ['operations',localText('التشغيل والصيانة','Operations & Service'),['tickets','assets','technicians','maintenance_plans']],
+   ['workspace',localText('التواصل والدعم','Communications & Support'),['resident_messages','announcements','notifications','support_tickets','members']],
+   ['advanced',localText('سجلات ومحاسبة متقدمة','Advanced Records'),['credit_balances','fines','journals','accounts','recurring_charges','accounting_periods','vendor_contracts','budgets','audit_logs']]
  ];
- const item=k=>`<button data-page="${k}" class="nav-item ${k===page?'active':''}" ${k===page?'aria-current="page"':''}>${icon(iconNames[k],18)}<span>${t(k)}</span></button>`;
- return `<aside class="sidebar" id="navigation" aria-label="${localText('التنقل الرئيسي','Main navigation')}">${brand()}<nav><div class="sidebar-caption">${localText('مساحة العمل','WORKSPACE')}</div>${available.includes('dashboard')?item('dashboard'):''}${available.includes('portal')?item('portal'):''}${groups.map(([key,label,keys])=>{const visible=keys.filter(k=>available.includes(k));return visible.length?`<details class="nav-group" ${keys.includes(page)||['portfolio','finance'].includes(key)?'open':''}><summary>${label}</summary>${visible.map(item).join('')}</details>`:''}).join('')}</nav><div class="sidebar-bottom">${item('profile')}${item('settings')}<p>TOWERFLOW</p></div></aside>`;
+ const item=k=>`<button data-page="${k}" class="nav-item ${k===page?'active':''}" ${k===page?'aria-current="page"':''}>${icon(iconNames[k]||'file',18)}<span>${t(k)}</span></button>`;
+ return `<aside class="sidebar" id="navigation" aria-label="${localText('التنقل الرئيسي','Main navigation')}">${brand()}<nav><div class="sidebar-caption">${localText('مساحة العمل','WORKSPACE')}</div>${available.includes('dashboard')?item('dashboard'):''}${available.includes('portal')?item('portal'):''}${groups.map(([key,label,keys])=>{const visible=keys.filter(k=>available.includes(k));return visible.length?`<details class="nav-group" ${keys.includes(page)||(['portfolio','finance'].includes(key)&&key!=='advanced')?'open':''}><summary>${label}</summary>${visible.map(item).join('')}</details>`:''}).join('')}</nav><div class="sidebar-bottom">${item('profile')}${item('settings')}<p>TOWERFLOW</p></div></aside>`;
 }
 
 async function render(){
@@ -267,8 +268,22 @@ async function dashboard(){
        <span class="hero-tag">${escape(me.organizations.find(o=>o.id===org)?.name||'')}</span>
      </div>
      ${architecture()}
-   </div>
-   <div class="metrics">
+    </div>
+    <div class="quick-hub">
+      ${role()==='resident'?`
+        <button class="quick-hub-btn primary" data-quick="submit_proof">${icon('plus',18)}<span>${localText('إرسال إثبات سداد','Submit Payment Proof')}</span></button>
+        <button class="quick-hub-btn" data-quick="new_ticket">${icon('tool',18)}<span>${localText('طلب صيانة جديد','Request Maintenance')}</span></button>
+        <button class="quick-hub-btn" data-go="invoices">${icon('wallet',18)}<span>${localText('فواتيري ومستحقاتي','My Invoices')}</span></button>
+        <button class="quick-hub-btn" data-quick="new_support">${icon('shield',18)}<span>${localText('الدعم الفني','Support Ticket')}</span></button>
+      `:`
+        <button class="quick-hub-btn primary" data-quick="collect">${icon('plus',18)}<span>${localText('تحصيل فوري','Quick Collect')}</span></button>
+        <button class="quick-hub-btn" data-go="invoices">${icon('wallet',18)}<span>${localText('الفواتير والمطالبات','Invoices')}</span></button>
+        <button class="quick-hub-btn" data-go="units">${icon('grid',18)}<span>${localText('إدارة الشقق والوحدات','Units & Apartments')}</span></button>
+        <button class="quick-hub-btn" data-go="payment_proofs">${icon('check',18)}<span>${localText('إثباتات التحويل','Payment Proofs')} ${pendingProofs.length?`<span class="badge warn">${pendingProofs.length}</span>`:''}</span></button>
+        <button class="quick-hub-btn" data-quick="new_ticket">${icon('tool',18)}<span>${localText('بلاغ صيانة جديد','New Ticket')}</span></button>
+      `}
+    </div>
+    <div class="metrics">
      ${[
        [t('units'),unitTotal,'building'],
        [localText('المبالغ المستحقة','Outstanding balance'),money(due),'wallet'],

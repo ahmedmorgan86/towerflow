@@ -117,7 +117,12 @@ class MainActivity : Activity() {
         base = getPreferences(0).getString("base", "https://towerflow.vercel.app") ?: "https://towerflow.vercel.app"
         arabic = getPreferences(0).getBoolean("arabic", true)
         dark = getPreferences(0).getBoolean("dark", false)
-        login()
+        token = getPreferences(0).getString("session_token", "") ?: ""
+        if (token.isNotEmpty()) {
+            loadMe()
+        } else {
+            login()
+        }
         handleAuth(intent)
         pendingNotifications = intent?.extras?.getBoolean("open_notifications", false) == true || intent?.hasExtra("notification_id") == true
         getSystemService(NotificationManager::class.java).createNotificationChannel(
@@ -524,6 +529,16 @@ class MainActivity : Activity() {
                         connection.outputStream.use { it.write(data.toString().toByteArray(Charsets.UTF_8)) }
                     }
                     val code = connection.responseCode
+                    if (code == 401) {
+                        token = ""
+                        getPreferences(0).edit().remove("session_token").apply()
+                        runOnUiThread {
+                            if (!isFinishing && !isDestroyed) {
+                                login()
+                            }
+                        }
+                        return@execute
+                    }
                     val raw = (if (code in 200..299) connection.inputStream else connection.errorStream)?.bufferedReader()?.use { it.readText() } ?: "{}"
                     if (code !in 200..299) {
                         val errMsg = try {
@@ -670,6 +685,7 @@ class MainActivity : Activity() {
                     if (register) payload.put("name", name?.text.toString().trim()).put("organization", organization?.text.toString().trim())
                     call("auth/" + if (register) "register" else "login", "POST", payload) { raw ->
                         token = JSONObject(raw).getString("token")
+                        getPreferences(0).edit().putString("session_token", token).apply()
                         pass.text.clear()
                         loadMe()
                     }
@@ -808,6 +824,67 @@ class MainActivity : Activity() {
                 loadMe()
             }
         }
+    }
+
+    private fun hubGrid(items: List<Pair<String, Pair<String, String>>>): LinearLayout {
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+        for (chunk in items.chunked(2)) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                    topMargin = dp(4)
+                    bottomMargin = dp(4)
+                }
+                weightSum = 2f
+            }
+            for ((index, item) in chunk.withIndex()) {
+                val key = item.first
+                val glyph = item.second.first
+                val titleText = item.second.second
+                val pill = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    setPadding(dp(12), dp(10), dp(12), dp(10))
+                    background = roundedDrawable(
+                        if (dark) Color.parseColor("#17243B") else Color.parseColor("#F8FAFC"),
+                        12f,
+                        if (dark) Color.parseColor("#27394E") else Color.parseColor("#E2E8F0")
+                    )
+                    val lp = LinearLayout.LayoutParams(0, dp(46), 1f).apply {
+                        if (index == 0 && chunk.size == 2) marginEnd = dp(4)
+                        else if (index == 1) marginStart = dp(4)
+                    }
+                    layoutParams = lp
+                    isClickable = true
+                    isFocusable = true
+                    setOnClickListener { listing(key) }
+                    addView(TextView(this@MainActivity).apply {
+                        text = glyph
+                        textSize = 16f
+                        setPadding(0, 0, dp(8), 0)
+                    })
+                    addView(TextView(this@MainActivity).apply {
+                        text = titleText
+                        textSize = 12f
+                        maxLines = 1
+                        ellipsize = TextUtils.TruncateAt.END
+                        typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                        setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#1E293B"))
+                    })
+                }
+                row.addView(pill)
+            }
+            if (chunk.size == 1) {
+                row.addView(View(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(0, dp(46), 1f).apply { marginStart = dp(4) }
+                })
+            }
+            container.addView(row)
+        }
+        return container
     }
 
     private fun home() {
@@ -1026,51 +1103,119 @@ class MainActivity : Activity() {
         quickGrid.addView(q2)
         screen.addView(quickGrid)
 
-        // Categorized Sections
+        // Organized Hub Cards (Simplified for Superior Mobile Usability)
         if (role != "resident") {
-            sectionHeader(text("🏢 إدارة العقار والوحدات", "Property & Units"))
-            navTile("properties", title("properties"), text("سجل الأبراج والمباني وبياناتها", "Towers and buildings directory"))
-            navTile("units", title("units"), text("حصر الشقق والمساحات وحالة الإشغال", "Apartments, areas and occupancy"))
-            navTile("parties", title("parties"), text("سجل الملاك والمستأجرين وبيانات التواصل", "Owners and tenants registry"))
-            navTile("leases", title("leases"), text("عقود الإيجار والمدد وتاريخ التجديد", "Lease contracts and renewals"))
-            navTile("ownerships", title("ownerships"), text("حصص الملكية المشتركة في العقار", "Ownership shares"))
+            card {
+                addView(TextView(this@MainActivity).apply {
+                    text = text("🏢 المحفظة العقارية", "Property & Units")
+                    textSize = 13.5f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                    setPadding(0, 0, 0, dp(6))
+                })
+                addView(hubGrid(listOf(
+                    "properties" to Pair("🏢", title("properties")),
+                    "units" to Pair("🚪", title("units")),
+                    "parties" to Pair("👥", title("parties")),
+                    "leases" to Pair("📑", title("leases"))
+                )))
+            }
 
-            sectionHeader(text("💳 المالية والتحصيل", "Finance & Cash Flow"))
-            navTile("invoices", title("invoices"), text("الفواتير الشهرية والخدمات والمطالبات", "Issued invoices and dues"))
-            navTile("receipts", title("receipts"), text("سندات القبض النقدية والبنكية", "Payment receipts ledger"))
-            navTile("payment_proofs", title("payment_proofs"), text("مراجعة واعتماد إيصالات التحويل البنكي", "Review transfer slips"))
-            navTile("credit_balances", title("credit_balances"), text("أرصدة السكان الدائنة المتاحة للتسوية", "Available resident credit balances"))
-            navTile("fines", title("fines"), text("غرامات التأخير والمخالفات والإعفاءات", "Late penalties and waivers"))
-            navTile("money_accounts", title("money_accounts"), text("الخزينة والحسابات البنكية وصناديق الصيانة", "Cash, bank and maintenance reserves"))
-            navTile("expenses", title("expenses"), text("أوامر الصرف ومصروفات التشغيل", "Operational expenses"))
-            navTile("journals", title("journals"), text("دفتر اليومية العامة والقيود المحاسبية", "General journal entries"))
-            navTile("trial_balance", title("trial_balance"), text("ميزان المراجعة والأرصدة الختامية", "Trial balance ledger"))
+            card {
+                addView(TextView(this@MainActivity).apply {
+                    text = text("💳 المالية والتحصيل", "Finance & Cash Flow")
+                    textSize = 13.5f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                    setPadding(0, 0, 0, dp(6))
+                })
+                addView(hubGrid(listOf(
+                    "invoices" to Pair("💳", title("invoices")),
+                    "receipts" to Pair("🧾", title("receipts")),
+                    "payment_proofs" to Pair("📤", title("payment_proofs")),
+                    "money_accounts" to Pair("🏦", title("money_accounts")),
+                    "expenses" to Pair("📉", title("expenses")),
+                    "fines" to Pair("⚠️", title("fines"))
+                )))
+            }
 
-            sectionHeader(text("🛠️ الصيانة والتشغيل", "Maintenance & Operations"))
-            navTile("tickets", title("tickets"), text("طلبات وبلاغات الصيانة وتتبع إنجازها", "Maintenance tickets tracking"))
-            navTile("assets", title("assets"), text("سجل المصاعد والمضخات ومعدات البرج", "Elevators, pumps and equipment"))
-            navTile("technicians", title("technicians"), text("فنيو الصيانة والموردون المعتمدون", "Approved service technicians"))
-            navTile("vendor_contracts", title("vendor_contracts"), text("عقود الصيانة الدورية والنظافة والأمن", "Periodic service contracts"))
-            navTile("budgets", title("budgets"), text("الميزانيات التقديرية السنوية للبرج", "Annual budget targets"))
-            navTile("expense_distributions", title("expense_distributions"), text("توزيع المصروفات الطارئة على الشقق", "Shared expense distributions"))
+            card {
+                addView(TextView(this@MainActivity).apply {
+                    text = text("🛠️ الصيانة والتشغيل", "Maintenance & Operations")
+                    textSize = 13.5f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                    setPadding(0, 0, 0, dp(6))
+                })
+                addView(hubGrid(listOf(
+                    "tickets" to Pair("🛠️", title("tickets")),
+                    "technicians" to Pair("👷", title("technicians")),
+                    "assets" to Pair("🛗", title("assets")),
+                    "vendor_contracts" to Pair("📝", title("vendor_contracts"))
+                )))
+            }
 
-            sectionHeader(text("📢 الإدارة والدعم", "Management & Support"))
-            navTile("announcements", title("announcements"), text("نشر التعميمات والإعلانات للسكان", "Resident announcements"))
-            navTile("notifications", title("notifications"), text("التنبيهات والإشعارات اللحظية", "App notifications"))
-            navTile("support_tickets", title("support_tickets"), text("تذاكر الدعم الفني لمشرفي النظام", "Technical support tickets"))
-            navTile("audit_logs", title("audit_logs"), text("سجل الحركات الإدارية والمالية غير القابل للتعديل", "Immutable audit trail"))
+            card {
+                addView(TextView(this@MainActivity).apply {
+                    text = text("📢 التواصل والدعم", "Workspace & Support")
+                    textSize = 13.5f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                    setPadding(0, 0, 0, dp(6))
+                })
+                addView(hubGrid(listOf(
+                    "announcements" to Pair("📢", title("announcements")),
+                    "notifications" to Pair("🔔", title("notifications")),
+                    "support_tickets" to Pair("🎫", title("support_tickets")),
+                    "audit_logs" to Pair("📜", title("audit_logs"))
+                )))
+            }
         } else {
-            sectionHeader(text("خدماتي", "My Services"))
-            navTile("units", title("units"), text("بيانات وحدتي السكنية", "My Apartment Details"))
-            navTile("leases", title("leases"), text("عقد الإيجار النشط", "My Active Lease"))
-            navTile("invoices", title("invoices"), text("الفواتير والمستحقات الشهرية", "My Invoices & Dues"))
-            navTile("payment_proofs", title("payment_proofs"), text("إرسال إثبات تحويل بنكي", "Submit Payment Slip"))
-            navTile("credit_balances", title("credit_balances"), text("رصيدي الدائن المتاح", "My Credit Balance"))
-            navTile("fines", title("fines"), text("الغرامات والمخالفات إن وجدت", "My Fines"))
-            navTile("tickets", title("tickets"), text("طلب صيانة أو إصلاح", "Maintenance Requests"))
-            navTile("announcements", title("announcements"), text("إعلانات وتعليمات إدارة البرج", "Building Announcements"))
-            navTile("notifications", title("notifications"), text("التنبيهات المستلمة", "Notifications"))
-            navTile("support_tickets", title("support_tickets"), text("تواصل مع الدعم الفني", "Customer Support"))
+            card {
+                addView(TextView(this@MainActivity).apply {
+                    text = text("🏠 وحدتي وعقدي السكني", "My Home & Lease")
+                    textSize = 13.5f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                    setPadding(0, 0, 0, dp(6))
+                })
+                addView(hubGrid(listOf(
+                    "units" to Pair("🚪", title("units")),
+                    "leases" to Pair("📑", title("leases"))
+                )))
+            }
+
+            card {
+                addView(TextView(this@MainActivity).apply {
+                    text = text("💳 فواتيري وإثباتات السداد", "Invoices & Payments")
+                    textSize = 13.5f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                    setPadding(0, 0, 0, dp(6))
+                })
+                addView(hubGrid(listOf(
+                    "invoices" to Pair("💳", title("invoices")),
+                    "payment_proofs" to Pair("📤", title("payment_proofs")),
+                    "credit_balances" to Pair("💰", title("credit_balances")),
+                    "fines" to Pair("⚠️", title("fines"))
+                )))
+            }
+
+            card {
+                addView(TextView(this@MainActivity).apply {
+                    text = text("🛠️ الصيانة والتواصل", "Maintenance & Notices")
+                    textSize = 13.5f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                    setPadding(0, 0, 0, dp(6))
+                })
+                addView(hubGrid(listOf(
+                    "tickets" to Pair("🛠️", title("tickets")),
+                    "announcements" to Pair("📢", title("announcements")),
+                    "notifications" to Pair("🔔", title("notifications")),
+                    "support_tickets" to Pair("🎫", title("support_tickets"))
+                )))
+            }
         }
 
         sectionHeader(text("حسابي", "My Profile"))
@@ -1582,6 +1727,7 @@ class MainActivity : Activity() {
         getPreferences(0).edit().remove("oauth_verifier").apply()
         call("auth/mobile/exchange", "POST", JSONObject().put("code", code).put("verifier", verifier)) { raw ->
             token = JSONObject(raw).getString("token")
+            getPreferences(0).edit().putString("session_token", token).apply()
             loadMe()
         }
     }
@@ -1631,12 +1777,14 @@ class MainActivity : Activity() {
     private fun disablePushAndLogout() {
         val device = getSharedPreferences("push_device", MODE_PRIVATE).getString("token", null)
         fun finishLogout() {
-            call("auth/logout", "POST", JSONObject()) {
+            fun doClear() {
                 token = ""
                 org = ""
+                getPreferences(0).edit().remove("session_token").apply()
                 getSystemService(NotificationManager::class.java).cancelAll()
                 login()
             }
+            call("auth/logout", "POST", JSONObject(), onError = { doClear() }) { doClear() }
         }
         if (device != null) call("push/devices/remove", "POST", JSONObject().put("token", device)) { finishLogout() } else finishLogout()
     }

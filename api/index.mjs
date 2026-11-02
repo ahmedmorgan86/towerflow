@@ -12,18 +12,19 @@ import {createTowerWithZeroBalance,generateUnitsBatch,transferWithinTower,submit
 import {createSupportTicket,addSupportMessage,requestSupportAccess,approveSupportAccess,revokeSupportAccess} from '../lib/support-system.mjs';
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
 async function body(req){if(req.body&&typeof req.body==='object')return req.body;let data='';for await(const chunk of req){data+=chunk;if(Buffer.byteLength(data)>750000)throw fail('Request too large',413);}try{return data?JSON.parse(data):{};}catch{throw fail('Invalid JSON');}}
-const cookie=(token,secure)=>`tf_session=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${token?43200:0}${secure?'; Secure':''}`;
+const cookie=(token,secure)=>`tf_session=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${token?2592000:0}${secure?'; Secure':''}`;
 async function context(user,fn){return database().transaction(async c=>{await c.query("select set_config('app.user_id',$1,true)",[user.id]);return fn(c);});}
 export default async function handler(req,res){
  res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
  const send=(value,status=200)=>{res.statusCode=status;res.end(JSON.stringify(value));};
+ const isHttps = !!process.env.VERCEL || (process.env.APP_ORIGIN || '').startsWith('https:') || req.headers['x-forwarded-proto'] === 'https';
  try{
  const u=new URL(req.url,'http://localhost');const route=u.pathname.replace(/^\/api\/?/,'').replace(/\/$/,'');const method=req.method;
  if(route==='health'){if(method!=='GET')throw fail('Method not allowed',405);const configured=!!(process.env.DATABASE_URL||globalThis.towerflowLocalDB);if(configured)await database().transaction(c=>c.query('select 1'));return send({service:'TowerFlow',database:configured?'ready':'unconfigured',ai:false},configured?200:503);}
  if(route==='auth/providers'&&method==='GET')return send({google:googleReady(),password:true});
  if(route==='auth/google/start'&&method==='GET'){const location=await googleStart(req,u,res);res.statusCode=302;res.setHeader('Location',location);return res.end();}
  if(route==='auth/google/callback'&&method==='GET'){
- try{const location=await googleCallback(req,u,res,token=>cookie(token,true));res.statusCode=302;res.setHeader('Location',location);return res.end();}catch(error){res.statusCode=302;res.setHeader('Location',(process.env.APP_ORIGIN||'http://localhost:3000')+'/?google_error='+encodeURIComponent(error.status?error.message:'Google sign-in could not be verified'));return res.end();}}
+ try{const location=await googleCallback(req,u,res,token=>cookie(token,isHttps));res.statusCode=302;res.setHeader('Location',location);return res.end();}catch(error){res.statusCode=302;res.setHeader('Location',(process.env.APP_ORIGIN||'http://localhost:3000')+'/?google_error='+encodeURIComponent(error.status?error.message:'Google sign-in could not be verified'));return res.end();}}
  if(!['GET','HEAD'].includes(method)){
 
  const expected=process.env.APP_ORIGIN||(process.env.VERCEL_URL?'https://'+process.env.VERCEL_URL:'http://localhost:3000');
@@ -49,11 +50,11 @@ export default async function handler(req,res){
  if(!row||!valid)throw fail('Invalid email or password',401);user={id:row.id,email:row.email,name:row.name};
  }
  return {user,token:await createSession(c,user.id)};
- });res.setHeader('Set-Cookie',cookie(result.token,!!process.env.VERCEL||process.env.APP_ORIGIN?.startsWith('https:')));return send(req.headers['x-towerflow-client']==='android'?result:{user:result.user},route==='auth/register'?201:200);
+ });res.setHeader('Set-Cookie',cookie(result.token,isHttps));return send(req.headers['x-towerflow-client']==='android'?result:{user:result.user},route==='auth/register'?201:200);
  }
  if(route==='auth/mobile/exchange'&&method==='POST')return send(await mobileExchange(await body(req)));
  const user=await session(req);if(!user)throw fail('Sign in required',401);
- if(route==='auth/logout'&&method==='POST'){await database().transaction(c=>c.query('delete from private.sessions where token_hash=$1',[hashToken(tokenFrom(req))]));res.setHeader('Set-Cookie',cookie('',!!process.env.VERCEL));return send({ok:true});}
+ if(route==='auth/logout'&&method==='POST'){await database().transaction(c=>c.query('delete from private.sessions where token_hash=$1',[hashToken(tokenFrom(req))]));res.setHeader('Set-Cookie',cookie('',isHttps));return send({ok:true});}
  if(route==='push/devices'&&method==='POST'){const b=await body(req);return send(await database().transaction(c=>registerDevice(c,user.id,b.token)));}
  if(route==='push/devices/remove'&&method==='POST'){const b=await body(req);return send(await database().transaction(c=>registerDevice(c,user.id,b.token,true)));}
  if(route==='me/profile'&&method==='PATCH')return send({user:await updateProfile(user,await body(req))});

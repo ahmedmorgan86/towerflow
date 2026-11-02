@@ -757,6 +757,17 @@ textarea { min-height: 100px; resize: vertical; }
 .hero .hero-tag { display: inline-flex; gap: 8px; align-items: center; color: #c7d2fe; font-size: 11px; margin-top: 14px; font-weight: 600; }
 .hero-tag:before { content: ''; width: 6px; height: 6px; background: #818cf8; border-radius: 50%; box-shadow: 0 0 8px #818cf8; }
 
+/* Quick Actions Hub */
+.quick-hub { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.quick-hub-btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; border-radius: var(--radius-md); font-size: 13.5px; font-weight: 700; background: var(--surface); border: 1px solid var(--line); color: var(--text); cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-sm); }
+.quick-hub-btn:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.quick-hub-btn.primary { background: linear-gradient(135deg, #4f46e5, #6366f1); color: #ffffff; border: none; }
+.quick-hub-btn.primary:hover { opacity: 0.95; box-shadow: 0 4px 14px rgba(79,70,229,0.35); }
+.quick-hub-btn svg { flex-shrink: 0; }
+.dark .quick-hub-btn { background: #11131a; border-color: #1e2330; color: #f1f5f9; }
+.dark .quick-hub-btn:hover { border-color: #818cf8; }
+.dark .quick-hub-btn.primary { background: linear-gradient(135deg, #4f46e5, #6366f1); color: #ffffff; }
+
 /* Metrics / KPI Grid */
 .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; margin-bottom: 28px; }
 .metric { padding: 22px; border-radius: var(--radius-lg); position: relative; overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
