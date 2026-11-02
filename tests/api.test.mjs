@@ -40,6 +40,27 @@ test('API: monthly collections tracks units, generates dues and records quick co
   const updated=m2.data.units.find(u=>u.unit_id===targetUnit.unit_id);
   assert.equal(updated.is_paid,true);
   assert.equal(updated.paid_amount,'250.00');
+
+  // Verify owned unit behavior and assign-resident endpoint
+  const ownedRes=await request('units?org='+org,'POST',{property_id:property,unit_number:'99',floor:9,ownership_type:'owned'},alice);
+  assert.equal(ownedRes.status,201);
+  const mOwned=await request('collections/monthly?org='+org+'&month=2026-11','GET',null,alice);
+  const ownedUnit=mOwned.data.units.find(u=>u.unit_id===ownedRes.data.id);
+  assert.ok(ownedUnit);
+  assert.equal(ownedUnit.ownership_type,'owned');
+  assert.equal(ownedUnit.status,'owned');
+  assert.equal(ownedUnit.resident_name,'مالك الوحدة (تمليك)');
+  assert.equal(ownedUnit.resident_kind,'owner');
+
+  const assign=await request('units/'+ownedRes.data.id+'/assign-resident?org='+org,'POST',{name:'أحمد مرجان',phone:'01001234567',kind:'owner'},alice);
+  assert.equal(assign.status,200);
+  assert.equal(assign.data.ok,true);
+
+  const mAssigned=await request('collections/monthly?org='+org+'&month=2026-11','GET',null,alice);
+  const assignedUnit=mAssigned.data.units.find(u=>u.unit_id===ownedRes.data.id);
+  assert.equal(assignedUnit.resident_name,'أحمد مرجان');
+  assert.equal(assignedUnit.resident_phone,'01001234567');
+  assert.equal(assignedUnit.resident_kind,'owner');
 });
 test('API: logout revokes session immediately',async()=>{assert.equal((await request('auth/logout','POST',{},alice)).status,200);assert.equal((await request('me','GET',null,alice)).status,401);});
 test('API: valid login works and wrong password is rejected',async()=>{assert.equal((await request('auth/login','POST',{email:'alice@example.test',password:'wrong-password-123'})).status,401);assert.equal((await request('auth/login','POST',{email:'alice@example.test',password:'test-password-123'})).status,200);});

@@ -171,15 +171,15 @@ document.addEventListener('click',async e=>{
 
 function auth(register=false){
  theme();document.body.classList.remove('nav-open');
- $('#app').innerHTML=`<main class="auth"><section class="auth-art">${brand()}<div class="auth-story"><div class="eyebrow">${localText('عقاراتك. رؤيتك. مساحتك.','YOUR PROPERTIES. YOUR PERSPECTIVE.')}</div><h1>${localText('إدارة أذكى للعقارات.<br>ومساحة أكبر للنمو.','A clearer way to manage.<br>More room to grow.')}</h1><p class="story-desc">${localText('من العقود والتحصيل إلى الصيانة والحسابات، كل تفاصيل محفظتك في مكان واحد.','From leases and collections to maintenance and accounting, bring your entire portfolio together.')}</p>${architecture()}<div class="auth-benefits"><span>${icon('check',15)}${localText('عقارات ووحدات','Properties & units')}</span><span>${icon('check',15)}${localText('محاسبة وتحصيل','Accounting & collections')}</span><span>${icon('check',15)}${localText('صيانة وسكان','Maintenance & residents')}</span></div><a href="/TowerFlow-latest.apk" download="TowerFlow-v0.7.0.apk" class="auth-app-badge">${icon('android',16)} ${localText('تطبيق أندرويد أصلي متاح الآن (APK)','Native Android APK Available')}</a></div><div class="foot">© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow ${localText('لإدارة العقارات','Property Management')}</div></section><section class="auth-main"><div class="auth-mobile-brand">${brand()}</div><div class="auth-tools">${toggles()}</div><form id="authform"><div class="login-symbol">${icon(register?'building':'shield',24)}</div><h1>${localText(register?'ابدأ مع TowerFlow':'أهلًا بعودتك',register?'Your workspace starts here':'Welcome back')}</h1><p>${localText(register?'أنشئ حسابك وابدأ تنظيم محفظتك العقارية.':'سجّل دخولك لمتابعة عقاراتك وأعمالك اليومية.',register?'Create an account and organize your portfolio.':'Sign in to your workspace and pick up where you left off.')}</p>${register?`<label>${t('name')}<input name="name" required maxlength="160" autocomplete="name" placeholder="${localText('اسمك الكامل','Your full name')}"></label><label>${t('organization')}<input name="organization" required maxlength="160" autocomplete="organization" placeholder="${localText('اسم شركتك أو مؤسستك','Your organization name')}"></label>`:''}<label>${t('email')}<input name="email" type="email" required autocomplete="email" placeholder="name@company.com"></label><label>${localText('كلمة المرور','Password')}<input name="password" type="password" minlength="12" maxlength="128" required autocomplete="${register?'new-password':'current-password'}" placeholder="${localText('12 حرفًا على الأقل','At least 12 characters')}"></label><div class="error" id="autherror" role="alert"></div><button class="primary" type="submit">${t(register?'signup':'signin')}${icon('arrow',17)}</button><div class="auth-divider">${localText('أو','or')}</div><button type="button" class="google-button" id="google-login"><span aria-hidden="true">G</span>${localText('المتابعة باستخدام Google','Continue with Google')}</button><p id="google-note" class="muted" role="status"></p><div class="auth-switch"><span>${localText(register?'لديك حساب بالفعل؟':'ليس لديك حساب بعد؟',register?'Already have an account?':'New to TowerFlow?')}</span><button type="button" class="text-button" id="switchauth">${localText(register?'تسجيل الدخول':'إنشاء حساب',register?'Sign in':'Create an account')}</button></div><div class="app-download-card">
+ $('#app').innerHTML=`<main class="auth"><section class="auth-art">${brand()}<div class="auth-story"><div class="eyebrow">${localText('عقاراتك. رؤيتك. مساحتك.','YOUR PROPERTIES. YOUR PERSPECTIVE.')}</div><h1>${localText('إدارة أذكى للعقارات.<br>ومساحة أكبر للنمو.','A clearer way to manage.<br>More room to grow.')}</h1><p class="story-desc">${localText('من العقود والتحصيل إلى الصيانة والحسابات، كل تفاصيل محفظتك في مكان واحد.','From leases and collections to maintenance and accounting, bring your entire portfolio together.')}</p>${architecture()}<div class="auth-benefits"><span>${icon('check',15)}${localText('عقارات ووحدات','Properties & units')}</span><span>${icon('check',15)}${localText('محاسبة وتحصيل','Accounting & collections')}</span><span>${icon('check',15)}${localText('صيانة وسكان','Maintenance & residents')}</span></div><a href="/TowerFlow-latest.apk" download="TowerFlow-v0.7.1.apk" class="auth-app-badge">${icon('android',16)} ${localText('تطبيق أندرويد أصلي متاح الآن (APK)','Native Android APK Available')}</a></div><div class="foot">© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow ${localText('لإدارة العقارات','Property Management')}</div></section><section class="auth-main"><div class="auth-mobile-brand">${brand()}</div><div class="auth-tools">${toggles()}</div><form id="authform"><div class="login-symbol">${icon(register?'building':'shield',24)}</div><h1>${localText(register?'ابدأ مع TowerFlow':'أهلًا بعودتك',register?'Your workspace starts here':'Welcome back')}</h1><p>${localText(register?'أنشئ حسابك وابدأ تنظيم محفظتك العقارية.':'سجّل دخولك لمتابعة عقاراتك وأعمالك اليومية.',register?'Create an account and organize your portfolio.':'Sign in to your workspace and pick up where you left off.')}</p>${register?`<label>${t('name')}<input name="name" required maxlength="160" autocomplete="name" placeholder="${localText('اسمك الكامل','Your full name')}"></label><label>${t('organization')}<input name="organization" required maxlength="160" autocomplete="organization" placeholder="${localText('اسم شركتك أو مؤسستك','Your organization name')}"></label>`:''}<label>${t('email')}<input name="email" type="email" required autocomplete="email" placeholder="name@company.com"></label><label>${localText('كلمة المرور','Password')}<input name="password" type="password" minlength="12" maxlength="128" required autocomplete="${register?'new-password':'current-password'}" placeholder="${localText('12 حرفًا على الأقل','At least 12 characters')}"></label><div class="error" id="autherror" role="alert"></div><button class="primary" type="submit">${t(register?'signup':'signin')}${icon('arrow',17)}</button><div class="auth-divider">${localText('أو','or')}</div><button type="button" class="google-button" id="google-login"><span aria-hidden="true">G</span>${localText('المتابعة باستخدام Google','Continue with Google')}</button><p id="google-note" class="muted" role="status"></p><div class="auth-switch"><span>${localText(register?'لديك حساب بالفعل؟':'ليس لديك حساب بعد؟',register?'Already have an account?':'New to TowerFlow?')}</span><button type="button" class="text-button" id="switchauth">${localText(register?'تسجيل الدخول':'إنشاء حساب',register?'Sign in':'Create an account')}</button></div><div class="app-download-card">
   <div class="app-download-content">
     <div class="app-download-icon">${icon('android',22)}</div>
     <div class="app-download-text">
       <strong>${localText('تطبيق TowerFlow للأندرويد','TowerFlow Android App')}</strong>
-      <small>${localText('تحميل مباشر للأجهزة الذكية · إصدار v0.7.0','Direct APK installation · v0.7.0')}</small>
+      <small>${localText('تحميل مباشر للأجهزة الذكية · إصدار v0.7.1','Direct APK installation · v0.7.1')}</small>
     </div>
   </div>
-  <a href="/TowerFlow-latest.apk" download="TowerFlow-v0.7.0.apk" class="app-download-btn">
+  <a href="/TowerFlow-latest.apk" download="TowerFlow-v0.7.1.apk" class="app-download-btn">
     ${icon('android',17)} ${localText('تحميل التطبيق للأندرويد','Download for Android')}
   </a>
 </div><details class="install-guide"><summary>${localText('تعليمات التثبيت وتخطي تحذير الحماية المعتاد','Installation guide & Play Protect steps')}</summary><div class="install-steps"><p>1. ${localText('عند بدء التنزيل: اختر <b>تنزيل على أي حال (Download anyway)</b>.','When downloading: tap <b>Download anyway</b>.')}</p><p>2. ${localText('عند فتح الملف: اضغط <b>الإعدادات</b> ثم فعّل <b>السماح بتثبيت التطبيقات من هذا المصدر</b>.','When opening: tap <b>Settings</b> and enable <b>Allow from this source</b>.')}</p><p>3. ${localText('إذا ظهر تنبيه Play Protect: اضغط <b>مزيد من التفاصيل (More details)</b> ثم <b>التثبيت على أي حال (Install anyway)</b> — الحزمة أصلية وموقعة بشهادة TowerFlow الرسمية.','If Play Protect warns: tap <b>More details</b> then <b>Install anyway</b> — The APK is clean and officially signed.')}</p><p>4. ${localText('إذا ظهر تعارض في الحزمة (Package conflicts): احذف النسخة التجريبية القديمة من الهاتف أولاً ثم ثبّت هذه الحزمة الإنتاجية.','If you get a package conflict error: uninstall the previous test version from your phone first, then install.')}</p></div></details><p class="privacy-link"><a href="/privacy.html">${localText('الخصوصية وبياناتك','Privacy & your data')}</a></p><div class="auth-security">${icon('shield',14)}${localText('بيانات مؤسستك معزولة ومحمية بصلاحيات الوصول','Your workspace is isolated and protected by access controls')}</div></form></section></main>`;
@@ -610,18 +610,32 @@ async function collectionsView(){
             </tr>
           </thead>
           <tbody>
-            ${units.map(u => `
+            ${units.map(u => {
+              const isOwned = u.ownership_type === 'owned' || u.status === 'owned' || u.resident_kind === 'owner';
+              let resDisplay = u.resident_name;
+              if (isOwned && (!resDisplay || resDisplay.includes('شاغرة') || resDisplay === 'vacant')) {
+                resDisplay = localText('مالك الوحدة (تمليك)', 'Unit Owner (Owned)');
+              }
+              const kindBadge = isOwned
+                ? `<span class="badge" style="background:#e0f2fe;color:#0369a1">${localText('وحدة تمليك (ملك)','Owned Unit')}</span>`
+                : (u.resident_kind === 'tenant' ? `<span class="badge" style="background:#f1f5f9;color:#475569">${localText('مستأجر','Tenant')}</span>` : `<span class="badge" style="background:#fef3c7;color:#b45309">${localText('شاغرة للإيجار','Vacant Rental')}</span>`);
+              return `
               <tr>
-                <td><strong>${localText('شقة','Unit')} ${escape(u.unit_number||u.unit_name)}</strong><br><small class="muted">${localText('طابق','Floor')} ${u.floor||0}</small></td>
-                <td>${escape(u.resident_name)}<br><small class="muted">${u.resident_kind==='owner'?localText('مالك','Owner'):localText('مستأجر','Tenant')}${u.resident_phone?' · '+escape(u.resident_phone):''}</small></td>
+                <td><strong>${localText('شقة','Unit')} ${escape(u.unit_number||u.unit_name)}</strong><br><small class="muted">${localText('طابق','Floor')} ${u.floor||0} · ${isOwned ? localText('تمليك','Owned') : localText('إيجار','Rental')}</small></td>
+                <td>
+                  <strong>${escape(resDisplay)}</strong><br>
+                  <small class="muted">${kindBadge}${u.resident_phone?' · 📞 '+escape(u.resident_phone):''}</small>
+                  ${!u.party_id ? `<br><button class="ghost small btn-assign-owner" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-kind="${isOwned?'owner':'tenant'}" style="margin-top:4px;padding:2px 6px;font-size:0.75rem">${localText('👤 تحديد المالك/الساكن','👤 Set Resident')}</button>` : ''}
+                </td>
                 <td><strong>${money(u.monthly_fee)}</strong></td>
                 <td>${u.is_paid?'<span class="badge ok">'+localText('✅ تم السداد','Paid')+'</span>':'<span class="badge warn">'+localText('⏳ غير مسدد','Unpaid')+'</span>'}</td>
                 <td>${u.is_paid?`<small>🧾 ${escape(u.receipt_reference||'-')}<br>${escape(u.collected_at||'')}</small>`:'-'}</td>
                 <td>
-                  ${u.is_paid?'<span class="muted">'+localText('مكتمل','Done')+'</span>':`<button class="primary small btn-quick-collect" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-res="${escape(u.resident_name)}" data-fee="${u.monthly_fee}">${localText('⚡ تحصيل فوري','Quick Collect')}</button>`}
+                  ${u.is_paid?'<span class="muted">'+localText('مكتمل','Done')+'</span>':`<button class="primary small btn-quick-collect" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-res="${escape(resDisplay)}" data-fee="${u.monthly_fee}">${localText('⚡ تحصيل فوري','Quick Collect')}</button>`}
                 </td>
               </tr>
-            `).join('')}
+              `;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -643,24 +657,29 @@ async function collectionsView(){
     }
   };
 
-  document.querySelectorAll('.btn-quick-collect').forEach(btn => {
-    btn.onclick = async () => {
+  document.querySelectorAll('.btn-assign-owner').forEach(btn => {
+    btn.onclick = () => {
       const uId = btn.dataset.unit;
       const uName = btn.dataset.name;
-      const resName = btn.dataset.res;
-      const fee = btn.dataset.fee;
-      const amt = prompt(localText('المبلغ المراد تحصيله لشقة ' + uName + ' (' + resName + '):', 'Amount to collect for unit ' + uName + ':'), fee && Number(fee) > 0 ? fee : '500');
-      if (!amt) return;
-      try {
-        const res = await api('collections/quick-collect', {
-          method: 'POST',
-          body: JSON.stringify({ unit_id: uId, amount: amt, method: 'cash', month })
-        });
-        toast(localText('تم التحصيل بنجاح! سند رقم: ' + res.receipt_reference, 'Collected successfully! Receipt: ' + res.receipt_reference));
-        collectionsView();
-      } catch (err) {
-        alert(err.message);
-      }
+      const kind = btn.dataset.kind || 'owner';
+      modal(localText('تحديد بيانات المالك / الساكن لشقة ' + uName, 'Set Resident / Owner for Unit ' + uName),
+        field('name', '', { placeholder: localText('اسم المالك أو الساكن بالكامل', 'Full Name') }) +
+        field('phone', '', { placeholder: localText('رقم الهاتف للتواصل', 'Phone number') }) +
+        field('kind', kind, { choices: [['owner', localText('مالك الوحدة (تمليك)', 'Owner')], ['tenant', localText('مستأجر', 'Tenant')]] }),
+        async (b) => {
+          if (!b.name || !b.name.trim()) return alert(localText('يرجى إدخال الاسم', 'Please enter a name'));
+          try {
+            await api('units/' + uId + '/assign-resident', {
+              method: 'POST',
+              body: JSON.stringify({ name: b.name.trim(), phone: (b.phone || '').trim(), kind: b.kind })
+            });
+            toast(localText('تم حفظ وتعيين المالك بنجاح', 'Assigned successfully'));
+            collectionsView();
+          } catch (err) {
+            alert(err.message);
+          }
+        }
+      );
     };
   });
 }

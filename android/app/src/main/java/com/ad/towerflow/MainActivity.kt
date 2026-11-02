@@ -125,7 +125,7 @@ class MainActivity : Activity() {
             "vacant" -> text("شاغرة وغير مشغولة", "Vacant")
             "occupied" -> text("مشغولة / مؤجرة", "Occupied")
             "owned" -> text("وحدة ملك (تمليك)", "Owned")
-            "rental" -> text("إيجار", "Rental")
+            "rental" -> text("وحدة إيجار", "Rental")
             "maintenance" -> text("تحت أعمال الصيانة", "Under Maintenance")
 
             "open" -> text("مفتوح", "Open")
@@ -1614,9 +1614,11 @@ class MainActivity : Activity() {
                 val u = unitsArr.getJSONObject(i)
                 val isPaid = u.optBoolean("is_paid", false)
                 val fee = u.optDouble("monthly_fee", 0.0)
+                val isOwnedUnit = u.optString("ownership_type") == "owned" || u.optString("status") == "owned" || u.optString("resident_kind") == "owner"
 
                 if (activeFilter == "paid" && !isPaid) continue
                 if (activeFilter == "unpaid" && isPaid) continue
+                if (activeFilter == "owned" && !isOwnedUnit) continue
                 count++
 
                 // Unit Card
@@ -1641,7 +1643,7 @@ class MainActivity : Activity() {
 
                 val unitNumber = u.optString("unit_number", u.optString("unit_name", ""))
                 val titleTv = TextView(this@MainActivity).apply {
-                    text = text("شقة / وحدة $unitNumber", "Unit $unitNumber")
+                    text = text("شقة / وحدة " + unitNumber, "Unit " + unitNumber)
                     textSize = 15.5f
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
                     setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
@@ -1650,26 +1652,39 @@ class MainActivity : Activity() {
                 topRow.addView(titleTv)
 
                 val badgeTv = TextView(this@MainActivity).apply {
-                    text = if (isPaid) text("✅ تم السداد", "✅ Paid") else (if (fee > 0) text("⏳ بانتظار السداد", "⏳ Pending") else text("⚪ بدون اشتراك", "⚪ No Dues"))
+                    text = if (isPaid) {
+                        text("✅ تم السداد", "✅ Paid")
+                    } else if (fee > 0) {
+                        text("⏳ بانتظار السداد", "⏳ Pending")
+                    } else {
+                        if (isOwnedUnit) text("🏢 وحدة تمليك (ملك)", "🏢 Owned Unit") else text("⚪ بدون اشتراك", "⚪ No Dues")
+                    }
                     textSize = 10.5f
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (isPaid) "#10B981" else (if (fee > 0) "#F59E0B" else "#94A3B8")))
+                    setTextColor(Color.parseColor(if (isPaid) "#10B981" else (if (fee > 0) "#F59E0B" else (if (isOwnedUnit) "#0284C7" else "#94A3B8"))))
                     setPadding(dp(8), dp(3), dp(8), dp(3))
                     background = roundedDrawable(
-                        Color.parseColor(if (isPaid) (if (dark) "#064E3B" else "#ECFDF5") else (if (fee > 0) (if (dark) "#78350F" else "#FEF3C7") else (if (dark) "#1E293B" else "#F1F5F9"))),
+                        Color.parseColor(if (isPaid) (if (dark) "#064E3B" else "#ECFDF5") else (if (fee > 0) (if (dark) "#78350F" else "#FEF3C7") else (if (isOwnedUnit) (if (dark) "#082F49" else "#E0F2FE") else (if (dark) "#1E293B" else "#F1F5F9")))),
                         8f
                     )
                 }
                 topRow.addView(badgeTv)
                 uCard.addView(topRow)
 
-                // Subtitle: Resident Info & Kind
-                val resName = u.optString("resident_name", "ساكن الوحدة")
-                val resKind = if (u.optString("resident_kind") == "owner") text("مالك", "Owner") else text("مستأجر", "Tenant")
+                // Subtitle: Resident Info & Kind (An owned unit NEVER displays as vacant)
+                val rawResName = u.optString("resident_name", "")
+                val cleanResName = if (isOwnedUnit && (rawResName.isEmpty() || rawResName.contains("شاغرة") || rawResName.contains("vacant"))) {
+                    text("مالك الوحدة (تمليك)", "Unit Owner (Owned)")
+                } else if (rawResName.isNotEmpty()) {
+                    rawResName
+                } else {
+                    if (isOwnedUnit) text("مالك الوحدة (تمليك)", "Unit Owner (Owned)") else text("شاغرة للإيجار", "Vacant Rental")
+                }
+                val resKind = if (isOwnedUnit) text("مالك", "Owner") else text("مستأجر", "Tenant")
                 val resPhone = u.optString("resident_phone", "")
 
                 val resTv = TextView(this@MainActivity).apply {
-                    text = "👤 $resName · $resKind" + (if (resPhone.isNotEmpty()) " · 📞 $resPhone" else "")
+                    text = "👤 " + cleanResName + " · " + resKind + (if (resPhone.isNotEmpty()) " · 📞 " + resPhone else "")
                     textSize = 11.5f
                     typeface = cairoFont
                     setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
@@ -1684,7 +1699,7 @@ class MainActivity : Activity() {
                     setPadding(0, dp(2), 0, dp(6))
                 }
                 feeRow.addView(TextView(this@MainActivity).apply {
-                    text = text("المطلوب لشهر $currentMonth: ", "Due for $currentMonth: ")
+                    text = text("المطلوب لشهر " + currentMonth + ": ", "Due for " + currentMonth + ": ")
                     textSize = 12f
                     typeface = cairoFont
                     setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
@@ -1695,20 +1710,31 @@ class MainActivity : Activity() {
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
                     setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                 })
+                feeRow.addView(TextView(this@MainActivity).apply {
+                    text = "  (" + (if (isOwnedUnit) text("اشتراك تمليك", "Owner Dues") else text("إيجار / خدمات", "Rent/Services")) + ")"
+                    textSize = 10f
+                    typeface = cairoFont
+                    setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+                })
                 uCard.addView(feeRow)
 
                 // Action Row
+                val actionRow = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                }
+
                 if (isPaid) {
                     val recRef = u.optString("receipt_reference", "")
                     val colAt = u.optString("collected_at", "")
                     val paidInfo = TextView(this@MainActivity).apply {
-                        text = "🧾 " + text("مسدد بسند رقم: $recRef", "Receipt: $recRef") + (if (colAt.isNotEmpty()) " ($colAt)" else "")
+                        text = "🧾 " + text("مسدد بسند رقم: " + recRef, "Receipt: " + recRef) + (if (colAt.isNotEmpty()) " (" + colAt + ")" else "")
                         textSize = 11f
                         typeface = Typeface.create(cairoFont, Typeface.BOLD)
                         setTextColor(Color.parseColor("#10B981"))
-                        setPadding(0, dp(4), 0, 0)
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                     }
-                    uCard.addView(paidInfo)
+                    actionRow.addView(paidInfo)
                 } else {
                     val collectBtn = Button(this@MainActivity).apply {
                         text = text("⚡ تحصيل فوري", "⚡ Collect Now")
@@ -1725,8 +1751,32 @@ class MainActivity : Activity() {
                             showQuickCollectDialog(u, currentMonth)
                         }
                     }
-                    uCard.addView(collectBtn)
+                    actionRow.addView(collectBtn)
                 }
+
+                // If owner is not assigned yet, show button to set owner directly
+                if (u.optString("party_id").isEmpty()) {
+                    val assignBtn = Button(this@MainActivity).apply {
+                        text = text("👤 بيانات المالك", "👤 Set Owner")
+                        textSize = 11f
+                        typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                        setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                        isAllCaps = false
+                        includeFontPadding = false
+                        minHeight = 0
+                        minimumHeight = 0
+                        setPadding(dp(10), dp(8), dp(10), dp(8))
+                        background = roundedDrawable(if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"), 10f)
+                        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                            marginStart = dp(8)
+                        }
+                        setOnClickListener {
+                            showAssignResidentDialog(u, isOwnedUnit, currentMonth)
+                        }
+                    }
+                    actionRow.addView(assignBtn)
+                }
+                uCard.addView(actionRow)
 
                 unitsContainer.addView(uCard)
             }
@@ -1771,7 +1821,7 @@ class MainActivity : Activity() {
                     for (k in 0 until filterRow.childCount) {
                         val b = filterRow.getChildAt(k) as? Button
                         if (b != null) {
-                            val isActive = (k == 0 && fKey == "all") || (k == 1 && fKey == "unpaid") || (k == 2 && fKey == "paid")
+                            val isActive = (k == 0 && fKey == "all") || (k == 1 && fKey == "unpaid") || (k == 2 && fKey == "paid") || (k == 3 && fKey == "owned")
                             b.setTextColor(if (isActive) Color.WHITE else Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                             b.background = if (isActive) gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 10f)
                                            else roundedDrawable(if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"), 10f)
@@ -1784,11 +1834,91 @@ class MainActivity : Activity() {
 
         filterRow.addView(makeFilterBtn("all", text("الكل (" + unitsArr.length() + ")", "All (" + unitsArr.length() + ")")))
         filterRow.addView(makeFilterBtn("unpaid", text("غير مسدد ⏳", "Unpaid ⏳")))
-        filterRow.addView(makeFilterBtn("paid", text("تم السداد ✅", "Paid ✅")))
+        filterRow.addView(makeFilterBtn("paid", text("مسدد ✅", "Paid ✅")))
+        filterRow.addView(makeFilterBtn("owned", text("التمليك 🏢", "Owned 🏢")))
 
         screen.addView(filterRow)
         screen.addView(unitsContainer)
         refreshUnitsList()
+    }
+
+    private fun showAssignResidentDialog(u: JSONObject, isOwned: Boolean, currentMonth: String) {
+        val unitId = u.optString("unit_id")
+        val unitNumber = u.optString("unit_number", u.optString("unit_name", ""))
+
+        val dialogView = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(14), dp(20), dp(10))
+        }
+
+        val titleTv = TextView(this).apply {
+            text = text("تحديد بيانات المالك / الساكن لشقة " + unitNumber, "Assign Owner for Unit " + unitNumber)
+            textSize = 14.5f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+        }
+        dialogView.addView(titleTv)
+
+        val nameLabel = TextView(this).apply {
+            text = text("اسم المالك أو الساكن بالكامل:", "Full Name:")
+            textSize = 11.5f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+            setPadding(0, dp(10), 0, dp(4))
+        }
+        dialogView.addView(nameLabel)
+
+        val nameInput = EditText(this).apply {
+            hint = text("مثال: أحمد مرجان", "e.g. Ahmed Morgan")
+            textSize = 13.5f
+            typeface = cairoFont
+            background = roundedDrawable(if (dark) Color.parseColor("#17243B") else Color.parseColor("#F1F5F9"), 10f)
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+        }
+        dialogView.addView(nameInput)
+
+        val phoneLabel = TextView(this).apply {
+            text = text("رقم الهاتف للتواصل:", "Phone Number:")
+            textSize = 11.5f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+            setPadding(0, dp(10), 0, dp(4))
+        }
+        dialogView.addView(phoneLabel)
+
+        val phoneInput = EditText(this).apply {
+            hint = text("01xxxxxxxxx", "Phone")
+            inputType = android.text.InputType.TYPE_CLASS_PHONE
+            textSize = 13.5f
+            typeface = cairoFont
+            background = roundedDrawable(if (dark) Color.parseColor("#17243B") else Color.parseColor("#F1F5F9"), 10f)
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+        }
+        dialogView.addView(phoneInput)
+
+        AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setPositiveButton(text("حفظ وتعيين", "Save & Assign")) { _, _ ->
+                val name = nameInput.text.toString().trim()
+                val phone = phoneInput.text.toString().trim()
+                if (name.isEmpty()) {
+                    error(IllegalStateException(text("يرجى إدخال اسم المالك أو الساكن", "Please enter a name")))
+                    return@setPositiveButton
+                }
+                val payload = JSONObject().apply {
+                    put("name", name)
+                    put("phone", phone)
+                    put("kind", if (isOwned) "owner" else "tenant")
+                }
+                call("units/" + unitId + "/assign-resident", "POST", payload) {
+                    Toast.makeText(this@MainActivity, text("تم حفظ بيانات المالك بنجاح", "Saved successfully"), Toast.LENGTH_SHORT).show()
+                    monthlyCollections(currentMonth)
+                }
+            }
+            .setNegativeButton(text("إلغاء", "Cancel"), null)
+            .show()
     }
 
     private fun showQuickCollectDialog(u: JSONObject, currentMonth: String) {
@@ -2443,7 +2573,7 @@ class MainActivity : Activity() {
 
     private val forms = mapOf(
         "properties" to listOf("name", "address"),
-        "units" to listOf("property_id", "unit_number", "name", "floor", "area", "status", "ownership_type"),
+        "units" to listOf("property_id", "unit_number", "floor", "ownership_type", "area"),
         "parties" to listOf("name", "kind", "email", "phone"),
         "leases" to listOf("unit_id", "party_id", "start_date", "end_date", "rent", "status"),
         "ownerships" to listOf("unit_id", "party_id", "share"),
@@ -2549,7 +2679,7 @@ class MainActivity : Activity() {
                     key == "frequency" && entity == "vendor_contracts" -> listOf("monthly", "quarterly", "yearly", "one_time")
                     key == "period" && entity == "budgets" -> listOf("monthly", "quarterly", "annual")
                     key == "status" && entity == "units" -> listOf("vacant", "occupied", "owned", "maintenance")
-                    key == "ownership_type" && entity == "units" -> listOf("rental", "owned")
+                    key == "ownership_type" && entity == "units" -> listOf("owned", "rental")
                     key == "status" && entity == "leases" -> listOf("active", "ended")
                     key == "priority" -> listOf("normal", "low", "urgent")
                     key == "category" && entity == "support_tickets" -> listOf("technical", "billing", "accounting", "general")
