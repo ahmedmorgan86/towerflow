@@ -1,0 +1,2 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {vendorStream} from '../vendor.mjs';
+test('vendor adapters must be explicitly registered by the operator',async()=>{await assert.rejects(vendorStream({adapter:'some_brand'},{}),e=>e.status===501);await assert.rejects(vendorStream({adapter:'bad'},{CAMERA_VENDOR_ADAPTERS:'{"bad":"../../secret.mjs"}'}),/adapters directory/);await assert.rejects(vendorStream({adapter:'bad'},{CAMERA_VENDOR_ADAPTERS:'invalid'}),/Invalid adapter registry/);});

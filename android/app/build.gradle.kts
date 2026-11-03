@@ -32,3 +32,5 @@ android {
 }
 
 dependencies { implementation(platform("com.google.firebase:firebase-bom:35.1.0")); implementation("com.google.firebase:firebase-messaging") }
+
+ dependencies { implementation("androidx.media3:media3-exoplayer-hls:1.8.0"); implementation("androidx.media3:media3-ui:1.8.0") }

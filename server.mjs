@@ -2,6 +2,8 @@ import http from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname,sep} from 'node:path';
 import handler from './api/index.mjs';
+import {prepareClientVendor} from './scripts/client-vendor.mjs';
+await prepareClientVendor();
 const root=resolve('web');
 http.createServer(async(req,res)=>{
  if(req.url.startsWith('/api')) return handler(req,res);
@@ -14,7 +16,7 @@ http.createServer(async(req,res)=>{
   res.setHeader('Content-Disposition','attachment; filename="TowerFlow-v0.7.2.apk"');
   res.setHeader('Cache-Control','public, max-age=3600');
  }else{
-  res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'})[extname(file)]||'application/octet-stream');
+  res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'})[extname(file)]||'application/octet-stream');
  }
  res.setHeader('X-Content-Type-Options','nosniff');res.end(await readFile(file));
  }catch{res.writeHead(404);res.end('Not found');}

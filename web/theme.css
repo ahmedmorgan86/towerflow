@@ -1108,3 +1108,14 @@ dialog .actions { justify-content: flex-end; border-top: 1px solid var(--line); 
   #report-result th, #report-result td { padding: 6px; color: black; background: white; }
   @page { size: A4 landscape; margin: 10mm; }
 }
+
+/* Camera management and protected live viewing */
+.camera-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px;margin-block:24px}
+.camera-card{min-width:0}.camera-card .actions{display:flex;flex-wrap:wrap;gap:8px}.camera-card h2{overflow-wrap:anywhere}
+.camera-player video{display:block;width:100%;aspect-ratio:16/9;background:#081525;border-radius:12px;margin-block:16px;object-fit:contain}
+.camera-result{overflow-wrap:anywhere;margin-block:12px}.camera-result form{display:grid;gap:12px}
+#camera-editor{margin-block:20px}#camera-editor summary{cursor:pointer;font-weight:700;padding-block:12px}
+#camera-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding-block:16px}
+#camera-form label{display:grid;gap:7px}#camera-form .full{grid-column:1/-1}#camera-form input[type=checkbox]{width:auto;justify-self:start}
+#camera-form input[name=endpoint],#camera-form input[name=profile_token],#camera-form input[name=adapter]{direction:ltr;text-align:left}
+@media(max-width:600px){#camera-form{grid-template-columns:1fr}.camera-card .actions button{flex:1 1 140px}}

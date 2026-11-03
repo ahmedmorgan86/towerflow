@@ -1,0 +1,1 @@
+{"name":"towerflow-camera-gateway","private":true,"type":"module","engines":{"node":">=24"},"scripts":{"start":"node --env-file-if-exists=.env.local server.mjs","test":"node --test tests/*.test.mjs"},"dependencies":{"onvif":"0.8.3"}}

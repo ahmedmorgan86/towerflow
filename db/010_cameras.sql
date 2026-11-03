@@ -1,0 +1,15 @@
+begin;
+create table public.cameras(id uuid primary key default gen_random_uuid(),org_id uuid not null,property_id uuid not null,name text not null check(length(name) between 1 and 160),vendor text not null default '',model text not null default '',location text not null default '',protocol text not null check(protocol in ('rtsp','onvif','vendor')),enabled boolean not null default true,capabilities jsonb not null default '{}',last_test_at timestamptz,last_test_status text not null default 'not_tested' check(last_test_status in ('not_tested','connected','failed','gateway_unconfigured')),created_at timestamptz not null default now(),unique(org_id,id),foreign key(org_id,property_id) references properties(org_id,id));
+create index on cameras(org_id,property_id);
+create table private.camera_secrets(camera_id uuid primary key references cameras(id),encrypted_config text not null);
+create table private.camera_grants(camera_id uuid not null references cameras(id),user_id uuid not null references private.users(id),expires_at timestamptz,primary key(camera_id,user_id));
+create table private.camera_sessions(id uuid primary key default gen_random_uuid(),camera_id uuid not null references cameras(id),user_id uuid not null references private.users(id),gateway_session uuid not null,expires_at timestamptz not null,closed_at timestamptz);
+create index on private.camera_sessions(camera_id,user_id,expires_at);
+create function private.camera_view(cam uuid) returns boolean language sql stable security definer set search_path='' as $$select exists(select 1 from public.cameras c join private.memberships m on m.org_id=c.org_id and m.user_id=private.uid() where c.id=cam and (private.can(c.org_id,'manage') or exists(select 1 from private.camera_grants g where g.camera_id=c.id and g.user_id=private.uid() and (g.expires_at is null or g.expires_at>now()))))$$;
+revoke all on function private.camera_view(uuid) from public;
+grant execute on function private.camera_view(uuid) to towerflow_client;
+alter table cameras enable row level security;
+grant select on cameras to towerflow_client;
+create policy camera_read on cameras for select to towerflow_client using(private.camera_view(id));
+create trigger audit_change after insert or update on cameras for each row execute function private.audit();
+commit;

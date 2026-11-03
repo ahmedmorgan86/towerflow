@@ -53,6 +53,7 @@ class MainActivity : Activity() {
     private lateinit var screen: LinearLayout
 
     private val names = linkedMapOf(
+        "cameras" to Pair("كاميرات العقار", "Cameras"),
         "properties" to Pair("العقارات والأبراج", "Properties"),
         "units" to Pair("الوحدات والشقق", "Units"),
         "parties" to Pair("الملاك والمستأجرون", "Residents & Owners"),
@@ -1071,6 +1072,7 @@ class MainActivity : Activity() {
 
     private fun home() {
         scaffold(text("لوحة التحكم", "Dashboard"))
+        outlineButton(text("كاميرات العقار", "Building cameras")) { cameraScreen() }
 
         // Active Workspace Selector
         if (organizations.length() > 0) {
@@ -2310,6 +2312,7 @@ class MainActivity : Activity() {
     }
 
     private fun listing(entity: String) {
+        if (entity == "cameras") { cameraScreen(); return }
         scaffold(title(entity), true) { home() }
 
         // Action Toolbar
@@ -3171,5 +3174,24 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         super.onDestroy()
         worker.shutdownNow()
+    }
+
+    private fun cameraScreen() {
+        scaffold(text("كاميرات العقار", "Building cameras"), true) { home() }
+        call("cameras") { raw -> val result = JSONObject(raw); val cameras = result.getJSONArray("cameras"); val manage = result.optBoolean("can_manage")
+            label(text("المشاهدة بصلاحية خاصة لكل كاميرا. التسجيل والتحريك غير مفعّلين في هذا الإصدار.", "Viewing requires permission per camera. Recording and PTZ are not enabled in this release."))
+            if (manage) outlineButton(text("إضافة كاميرا أو قناة تسجيل", "Add camera or recorder channel")) { cameraForm() }
+            if (cameras.length() == 0) label(text("لا توجد كاميرات متاحة لحسابك", "No cameras available to this account"))
+            for (i in 0 until cameras.length()) { val camera = cameras.getJSONObject(i); val id = camera.getString("id"); sectionHeader(camera.getString("name")); label(camera.optString("location") + " · " + camera.optString("vendor") + " " + camera.optString("model")); label(camera.optString("last_test_status"))
+                if (camera.optBoolean("enabled")) primaryButton(text("مشاهدة مباشرة", "Watch live")) { startActivity(Intent(this, CameraPlayerActivity::class.java).putExtra("origin", base).putExtra("token", token).putExtra("camera", id).putExtra("org", org).putExtra("arabic", arabic)) }
+                if (manage) { outlineButton(text("اختبار الاتصال والقنوات", "Test connection and channels")) { call("cameras/$id/test", "POST", JSONObject()) { response -> val r = JSONObject(response); val message = if (r.optBoolean("connected")) text("نجح اختبار الاتصال. القنوات: ", "Connection passed. Profiles: ") + r.optJSONArray("profiles").toString() else r.optString("error"); AlertDialog.Builder(this).setMessage(message).setPositiveButton("OK", null).show() } }; outlineButton(text("صلاحيات المشاهدة", "Viewing permissions")) { cameraAccessForm(id) }; outlineButton(text(if (camera.optBoolean("enabled")) "تعطيل الكاميرا" else "تفعيل الكاميرا", if (camera.optBoolean("enabled")) "Disable camera" else "Enable camera")) { call("cameras/$id", "PATCH", JSONObject().put("enabled", !camera.optBoolean("enabled"))) { cameraScreen() } } }
+            }
+        }
+    }
+    private fun cameraForm() {
+        scaffold(text("إضافة كاميرا", "Add camera"), true) { cameraScreen() }; call("properties?limit=500") { raw -> val properties = JSONArray(raw); if (properties.length() == 0) { label(text("أضف برجًا أولًا", "Add a building first")) } else { val property = Spinner(this); property.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until properties.length()).map { properties.getJSONObject(it).getString("name") }); screen.addView(property); val name = input(text("اسم الكاميرا", "Camera name")); val vendor = input(text("الشركة", "Manufacturer")); val model = input(text("الموديل", "Model")); val location = input(text("الموقع", "Location")); val protocol = Spinner(this); protocol.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("onvif", "rtsp", "vendor")); screen.addView(protocol); val endpoint = input(text("عنوان الجهاز داخل شبكة العقار", "Device endpoint in building network")); val username = input(text("اسم المستخدم", "Username")); val password = input(text("كلمة المرور", "Password"), true); val profile = input(text("معرّف القناة — اختياري", "Profile token — optional")); val adapter = input(text("معرّف التكامل الخاص — اختياري", "Vendor adapter — optional")); label(text("يتطلب البث بوابة فيديو في العقار. لا تُحفظ كلمات المرور داخل التطبيق.", "Streaming needs a gateway in the building. Passwords are not stored in the app.")); primaryButton(text("حفظ الكاميرا", "Save camera")) { call("cameras", "POST", JSONObject().put("property_id", properties.getJSONObject(property.selectedItemPosition).getString("id")).put("name", name.text.toString()).put("vendor", vendor.text.toString()).put("model", model.text.toString()).put("location", location.text.toString()).put("protocol", protocol.selectedItem.toString()).put("endpoint", endpoint.text.toString()).put("username", username.text.toString()).put("password", password.text.toString()).put("profile_token", profile.text.toString()).put("adapter", adapter.text.toString())) { password.text.clear(); cameraScreen() } } } }
+    }
+    private fun cameraAccessForm(camera: String) {
+        scaffold(text("صلاحيات مشاهدة الكاميرا", "Camera viewing access"), true) { cameraScreen() }; call("members") { raw -> val members = JSONArray(raw); val selected = Spinner(this); selected.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until members.length()).map { members.getJSONObject(it).getString("name") }); screen.addView(selected); val expiry = input(text("انتهاء الصلاحية ISO — اختياري", "Access expiry ISO — optional")); for (allow in listOf(true, false)) outlineButton(text(if (allow) "منح المشاهدة" else "سحب المشاهدة", if (allow) "Grant viewing" else "Revoke viewing")) { if (members.length() > 0) call("cameras/$camera/grants", "POST", JSONObject().put("user_id", members.getJSONObject(selected.selectedItemPosition).getString("id")).put("allowed", allow).put("expires_at", expiry.text.toString())) { cameraScreen() } } }
     }
 }

@@ -3,13 +3,16 @@ import {existsSync} from 'node:fs';
 import pg from 'pg';
 
 await mkdir('dist',{recursive:true});
+await mkdir('web/vendor',{recursive:true});
+await cp('node_modules/hls.js/dist/hls.mjs','web/vendor/hls.mjs');
+await cp('node_modules/hls.js/LICENSE','web/vendor/hls-LICENSE.txt');
 await cp('web','dist',{recursive:true});
 if (existsSync('release/TowerFlow-latest.apk')) {
   await cp('release/TowerFlow-latest.apk', 'dist/TowerFlow-latest.apk');
 }
 
 // Refresh sql-bundle.mjs to keep runtime migrations self-contained
-const files = ['schema.sql','002_workflows.sql','003_read_permissions.sql','004_platform.sql','005_identity.sql','006_owner_push.sql','007_master_system.sql','008_units_ownership_and_fixes.sql','009_unit_number.sql'];
+const files = ['schema.sql','002_workflows.sql','003_read_permissions.sql','004_platform.sql','005_identity.sql','006_owner_push.sql','007_master_system.sql','008_units_ownership_and_fixes.sql','009_unit_number.sql','010_cameras.sql'];
 const bundle = {};
 for (const f of files) {
   bundle[f] = await readFile(new URL('../db/'+f, import.meta.url), 'utf8');

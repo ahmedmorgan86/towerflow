@@ -19,3 +19,8 @@ android/signing.properties
 
 release/
 data/
+.npm-cache/
+camera-*-tests.txt
+camera-*-build.txt
+web/vendor/hls.mjs
+web/vendor/hls-LICENSE.txt

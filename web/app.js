@@ -1,3 +1,4 @@
+import {mountCameras,cleanupCameras} from './cameras.js';
 import {mountMessages} from './resident-messages.js';
 import {mountReports} from './reports.js';
 import {mountWorkflows} from './workflows.js';
@@ -5,10 +6,10 @@ import {mountProfile} from './profile.js';
 import {icon,architecture} from './design.js';
 
 const $=s=>document.querySelector(s), escape=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
-let lang=localStorage.tfLang||'ar',dark=localStorage.tfDark==='true',me=null,org='',page='dashboard',cache={},busy=false;
+let lang=localStorage.tfLang||'ar',dark=localStorage.tfDark==='true',me=null,org='',page='dashboard',cache={},busy=false,renderAgain=false;
 
 const words={
- dashboard:['نظرة عامة','Overview'],properties:['العقارات والأبراج','Properties'],units:['الوحدات','Units'],
+ cameras:['كاميرات العقار','Cameras'],dashboard:['نظرة عامة','Overview'],properties:['العقارات والأبراج','Properties'],units:['الوحدات','Units'],
  parties:['الملاك والمستأجرون','People'],leases:['العقود','Leases'],ownerships:['ملكيات الوحدات','Ownerships'],
  invoices:['الفواتير والمستحقات','Invoices'],receipts:['التحصيل','Receipts'],expenses:['المصروفات والموافقات','Expenses'],
  journals:['دفتر اليومية','Journal'],accounts:['دليل الحسابات','Accounts'],tickets:['الصيانة','Maintenance'],
@@ -197,7 +198,7 @@ function baseAllowed(){
  return ['dashboard','properties','units','parties','leases','ownerships','invoices','receipts','expenses','payment_proofs','credit_balances','fines','money_accounts','journals','accounts','tickets','assets','technicians','vendor_contracts','budgets','reports','announcements','notifications','support_tickets','audit_logs',...(['admin','manager'].includes(role())?['members']:[]),'profile','settings'];
 }
 function allowed(){
- return [...new Set([...baseAllowed(),...(['admin','manager'].includes(role())?['resident_messages']:[]),...(['admin','manager','accountant'].includes(role())?['recurring_charges','accounting_periods']:[]),...(['admin','manager','technician'].includes(role())?['maintenance_plans']:[])])];
+ return [...new Set([...baseAllowed(),'cameras',...(['admin','manager'].includes(role())?['resident_messages']:[]),...(['admin','manager','accountant'].includes(role())?['recurring_charges','accounting_periods']:[]),...(['admin','manager','technician'].includes(role())?['maintenance_plans']:[])])];
 }
 async function boot(){
  try{me=await api('me');org=me.organizations.some(x=>x.id===localStorage.tfOrg)?localStorage.tfOrg:me.organizations[0]?.id||'';if(role()==='resident')page='portal';await render();}catch{me=null;auth();}
@@ -212,7 +213,7 @@ function sidebar(){
  const available=allowed(),groups=[
    ['portfolio',localText('المحفظة العقارية','Portfolio'),['properties','units','parties','leases','ownerships']],
    ['finance',localText('المالية والتحصيل','Finance & Billing'),['collections','invoices','receipts','expenses','payment_proofs','reports']],
-   ['operations',localText('التشغيل والصيانة','Operations & Service'),['tickets','assets','technicians','maintenance_plans']],
+   ['operations',localText('التشغيل والصيانة','Operations & Service'),['cameras','tickets','assets','technicians','maintenance_plans']],
    ['workspace',localText('التواصل والدعم','Communications & Support'),['resident_messages','announcements','notifications','support_tickets','members']],
    ['advanced',localText('سجلات ومحاسبة متقدمة','Advanced Records'),['credit_balances','fines','journals','accounts','recurring_charges','accounting_periods','vendor_contracts','budgets','audit_logs']]
  ];
@@ -221,7 +222,8 @@ function sidebar(){
 }
 
 async function render(){
- if(busy)return;busy=true;theme();localStorage.tfOrg=org;
+ cleanupCameras();
+ if(busy){renderAgain=true;return;}busy=true;theme();localStorage.tfOrg=org;
  if(!allowed().includes(page))page=allowed()[0];
  $('#app').innerHTML=`<div class="layout">${sidebar()}<button class="sidebar-overlay" aria-label="${localText('إغلاق القائمة','Close menu')}"></button><main class="workspace"><header class="topbar"><div class="topbar-start"><button class="mobile-toggle icon-button" id="menu" aria-label="${localText('فتح القائمة','Open navigation')}" aria-expanded="false" aria-controls="navigation">${icon('menu')}</button><div class="breadcrumb">TowerFlow <span> / </span><strong>${t(page)}</strong></div><select id="org" aria-label="${t('organization')}">${me.organizations.map(x=>`<option value="${x.id}" ${x.id===org?'selected':''}>${escape(x.name)}</option>`).join('')}</select></div><div class="topbar-end"><div class="actions">${toggles()}<button class="icon-button" data-go="notifications" aria-label="${t('notifications')}">${icon('bell',18)}</button></div><button class="profile profile-link" data-go="profile"><div class="avatar">${me.user.avatar?`<img src="${escape(me.user.avatar)}" alt="">`:escape(me.user.name.slice(0,1))}</div><div><b>${escape(me.user.name)}</b><small>${t(me.user.platform_owner?'platform_owner':role())}</small></div></button><button class="icon-button" id="logout" aria-label="${t('logout')}" title="${t('logout')}">${icon('logout',17)}</button></div></header><div class="content-wrap"><section id="content" aria-live="polite"><div class="loading">${t('loading')}</div></section><footer class="footer"><span>© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow</span><span>${localText('مساحة واحدة. كل التفاصيل.','One workspace. Every detail.')}</span></footer></div></main></div>`;
  document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>navigate(b.dataset.page));
@@ -234,6 +236,7 @@ async function render(){
    if(['dashboard','portal'].includes(page))await dashboard();
    else if(['recurring_charges','maintenance_plans','accounting_periods'].includes(page))await mountWorkflows({api,lang,page,escape,toast,money});
    else if(page==='collections')await collectionsView();else if(page==='reports')await mountReports({api,lang,escape,money});
+   else if(page==='cameras')await mountCameras({api,lang,escape,toast,org});
    else if(page==='resident_messages')await mountMessages({api,lang,escape,toast});
    else if(page==='profile')await mountProfile({api,me,lang,escape,toast,onSave:async user=>{me.user=user;lang=user.locale||lang;await render();}});
    else if(page==='settings')settings();
@@ -242,7 +245,7 @@ async function render(){
  }catch(e){
    $('#content').innerHTML=head(t(page))+`<div class="notice" role="alert">${escape(e.message)}</div><button id="retry">${localText('إعادة المحاولة','Retry')}</button>`;
    $('#retry').onclick=render;
- }finally{busy=false;}
+ }finally{busy=false;if(renderAgain){renderAgain=false;await render();}}
 }
 
 async function dashboard(){

@@ -1,4 +1,5 @@
 import {waitUntil} from '@vercel/functions';
+import {cameraList,saveCamera,cameraGrants,probeCamera,startCamera,closeCamera,cameraMedia} from '../lib/cameras.mjs';
 import {detailedKinds,detailedReport} from '../lib/detail-reports.mjs';
 import {recipients,broadcast} from '../lib/resident-messages.mjs';
 import {registerDevice,pushStatus,processPush,pushReady} from '../lib/push.mjs';
@@ -65,6 +66,17 @@ export default async function handler(req,res){
  if(route.startsWith('support_tickets/')&&route.endsWith('/messages')&&method==='POST'){const tid=route.split('/')[1];const b=await body(req);return send(await database().transaction(c=>addSupportMessage(c,user.id,tid,b.message)),201);}
  if(route==='organizations'&&method==='POST'){const b=await body(req);if(!String(b.name||'').trim())throw fail('Name required');return send(await context(user,async c=>{const o=(await c.query('insert into organizations(name) values($1) returning *',[String(b.name).slice(0,160)])).rows[0];await c.query("insert into private.memberships values($1,$2,'admin')",[o.id,user.id]);for(const a of [['1100','Cash','asset'],['1200','Receivables','asset'],['4000','Rental income','income'],['5000','Operating expenses','expense']])await c.query('insert into accounts(org_id,code,name,kind) values($1,$2,$3,$4)',[o.id,...a]);return o;}),201);}
  const org=u.searchParams.get('org');if(!/^[a-f0-9-]{36}$/.test(org||''))throw fail('Organization required');
+ if(route==='cameras'&&method==='GET')return send(await context(user,c=>cameraList(c,org,user.id)));
+ if(route==='cameras'&&method==='POST')return send({id:await context(user,async c=>saveCamera(c,org,user.id,await body(req)))},201);
+ if(route.startsWith('cameras/')){
+ const [,cam,action,stream,file]=route.split('/');
+ if(!action&&method==='PATCH')return send({id:await context(user,async c=>saveCamera(c,org,user.id,await body(req),cam))});
+ if(action==='grants'&&['GET','POST'].includes(method))return send(await context(user,async c=>cameraGrants(c,org,user.id,cam,method==='POST'?await body(req):null)));
+ if(action==='test'&&method==='POST')return send(await context(user,c=>probeCamera(c,org,user.id,cam)));
+ if(action==='live'&&method==='POST')return send(await context(user,c=>startCamera(c,org,user.id,cam)));
+ if(action==='close'&&method==='POST'){const b=await body(req);return send(await context(user,c=>closeCamera(c,org,user.id,cam,b.session_id)));}
+ if(action==='media'&&method==='GET'){const media=await context(user,c=>cameraMedia(c,org,user.id,cam,stream,file));res.setHeader('Content-Type',media.type);res.statusCode=200;return res.end(media.data);}
+ }
  if(route==='reports'&&method==='GET'&&detailedKinds.includes(u.searchParams.get('kind'))){const from=isoDate(u.searchParams.get('from')||'0001-01-01'),to=isoDate(u.searchParams.get('to')||new Date().toISOString().slice(0,10));if(from>to)throw fail('Invalid date range');return send(await asUser(user.id,c=>detailedReport(c,org,u.searchParams.get('kind'),from,to,u.searchParams.get('property_id'),Number(u.searchParams.get('limit')||500),Number(u.searchParams.get('offset')||0))));}
  if(route==='broadcasts/recipients'&&method==='GET'){const unitIds=u.searchParams.get('scope')==='units'?(u.searchParams.get('unit_ids')||'').split(',').filter(Boolean):null;const r=await context(user,c=>recipients(c,org,u.searchParams.get('property_id'),unitIds));return send({registered:r.registered,unlinked:r.unlinked,pushConfigured:pushReady()});}
  if(route==='broadcasts'&&method==='POST'){const b=await body(req);const result=await context(user,c=>broadcast(c,org,user.id,b));if(process.env.VERCEL&&pushReady())waitUntil(processPush(org).catch(()=>{}));return send({...result,pushConfigured:pushReady()});}
