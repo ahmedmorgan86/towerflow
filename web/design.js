@@ -30,15 +30,15 @@ export function architecture(){
   return `<svg class="architecture" viewBox="0 0 580 360" fill="none" aria-hidden="true">
     <defs>
       <linearGradient id="towerFront" x1="200" y1="80" x2="400" y2="340" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#312e81"/>
-        <stop offset="1" stop-color="#1e1b4b"/>
+        <stop stop-color="#134E4A"/>
+        <stop offset="1" stop-color="#0B3136"/>
       </linearGradient>
       <linearGradient id="towerSide" x1="300" y1="100" x2="450" y2="300">
-        <stop stop-color="#4f46e5"/>
+        <stop stop-color="#0F766E"/>
         <stop offset="1" stop-color="#3730a3"/>
       </linearGradient>
       <pattern id="windows" width="25" height="28" patternUnits="userSpaceOnUse">
-        <path d="M6 0v18" stroke="#a5b4fc" stroke-width="8" opacity=".4"/>
+        <path d="M6 0v18" stroke="#5EEAD4" stroke-width="8" opacity=".4"/>
       </pattern>
     </defs>
     <ellipse cx="293" cy="309" rx="223" ry="24" fill="#090a0f" opacity=".4"/>
@@ -54,11 +54,11 @@ export function architecture(){
     <path d="m420 143 43 25v139h-43z" fill="#1f223a"/>
     <path d="M364 291v-105l44-22v127z" fill="url(#windows)"/>
     <path d="M249 301v-39l18-8v47z" fill="#0f111a"/>
-    <path d="M216 108 280 76l64 36" stroke="#818cf8" stroke-width="2"/>
-    <path d="M76 315h427" stroke="#6366f1" stroke-opacity=".3"/>
-    <path d="M133 311v-30m-9 10c-15-20 3-43 13-30 18-6 18 23 4 31M444 317v-33m-7 8c-19-22 3-43 13-29 17-8 20 24 4 31" stroke="#6366f1" stroke-width="7" stroke-linecap="round"/>
-    <circle cx="397" cy="79" r="24" stroke="#818cf8" stroke-opacity=".3"/>
-    <path d="m388 79 6 6 12-13" stroke="#818cf8" stroke-width="3" stroke-linecap="round"/>
-    <path d="M83 100h40m-20-20v40" stroke="#6366f1" stroke-opacity=".3"/>
+    <path d="M216 108 280 76l64 36" stroke="#5EEAD4" stroke-width="2"/>
+    <path d="M76 315h427" stroke="#0D9488" stroke-opacity=".3"/>
+    <path d="M133 311v-30m-9 10c-15-20 3-43 13-30 18-6 18 23 4 31M444 317v-33m-7 8c-19-22 3-43 13-29 17-8 20 24 4 31" stroke="#0D9488" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="397" cy="79" r="24" stroke="#5EEAD4" stroke-opacity=".3"/>
+    <path d="m388 79 6 6 12-13" stroke="#5EEAD4" stroke-width="3" stroke-linecap="round"/>
+    <path d="M83 100h40m-20-20v40" stroke="#0D9488" stroke-opacity=".3"/>
   </svg>`;
 }

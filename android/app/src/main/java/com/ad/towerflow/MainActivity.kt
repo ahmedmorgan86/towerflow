@@ -286,12 +286,12 @@ class MainActivity : Activity() {
                 text = if (arabic) "› عودة" else "‹ Back"
                 textSize = 13.5f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
                 gravity = Gravity.CENTER
                 background = roundedDrawable(
-                    if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"),
+                    if (dark) Color.parseColor("#0B3136") else Color.parseColor("#F0FDFA"),
                     10f,
-                    if (dark) Color.parseColor("#312E81") else Color.parseColor("#C7D2FE")
+                    if (dark) Color.parseColor("#134E4A") else Color.parseColor("#99F6E4")
                 )
                 setPadding(dp(12), dp(6), dp(12), dp(6))
                 isClickable = true
@@ -312,7 +312,7 @@ class MainActivity : Activity() {
                 text = "TowerFlow"
                 textSize = 10.5f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#6366F1"))
+                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0D9488"))
                 gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
             })
             titleCol.addView(TextView(this).apply {
@@ -466,7 +466,7 @@ class MainActivity : Activity() {
             text = titleText
             textSize = 12f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
-            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+            setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
             setPadding(dp(4), dp(16), dp(4), dp(8))
         }
         screen.addView(tv)
@@ -504,7 +504,7 @@ class MainActivity : Activity() {
             minHeight = 0
             minimumHeight = 0
             setPadding(dp(12), dp(11), dp(12), dp(11))
-            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
+            background = gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 12f)
             setOnClickListener { fn() }
         }
         val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -517,7 +517,7 @@ class MainActivity : Activity() {
     private fun outlineButton(value: String, fn: () -> Unit) {
         val btn = Button(this).apply {
             text = value
-            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+            setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
             textSize = 13f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             isAllCaps = false
@@ -595,9 +595,9 @@ class MainActivity : Activity() {
                 marginEnd = dp(12)
             }
             background = roundedDrawable(
-                if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"),
+                if (dark) Color.parseColor("#0B3136") else Color.parseColor("#F0FDFA"),
                 10f,
-                if (dark) Color.parseColor("#312E81") else Color.parseColor("#C7D2FE")
+                if (dark) Color.parseColor("#134E4A") else Color.parseColor("#99F6E4")
             )
             addView(TextView(this@MainActivity).apply {
                 text = iconGlyph
@@ -845,7 +845,7 @@ class MainActivity : Activity() {
             minHeight = 0
             minimumHeight = 0
             setPadding(dp(12), dp(12), dp(12), dp(12))
-            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
+            background = gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 12f)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 topMargin = dp(14)
                 bottomMargin = dp(4)
@@ -941,7 +941,7 @@ class MainActivity : Activity() {
                 text = text(if (register) "تسجيل الدخول" else "إنشاء حساب", if (register) "Sign in" else "Create account")
                 textSize = 13f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
                 setPadding(dp(4), dp(4), dp(4), dp(4))
                 isClickable = true
                 isFocusable = true
@@ -1081,7 +1081,7 @@ class MainActivity : Activity() {
                     text = text("المؤسسة / البرج النشط", "Active Workspace / Tower")
                     textSize = 11f
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                    setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
                 }
                 addView(h)
 
@@ -1111,13 +1111,13 @@ class MainActivity : Activity() {
                         text = text("＋ إضافة برج جديد", "＋ Add Tower")
                         textSize = 11.5f
                         typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                        setTextColor(Color.parseColor("#4F46E5"))
+                        setTextColor(Color.parseColor("#0F766E"))
                         isAllCaps = false
                         includeFontPadding = false
                         minHeight = 0
                         minimumHeight = 0
                         setPadding(dp(4), dp(7), dp(4), dp(7))
-                        background = roundedDrawable(if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"), 8f, Color.parseColor(if (dark) "#312E81" else "#C7D2FE"))
+                        background = roundedDrawable(if (dark) Color.parseColor("#0B3136") else Color.parseColor("#F0FDFA"), 8f, Color.parseColor(if (dark) "#134E4A" else "#99F6E4"))
                         layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(4) }
                         setOnClickListener { showTowerDialog(null) { loadMe() } }
                     }
@@ -1156,7 +1156,7 @@ class MainActivity : Activity() {
                 layoutParams = LinearLayout.LayoutParams(dp(44), dp(44)).apply {
                     marginEnd = dp(12)
                 }
-                background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 14f)
+                background = gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 14f)
                 addView(TextView(this@MainActivity).apply {
                     text = initial
                     textSize = 18f
@@ -1194,9 +1194,9 @@ class MainActivity : Activity() {
                 text = roleName
                 textSize = 11f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor("#4F46E5"))
+                setTextColor(Color.parseColor("#0F766E"))
                 setPadding(dp(8), dp(2), dp(8), dp(2))
-                background = roundedDrawable(Color.parseColor(if (dark) "#1E1B4B" else "#EEF2FF"), 99f)
+                background = roundedDrawable(Color.parseColor(if (dark) "#0B3136" else "#F0FDFA"), 99f)
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                     topMargin = dp(2)
                 }
@@ -1251,7 +1251,7 @@ class MainActivity : Activity() {
                         addView(TextView(this@MainActivity).apply {
                             text = kpiValue
                             textSize = 19f
-                            setTextColor(Color.parseColor("#4F46E5"))
+                            setTextColor(Color.parseColor("#0F766E"))
                             typeface = Typeface.create(cairoFont, Typeface.BOLD)
                             setPadding(0, dp(2), 0, dp(2))
                         })
@@ -1302,7 +1302,7 @@ class MainActivity : Activity() {
                 val heroCollect = LinearLayout(this@MainActivity).apply {
                     orientation = LinearLayout.VERTICAL
                     setPadding(dp(16), dp(16), dp(16), dp(16))
-                    background = gradientDrawable(Color.parseColor("#4338CA"), Color.parseColor("#312E81"), 16f)
+                    background = gradientDrawable(Color.parseColor("#0B5E58"), Color.parseColor("#134E4A"), 16f)
                     isClickable = true
                     isFocusable = true
                     setOnClickListener { monthlyCollections() }
@@ -1330,13 +1330,13 @@ class MainActivity : Activity() {
                     text = text("متابعة وسداد اشتراكات الصيانة والخدمات الشهرية للشقق فورياً", "Track & collect apartment monthly maintenance dues")
                     textSize = 11.5f
                     typeface = cairoFont
-                    setTextColor(Color.parseColor("#C7D2FE"))
+                    setTextColor(Color.parseColor("#99F6E4"))
                 })
                 topRow.addView(titleWrap)
                 topRow.addView(TextView(this@MainActivity).apply {
                     text = if (arabic) "‹" else "›"
                     textSize = 22f
-                    setTextColor(Color.parseColor("#A5B4FC"))
+                    setTextColor(Color.parseColor("#5EEAD4"))
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
                 })
                 heroCollect.addView(topRow)
@@ -1381,7 +1381,7 @@ class MainActivity : Activity() {
             minHeight = 0
             minimumHeight = 0
             setPadding(dp(4), dp(10), dp(4), dp(10))
-            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
+            background = gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 12f)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(3) }
             setOnClickListener { if (role == "resident") listing("invoices") else recordForm("units") }
         }
@@ -1389,7 +1389,7 @@ class MainActivity : Activity() {
 
         val q3 = Button(this).apply {
             text = text("🔧 بلاغ صيانة", "Ticket")
-            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+            setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
             textSize = 12f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             isAllCaps = false
@@ -1525,9 +1525,9 @@ class MainActivity : Activity() {
                             text = text("$count شقة مسجلة", "$count units registered")
                             textSize = 11f
                             typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                            setTextColor(Color.parseColor("#4F46E5"))
+                            setTextColor(Color.parseColor("#0F766E"))
                             setPadding(dp(8), dp(2), dp(8), dp(2))
-                            background = roundedDrawable(Color.parseColor(if (dark) "#1E1B4B" else "#EEF2FF"), 8f)
+                            background = roundedDrawable(Color.parseColor(if (dark) "#0B3136" else "#F0FDFA"), 8f)
                             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                                 topMargin = dp(4)
                             }
@@ -1549,13 +1549,13 @@ class MainActivity : Activity() {
                                 text = text("✏️ تعديل", "✏️ Edit")
                                 textSize = 12f
                                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
                                 isAllCaps = false
                                 includeFontPadding = false
                                 minHeight = 0
                                 minimumHeight = 0
                                 setPadding(dp(4), dp(8), dp(4), dp(8))
-                                background = roundedDrawable(if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"), 10f, Color.parseColor(if (dark) "#312E81" else "#C7D2FE"))
+                                background = roundedDrawable(if (dark) Color.parseColor("#0B3136") else Color.parseColor("#F0FDFA"), 10f, Color.parseColor(if (dark) "#134E4A" else "#99F6E4"))
                                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(4) }
                                 setOnClickListener { showTowerDialog(prop) { manageTowers() } }
                             }
@@ -1742,7 +1742,7 @@ class MainActivity : Activity() {
                 text = text("‹ السابق", "‹ Prev")
                 textSize = 12f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
                 isAllCaps = false
                 includeFontPadding = false
                 minHeight = 0
@@ -1772,7 +1772,7 @@ class MainActivity : Activity() {
                 text = text("التالي ›", "Next ›")
                 textSize = 12f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
                 isAllCaps = false
                 includeFontPadding = false
                 minHeight = 0
@@ -1846,7 +1846,7 @@ class MainActivity : Activity() {
             weightSum = 2f
         }
         kpiRow2.addView(makeKpiBox(text("المتبقي للتحصيل", "Remaining"), "$totalRemaining ج.م", Color.parseColor("#EF4444"), text("مستحقات معلقة", "Pending dues"), true))
-        kpiRow2.addView(makeKpiBox(text("حالة الإشغال", "Occupancy"), summary.optInt("occupied_units", 0).toString() + " / " + summary.optInt("total_units", 0), Color.parseColor("#4F46E5"), text("شقة مأهولة", "Occupied units"), false))
+        kpiRow2.addView(makeKpiBox(text("حالة الإشغال", "Occupancy"), summary.optInt("occupied_units", 0).toString() + " / " + summary.optInt("total_units", 0), Color.parseColor("#0F766E"), text("شقة مأهولة", "Occupied units"), false))
         screen.addView(kpiRow2)
 
         // 3. Batch Generate Monthly Dues Button
@@ -1860,7 +1860,7 @@ class MainActivity : Activity() {
             minHeight = 0
             minimumHeight = 0
             setPadding(dp(12), dp(10), dp(12), dp(10))
-            background = gradientDrawable(Color.parseColor("#4338CA"), Color.parseColor("#3730A3"), 12f)
+            background = gradientDrawable(Color.parseColor("#0B5E58"), Color.parseColor("#3730A3"), 12f)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 bottomMargin = dp(10)
             }
@@ -2006,7 +2006,7 @@ class MainActivity : Activity() {
                     text = u.optString("monthly_fee", "0.00") + " ج.م"
                     textSize = 13f
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                    setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
                 })
                 feeRow.addView(TextView(this@MainActivity).apply {
                     text = "  (" + text("اشتراك صيانة البرج", "Tower Maintenance") + ")"
@@ -2058,13 +2058,13 @@ class MainActivity : Activity() {
                         text = text("👤 بيانات المالك", "👤 Set Owner")
                         textSize = 11f
                         typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                        setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                        setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
                         isAllCaps = false
                         includeFontPadding = false
                         minHeight = 0
                         minimumHeight = 0
                         setPadding(dp(10), dp(8), dp(10), dp(8))
-                        background = roundedDrawable(if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"), 10f)
+                        background = roundedDrawable(if (dark) Color.parseColor("#0B3136") else Color.parseColor("#F0FDFA"), 10f)
                         layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                             marginStart = dp(8)
                         }
@@ -2107,7 +2107,7 @@ class MainActivity : Activity() {
                 fun updateStyle() {
                     if (activeFilter == fKey) {
                         setTextColor(Color.WHITE)
-                        background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 10f)
+                        background = gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 10f)
                     } else {
                         setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                         background = roundedDrawable(if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"), 10f)
@@ -2121,7 +2121,7 @@ class MainActivity : Activity() {
                         if (b != null) {
                             val isActive = (k == 0 && fKey == "all") || (k == 1 && fKey == "unpaid") || (k == 2 && fKey == "paid") || (k == 3 && fKey == "owned")
                             b.setTextColor(if (isActive) Color.WHITE else Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
-                            b.background = if (isActive) gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 10f)
+                            b.background = if (isActive) gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 10f)
                                            else roundedDrawable(if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"), 10f)
                         }
                     }
@@ -2233,7 +2233,7 @@ class MainActivity : Activity() {
             text = text("شقة: $unitNumber · الساكن: $resName", "Unit: $unitNumber · Resident: $resName")
             textSize = 13f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
-            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+            setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
             setPadding(0, 0, 0, dp(10))
         })
 
@@ -2368,9 +2368,9 @@ class MainActivity : Activity() {
             text = text("0 سجل", "0 items")
             textSize = 11.5f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
-            setTextColor(Color.parseColor("#4F46E5"))
+            setTextColor(Color.parseColor("#0F766E"))
             setPadding(dp(10), dp(6), dp(10), dp(6))
-            background = roundedDrawable(Color.parseColor(if (dark) "#1E1B4B" else "#EEF2FF"), 10f)
+            background = roundedDrawable(Color.parseColor(if (dark) "#0B3136" else "#F0FDFA"), 10f)
         }
         searchRow.addView(searchInput)
         searchRow.addView(countBadge)
@@ -2477,7 +2477,7 @@ class MainActivity : Activity() {
                             setPadding(dp(8), dp(3), dp(8), dp(3))
                             val (bgColor, textColor) = when (status) {
                                 "active", "paid", "approved", "owned" -> Pair(Color.parseColor("#ECFDF5"), Color.parseColor("#059669"))
-                                "pending", "draft", "open" -> Pair(Color.parseColor("#EEF2FF"), Color.parseColor("#4F46E5"))
+                                "pending", "draft", "open" -> Pair(Color.parseColor("#F0FDFA"), Color.parseColor("#0F766E"))
                                 "exempted" -> Pair(Color.parseColor("#FEF3C7"), Color.parseColor("#D97706"))
                                 "rejected" -> Pair(Color.parseColor("#FFF1F2"), Color.parseColor("#E11D48"))
                                 else -> Pair(Color.parseColor("#F1F5F9"), Color.parseColor("#64748B"))
@@ -2576,7 +2576,7 @@ class MainActivity : Activity() {
                             text = text("تعديل", "Edit")
                             textSize = 11.5f
                             typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
+                            setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
                             isAllCaps = false
                             includeFontPadding = false
                             minHeight = 0
@@ -2669,7 +2669,7 @@ class MainActivity : Activity() {
                                 minHeight = 0
                                 minimumHeight = 0
                                 setPadding(dp(4), dp(8), dp(4), dp(8))
-                                background = roundedDrawable(Color.parseColor("#4F46E5"), 8f)
+                                background = roundedDrawable(Color.parseColor("#0F766E"), 8f)
                                 setOnClickListener { call("invoices/$id/issue", "POST", JSONObject()) { listing(entity) } }
                             }
                             actionsRow.addView(issueBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(3); marginEnd = dp(3) })
