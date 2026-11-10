@@ -8,29 +8,30 @@ const $=s=>document.querySelector(s), escape=s=>String(s??'').replace(/[&<>"']/g
 let lang=localStorage.tfLang||'ar',dark=localStorage.tfDark==='true',me=null,org='',page='dashboard',cache={},busy=false;
 
 const words={
- dashboard:['نظرة عامة','Overview'],properties:['العقارات والأبراج','Properties'],instapay_id:['عنوان إنستاباي InstaPay IPA','InstaPay IPA'],wallet_number:['رقم المحفظة الإلكترونية','E-Wallet Mobile'],occupancy_state:['حالة إشغال الوحدة','Occupancy State'],units:['الوحدات','Units'],
- parties:['الملاك والمستأجرون','People'],leases:['العقود','Leases'],ownerships:['ملكيات الوحدات','Ownerships'],
- invoices:['الفواتير والمستحقات','Invoices'],receipts:['التحصيل','Receipts'],expenses:['المصروفات والموافقات','Expenses'],
- journals:['دفتر اليومية','Journal'],accounts:['دليل الحسابات','Accounts'],tickets:['الصيانة','Maintenance'],
- assets:['الأصول','Assets'],technicians:['الفنيون','Technicians'],reports:['التقارير','Reports'],
- announcements:['إعلانات السكان','Announcements'],notifications:['الإشعارات','Notifications'],
+ dashboard:['خزينة وصندوق العمارة','Building Sandok & Dashboard'],properties:['الأبراج والعمارات','Towers & Buildings'],instapay_id:['عنوان إنستاباي InstaPay IPA','InstaPay IPA'],wallet_number:['رقم المحفظة الإلكترونية (فودافون كاش / وي)','E-Wallet Mobile'],occupancy_state:['حالة إشغال الوحدة','Occupancy State'],units:['الشقق والوحدات','Apartments & Units'],
+ residing:['مشغولة ومقيمة 🟢','Residing (Occupied)'],closed:['مغلقة 🟡','Closed'],finishing:['تحت التشطيب 🔵','Under Finishing'],resident_phone:['هاتف الساكن (واتساب)','Resident WhatsApp Phone'],
+ parties:['الملاك والشاغلون','Residents & Owners'],leases:['عقود الوحدات','Units Records'],ownerships:['ملكيات الوحدات','Ownerships'],
+ invoices:['المطالبات والمستحقات','Dues & Invoices'],receipts:['سندات القبض','Receipts'],expenses:['مصروفات الصندوق','Sandok Expenses'],
+ journals:['دفتر اليومية','Journal'],accounts:['دليل الحسابات','Accounts'],tickets:['الصيانة والخدمات','Maintenance'],
+ assets:['الأصول','Assets'],technicians:['الفنيون','Technicians'],reports:['التقارير المالية','Financial Reports'],
+ announcements:['إعلانات وإشعارات السكان','Announcements'],notifications:['الإشعارات','Notifications'],
  audit_logs:['سجل التدقيق','Audit trail'],members:['المستخدمون والصلاحيات','Members & roles'],settings:['الإعدادات','Settings'],
  portal:['بوابة السكان','Resident portal'],money_accounts:['حسابات الأموال والخزائن','Money Accounts & Cash Boxes'],
- payment_proofs:['إثباتات الدفع','Payment Proofs'],fines:['الغرامات والتأخير','Fines & Late Fees'],
+ payment_proofs:['إثباتات التحويل','Payment Proofs'],fines:['الغرامات والتأخير','Fines & Late Fees'],
  credit_balances:['الأرصدة الدائنة','Credit Balances'],expense_distributions:['توزيع المصروفات','Expense Distributions'],
  vendor_contracts:['عقود الخدمات والموردين','Vendor Contracts'],budgets:['الميزانيات التقديرية','Budgets'],
  support_tickets:['الدعم الفني','Support Tickets'],quick_collect:['سجّل تحصيل','Quick Collect'],
  quick_expense:['إضافة مصروف','Quick Expense'],quick_proof:['إرسال إثبات دفع','Submit Payment Proof'],
  transfer_funds:['تحويل بين حسابات البرج','Transfer Within Tower'],
- unit_number:['رقم الوحدة','Unit number'],name:['الاسم / المسمى','Name'],address:['العنوان','Address'],kind:['النوع','Type'],property_id:['العقار / البرج','Property / Tower'],
- unit_id:['الوحدة','Unit'],party_id:['الطرف المسؤول','Person'],floor:['الطابق','Floor'],area:['المساحة م²','Area m²'],
+ unit_number:['رقم الشقة','Apartment #'],name:['الاسم / المسمى','Name'],address:['العنوان','Address'],kind:['النوع','Type'],property_id:['العقار / البرج','Property / Tower'],
+ unit_id:['الشقة / الوحدة','Unit'],party_id:['الساكن / المالك','Resident / Owner'],floor:['الطابق','Floor'],area:['المساحة م²','Area m²'],
  status:['الحالة','Status'],email:['البريد الإلكتروني','Email'],phone:['الهاتف','Phone'],start_date:['بداية العقد','Start date'],
- end_date:['نهاية العقد','End date'],rent:['الإيجار','Rent'],share:['نسبة الملكية %','Ownership %'],code:['الكود','Code'],
+ end_date:['نهاية العقد','End date'],rent:['المبلغ الشهري','Monthly Fee'],share:['نسبة الملكية %','Ownership %'],code:['الكود','Code'],
  specialty:['التخصص','Specialty'],serial:['الرقم التسلسلي','Serial'],next_service:['الصيانة القادمة','Next service'],
  title:['العنوان','Title'],description:['الوصف','Description'],priority:['الأولوية','Priority'],
  technician_id:['الفني المسؤول','Technician'],asset_id:['الأصل','Asset'],body:['المحتوى','Body'],
- number:['رقم الفاتورة','Invoice number'],amount:['المبلغ','Amount'],due_date:['تاريخ الاستحقاق','Due date'],
- reference:['المرجع الفريد','Unique Reference'],received_on:['تاريخ التحصيل','Received on'],created_at:['التاريخ','Date'],
+ number:['رقم المطالبة','Invoice number'],amount:['المبلغ','Amount'],due_date:['تاريخ الاستحقاق','Due date'],
+ reference:['رقم المرجع / الإيصال','Reference No'],received_on:['تاريخ التحصيل','Received on'],created_at:['التاريخ','Date'],
  entry_date:['تاريخ القيد','Entry date'],message:['الرسالة','Message'],entity:['الجدول','Entity'],
  entity_id:['السجل','Record'],action:['الإجراء','Action'],role:['الصلاحية','Role'],debit:['مدين','Debit'],
  credit:['دائن','Credit'],balance:['الرصيد','Balance'],destination:['جهة الحصيلة','Destination'],
@@ -40,20 +41,20 @@ const words={
  edit:['تعديل','Edit'],export:['تصدير CSV','Export CSV'],empty:['لا توجد سجلات بعد. ابدأ بإضافة أول سجل.','No records yet. Add your first record.'],
  loading:['جارٍ التحميل…','Loading…'],saved:['تم الحفظ','Saved'],search:['ابحث في السجلات…','Search records…'],
  logout:['تسجيل الخروج','Sign out'],signin:['تسجيل الدخول','Sign in'],signup:['إنشاء حساب ومؤسسة','Create account & workspace'],
- password:['كلمة المرور (12 حرفًا على الأقل)','Password (at least 12 characters)'],organization:['اسم المؤسسة','Organization name'],
- welcome:['إدارة عقاراتك، بوضوح.','Your properties. In perspective.'],
- subtitle:['كل التفاصيل في مكان واحد. من أول عقد إلى آخر قيد.','Every detail in one place. From your first lease to your last entry.'],
+ password:['كلمة المرور (12 حرفًا على الأقل)','Password (at least 12 characters)'],organization:['اسم البرج أو اتحاد الشاغلين','Tower / HOA Name'],
+ welcome:['صندوق وخزينة العمارة، بوضوح.','Building Sandok & Management.'],
+ subtitle:['إدارة البرج والشقق والتحصيلات في مساحة واحدة مباشرة وسهلة.','Manage your tower, units and collections in one simple place.'],
  draft:['مسودة','Draft'],issued:['صادرة','Issued'],paid:['مدفوعة','Paid'],pending:['قيد المراجعة','Pending'],
  approved:['معتمدة','Approved'],rejected:['مرفوضة','Rejected'],exempt:['معفاة','Exempt'],
- vacant:['شاغرة (غير متأجرة)','Vacant'],occupied:['مؤجرة','Rented'],owned:['تمليك','Owned'],maintenance:['صيانة','Maintenance'],
+ vacant:['مغلقة 🟡','Closed'],occupied:['مشغولة ومقيمة 🟢','Residing'],owned:['تمليك','Owned'],maintenance:['تحت التشطيب 🔵','Under Finishing'],
  active:['نشط','Active'],ended:['منتهٍ','Ended'],open:['مفتوح','Open'],assigned:['مسند','Assigned'],
  in_progress:['جارٍ العمل','In progress'],resolved:['تم الحل','Resolved'],closed:['مغلق','Closed'],
  normal:['عادية','Normal'],urgent:['عاجلة','Urgent'],low:['منخفضة','Low'],high:['مرتفعة','High'],critical:['حرجة','Critical'],
- owner:['مالك','Owner'],tenant:['مستأجر','Tenant'],vendor:['مورد','Vendor'],asset:['أصل','Asset'],
+ owner:['مالك','Owner'],tenant:['ساكن','Resident'],vendor:['مورد','Vendor'],asset:['أصل','Asset'],
  liability:['التزام','Liability'],equity:['حقوق ملكية','Equity'],income:['إيراد','Income'],expense:['مصروف','Expense'],
- admin:['مدير نظام','Administrator'],manager:['مدير برج','Manager'],accountant:['محاسب','Accountant'],
- technician:['فني','Technician'],resident:['ساكن','Resident'],viewer:['مشاهد','Viewer'],posted:['مرحّل','Posted'],
- issue:['إصدار وترحيل','Issue & post'],collect:['تسجيل تحصيل','Collect'],approve:['اعتماد','Approve'],
+ admin:['مدير برج / مسؤول','Administrator'],manager:['مدير برج','Manager'],accountant:['أمين صندوق','Accountant'],
+ technician:['فني صيانة','Technician'],resident:['ساكن / مالك','Resident'],viewer:['مشاهد','Viewer'],posted:['مرحّل','Posted'],
+ issue:['إصدار','Issue'],collect:['تسجيل تحصيل','Collect'],approve:['اعتماد','Approve'],
  reject:['رفض','Reject'],exempt_btn:['إعفاء','Exempt'],apply_credit:['سداد من الرصيد الدائن','Settle with credit'],
  cash:['خزنة نقدية','Cash Box'],bank:['حساب بنكي','Bank Account'],wallet:['محفظة إلكترونية','E-Wallet'],
  maintenance_fund:['صندوق الصيانة','Maintenance Fund'],fines_fund:['صندوق الغرامات','Fines Fund']
@@ -79,14 +80,14 @@ const t=(k)=>words[k]?.[lang==='ar'?0:1]||k;
 
 const schemas={
  properties:['name','address','kind','instapay_id','wallet_number'],
- units:['property_id','unit_number','name','floor','area','status','ownership_type'],
+ units:['property_id','unit_number','name','floor','area','occupancy_state','resident_phone'],
  parties:['name','kind','email','phone'],
  leases:['unit_id','party_id','start_date','end_date','rent','status'],
  ownerships:['unit_id','party_id','share'],
  accounts:['code','name','kind'],
  technicians:['name','specialty','phone'],
  assets:['property_id','name','serial','next_service'],
- tickets:['title','description','unit_id','asset_id','priority','status','technician_id'],
+ tickets:['title','description','unit_id','priority','status'],
  announcements:['title','body'],
  invoices:['number','party_id','unit_id','description','amount','due_date'],
  expenses:['description','amount'],
@@ -98,25 +99,20 @@ const schemas={
  support_tickets:['title','description','category','priority']
 };
 
-const optional=new Set(['address','phone','email','area','floor','serial','next_service','asset_id','technician_id','description','bank_name','account_number']);
+const optional=new Set(['address','phone','email','area','floor','serial','next_service','asset_id','technician_id','description','bank_name','account_number','instapay_id','wallet_number','resident_phone']);
 const relations={property_id:'properties',unit_id:'units',party_id:'parties',asset_id:'assets',technician_id:'technicians',vendor_id:'parties'};
 const enums={
- units:{status:['vacant','occupied','owned','maintenance'],ownership_type:['rental','owned']},
- parties:{kind:['owner','tenant','vendor']},
- leases:{status:['active','ended']},
- accounts:{kind:['asset','liability','equity','income','expense']},
+ units:{occupancy_state:['residing','closed','finishing']},
+ properties:{kind:['tower','building']},
+ parties:{kind:['owner','tenant']},
  tickets:{priority:['low','normal','urgent'],status:['open','assigned','in_progress','resolved','closed']},
- money_accounts:{kind:['cash','bank','wallet','maintenance_fund','fines_fund']},
  payment_proofs:{payment_method:['cash','bank_transfer','wallet','card','other']},
- fines:{destination:['maintenance_fund','fines_fund']},
- vendor_contracts:{frequency:['monthly','quarterly','yearly','one_time']},
- budgets:{period:['monthly','quarterly','annual']},
  support_tickets:{category:['general','billing','accounting','technical','security'],priority:['low','normal','high','critical']}
 };
 
 const iconNames={
- dashboard:'grid',properties:'building',units:'grid',parties:'people',leases:'file',ownerships:'home',
- invoices:'file',receipts:'wallet',expenses:'wallet',journals:'file',accounts:'chart',tickets:'tool',
+ dashboard:'grid',collections:'wallet',properties:'building',units:'home',parties:'people',leases:'file',ownerships:'home',
+ invoices:'file',receipts:'wallet',expenses:'chart',journals:'file',accounts:'chart',tickets:'tool',
  assets:'building',technicians:'people',reports:'chart',portal:'home',recurring_charges:'wallet',
  maintenance_plans:'tool',accounting_periods:'file',resident_messages:'bell',settings:'settings',
  profile:'people',notifications:'bell',announcements:'bell',audit_logs:'shield',members:'people',
@@ -125,13 +121,15 @@ const iconNames={
 };
 
 const descriptions={
- dashboard:['ملخص محفظتك العقارية، وكل ما يحتاج انتباهك اليوم.','Your portfolio at a glance, and what needs your attention.'],
- properties:['كل عقاراتك وأبراجك في مساحة واحدة منظّمة.','A clear view of every building in your portfolio.'],
- units:['تابع حالة الوحدات وتفاصيلها بسهولة.','Keep track of every unit and its availability.'],
- collections:['التحصيل الشهري من الشقق، سداد اشتراكات الصيانة والإيجارات.','Monthly unit collections, maintenance dues and rent receipts.'],invoices:['تابع المستحقات، وأصدر الفواتير، وسجّل التحصيل.','Manage your invoices, outstanding balances and collections.'],
+ dashboard:['خزينة وصندوق العمارة، الرصيد، التحصيل الشهري، والمتأخرات.','Building Sandok, treasury balance, monthly dues and arrears.'],
+ properties:['إدارة الأبراج والعمارات، إضافة وتعديل وحذف، وبيانات إنستاباي والمحافظ.','Towers management, add, edit, delete, and payment channels.'],
+ units:['الشقق والوحدات، الملاك والشاغلون، حالات الإشغال والواتساب.','Units & apartments, occupancy states and direct WhatsApp.'],
+ collections:['جدول التحصيل الشهري واشتراكات الصيانة وقنوات الدفع.','Monthly collection dues, maintenance fees and payment channels.'],
+ expenses:['تسجيل ومتابعة مصروفات الصندوق (كهرباء، نظافة، أسانسير، صيانة).','Sandok expenses tracking (electricity, cleaning, elevator, repairs).'],
+ invoices:['تابع المستحقات، وأصدر المطالبات، وسجّل التحصيل.','Manage your dues, outstanding balances and collections.'],
  payment_proofs:['مراجعة واعتماد إثباتات التحويل المرسلة من السكان.','Review and verify resident payment slips.'],
- tickets:['متابعة الطلبات من أول بلاغ حتى إتمام الصيانة.','Follow every request from first report to resolution.'],
- reports:['رؤية أوضح للحسابات والعمليات.','A clearer picture of your finances and operations.'],
+ tickets:['متابعة بلاغات الصيانة لخدمات ومرافق البرج المشتركة.','Follow every maintenance request from first report to resolution.'],
+ reports:['رؤية أوضح لحسابات الصندوق والمصروفات والتحصيل.','A clearer picture of your treasury and collections.'],
  support_tickets:['تواصل مع الدعم الفني وتتبع تذاكرك ومستجداتها.','Contact support and track your inquiries and tickets.']
 };
 
@@ -160,7 +158,7 @@ async function api(path,options={}){
 }
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';setTimeout(()=>$('#toast').style.display='none',4000);}
 function theme(){document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.documentElement.classList.toggle('dark',dark);localStorage.tfLang=lang;localStorage.tfDark=dark;}
-const brand=()=>`<div class="brand"><img src="/logo.svg" alt="TowerFlow"><span>TowerFlow<span>${localText('منظومة إدارة العقارات','PROPERTY SYSTEM')}</span></span></div>`;
+const brand=()=>`<div class="brand"><img src="/logo.svg" alt="TowerFlow"><span>TowerFlow<span>${localText('إدارة الأبراج وصندوق العمارة','TOWER & SANDOK')}</span></span></div>`;
 const toggles=()=>`<button data-global="language" aria-label="${localText('تغيير اللغة','Change language')}">${lang==='ar'?'English':'العربية'}</button><button class="icon-button" data-global="theme" aria-label="${localText('تغيير المظهر','Toggle theme')}">${icon(dark?'sun':'moon',18)}</button>`;
 
 document.addEventListener('click',async e=>{
@@ -171,18 +169,18 @@ document.addEventListener('click',async e=>{
 
 function auth(register=false){
  theme();document.body.classList.remove('nav-open');
- $('#app').innerHTML=`<main class="auth"><section class="auth-art">${brand()}<div class="auth-story"><div class="eyebrow">${localText('عقاراتك. رؤيتك. مساحتك.','YOUR PROPERTIES. YOUR PERSPECTIVE.')}</div><h1>${localText('إدارة أذكى للعقارات.<br>ومساحة أكبر للنمو.','A clearer way to manage.<br>More room to grow.')}</h1><p class="story-desc">${localText('من العقود والتحصيل إلى الصيانة والحسابات، كل تفاصيل محفظتك في مكان واحد.','From leases and collections to maintenance and accounting, bring your entire portfolio together.')}</p>${architecture()}<div class="auth-benefits"><span>${icon('check',15)}${localText('عقارات ووحدات','Properties & units')}</span><span>${icon('check',15)}${localText('محاسبة وتحصيل','Accounting & collections')}</span><span>${icon('check',15)}${localText('صيانة وسكان','Maintenance & residents')}</span></div><a href="/TowerFlow-latest.apk" download="TowerFlow-v0.7.3.apk" class="auth-app-badge">${icon('android',16)} ${localText('تطبيق أندرويد أصلي متاح الآن (APK)','Native Android APK Available')}</a></div><div class="foot">© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow ${localText('لإدارة العقارات','Property Management')}</div></section><section class="auth-main"><div class="auth-mobile-brand">${brand()}</div><div class="auth-tools">${toggles()}</div><form id="authform"><div class="login-symbol">${icon(register?'building':'shield',24)}</div><h1>${localText(register?'ابدأ مع TowerFlow':'أهلًا بعودتك',register?'Your workspace starts here':'Welcome back')}</h1><p>${localText(register?'أنشئ حسابك وابدأ تنظيم محفظتك العقارية.':'سجّل دخولك لمتابعة عقاراتك وأعمالك اليومية.',register?'Create an account and organize your portfolio.':'Sign in to your workspace and pick up where you left off.')}</p>${register?`<label>${t('name')}<input name="name" required maxlength="160" autocomplete="name" placeholder="${localText('اسمك الكامل','Your full name')}"></label><label>${t('organization')}<input name="organization" required maxlength="160" autocomplete="organization" placeholder="${localText('اسم شركتك أو مؤسستك','Your organization name')}"></label>`:''}<label>${t('email')}<input name="email" type="email" required autocomplete="email" placeholder="name@company.com"></label><label>${localText('كلمة المرور','Password')}<input name="password" type="password" minlength="12" maxlength="128" required autocomplete="${register?'new-password':'current-password'}" placeholder="${localText('12 حرفًا على الأقل','At least 12 characters')}"></label><div class="error" id="autherror" role="alert"></div><button class="primary" type="submit">${t(register?'signup':'signin')}${icon('arrow',17)}</button><div class="auth-divider">${localText('أو','or')}</div><button type="button" class="google-button" id="google-login"><span aria-hidden="true">G</span>${localText('المتابعة باستخدام Google','Continue with Google')}</button><p id="google-note" class="muted" role="status"></p><div class="auth-switch"><span>${localText(register?'لديك حساب بالفعل؟':'ليس لديك حساب بعد؟',register?'Already have an account?':'New to TowerFlow?')}</span><button type="button" class="text-button" id="switchauth">${localText(register?'تسجيل الدخول':'إنشاء حساب',register?'Sign in':'Create an account')}</button></div><div class="app-download-card">
+ $('#app').innerHTML=`<main class="auth"><section class="auth-art">${brand()}<div class="auth-story"><div class="eyebrow">${localText('إدارة الأبراج والعمارات · اتحاد الشاغلين','TOWER & SANDOK SYSTEM')}</div><h1>${localText('صندوق وخزينة العمارة.<br>إدارة أسهل وتحصيل أسرع.','Smart Building Management.<br>Simple, direct & effortless.')}</h1><p class="story-desc">${localText('متابعة رصيد الخزينة، اشتراكات الشقق الشهرية، التحصيل اللحظي عبر إنستاباي والمحافظ الإلكترونية، والتواصل المباشر مع الملاك والسكان عبر واتساب.','Manage treasury balance, monthly dues, instant WhatsApp reminders, and InstaPay / E-Wallet payments.')}</p>${architecture()}<div class="auth-benefits"><span>${icon('check',15)}${localText('صندوق وخزينة العمارة','Building Sandok')}</span><span>${icon('check',15)}${localText('إنستاباي ومحافظ ذكية','InstaPay & Wallets')}</span><span>${icon('check',15)}${localText('تواصل واتساب مباشر','Instant WhatsApp')}</span></div><a href="/TowerFlow-latest.apk" download="TowerFlow-v0.8.2.apk" class="auth-app-badge">${icon('android',16)} ${localText('تطبيق أندرويد متاح الآن v0.8.2 (APK)','Native Android APK v0.8.2 Available')}</a></div><div class="foot">© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow ${localText('لإدارة الأبراج','Tower Management')}</div></section><section class="auth-main"><div class="auth-mobile-brand">${brand()}</div><div class="auth-tools">${toggles()}</div><form id="authform"><div class="login-symbol">${icon(register?'building':'shield',24)}</div><h1>${localText(register?'ابدأ مع TowerFlow':'أهلًا بعودتك',register?'Your workspace starts here':'Welcome back')}</h1><p>${localText(register?'أنشئ حسابك لإدارة برجك وصندوق العمارة.':'سجّل دخولك لمتابعة صندوق العمارة والشقق والتحصيلات.',register?'Create an account to manage your tower and sandok.':'Sign in to manage your building and dues.')}</p>${register?`<label>${t('name')}<input name="name" required maxlength="160" autocomplete="name" placeholder="${localText('اسمك الكامل','Your full name')}"></label><label>${t('organization')}<input name="organization" required maxlength="160" autocomplete="organization" placeholder="${localText('اسم البرج أو اتحاد الشاغلين','Tower / HOA Name')}"></label>`:''}<label>${t('email')}<input name="email" type="email" required autocomplete="email" placeholder="name@company.com"></label><label>${localText('كلمة المرور','Password')}<input name="password" type="password" minlength="12" maxlength="128" required autocomplete="${register?'new-password':'current-password'}" placeholder="${localText('12 حرفًا على الأقل','At least 12 characters')}"></label><div class="error" id="autherror" role="alert"></div><button class="primary" type="submit">${t(register?'signup':'signin')}${icon('arrow',17)}</button><div class="auth-divider">${localText('أو','or')}</div><button type="button" class="google-button" id="google-login"><span aria-hidden="true">G</span>${localText('المتابعة باستخدام Google','Continue with Google')}</button><p id="google-note" class="muted" role="status"></p><div class="auth-switch"><span>${localText(register?'لديك حساب بالفعل؟':'ليس لديك حساب بعد؟',register?'Already have an account?':'New to TowerFlow?')}</span><button type="button" class="text-button" id="switchauth">${localText(register?'تسجيل الدخول':'إنشاء حساب',register?'Sign in':'Create an account')}</button></div><div class="app-download-card">
   <div class="app-download-content">
     <div class="app-download-icon">${icon('android',22)}</div>
     <div class="app-download-text">
       <strong>${localText('تطبيق TowerFlow للأندرويد','TowerFlow Android App')}</strong>
-      <small>${localText('تحميل مباشر للأجهزة الذكية · إصدار v0.7.3','Direct APK installation · v0.7.3')}</small>
+      <small>${localText('تحميل مباشر للأجهزة الذكية · إصدار v0.8.2','Direct APK installation · v0.8.2')}</small>
     </div>
   </div>
-  <a href="/TowerFlow-latest.apk" download="TowerFlow-v0.7.3.apk" class="app-download-btn">
+  <a href="/TowerFlow-latest.apk" download="TowerFlow-v0.8.2.apk" class="app-download-btn">
     ${icon('android',17)} ${localText('تحميل التطبيق للأندرويد','Download for Android')}
   </a>
-</div><details class="install-guide"><summary>${localText('تعليمات التثبيت وتخطي تحذير الحماية المعتاد','Installation guide & Play Protect steps')}</summary><div class="install-steps"><p>1. ${localText('عند بدء التنزيل: اختر <b>تنزيل على أي حال (Download anyway)</b>.','When downloading: tap <b>Download anyway</b>.')}</p><p>2. ${localText('عند فتح الملف: اضغط <b>الإعدادات</b> ثم فعّل <b>السماح بتثبيت التطبيقات من هذا المصدر</b>.','When opening: tap <b>Settings</b> and enable <b>Allow from this source</b>.')}</p><p>3. ${localText('إذا ظهر تنبيه Play Protect: اضغط <b>مزيد من التفاصيل (More details)</b> ثم <b>التثبيت على أي حال (Install anyway)</b> — الحزمة أصلية وموقعة بشهادة TowerFlow الرسمية.','If Play Protect warns: tap <b>More details</b> then <b>Install anyway</b> — The APK is clean and officially signed.')}</p><p>4. ${localText('إذا ظهر تعارض في الحزمة (Package conflicts): احذف النسخة التجريبية القديمة من الهاتف أولاً ثم ثبّت هذه الحزمة الإنتاجية.','If you get a package conflict error: uninstall the previous test version from your phone first, then install.')}</p></div></details><p class="privacy-link"><a href="/privacy.html">${localText('الخصوصية وبياناتك','Privacy & your data')}</a></p><div class="auth-security">${icon('shield',14)}${localText('بيانات مؤسستك معزولة ومحمية بصلاحيات الوصول','Your workspace is isolated and protected by access controls')}</div></form></section></main>`;
+</div><details class="install-guide"><summary>${localText('تعليمات التثبيت وتخطي تحذير الحماية المعتاد','Installation guide & Play Protect steps')}</summary><div class="install-steps"><p>1. ${localText('عند بدء التنزيل: اختر <b>تنزيل على أي حال (Download anyway)</b>.','When downloading: tap <b>Download anyway</b>.')}</p><p>2. ${localText('عند فتح الملف: اضغط <b>الإعدادات</b> ثم فعّل <b>السماح بتثبيت التطبيقات من هذا المصدر</b>.','When opening: tap <b>Settings</b> and enable <b>Allow from this source</b>.')}</p><p>3. ${localText('إذا ظهر تنبيه Play Protect: اضغط <b>مزيد من التفاصيل (More details)</b> ثم <b>التثبيت على أي حال (Install anyway)</b> — الحزمة أصلية وموقعة بشهادة TowerFlow الرسمية.','If Play Protect warns: tap <b>More details</b> then <b>Install anyway</b> — The APK is clean and officially signed.')}</p><p>4. ${localText('إذا ظهر تعارض في الحزمة (Package conflicts): احذف النسخة القديمة من الهاتف أولاً ثم ثبّت هذه الحزمة.','If you get a package conflict error: uninstall the previous version from your phone first, then install.')}</p></div></details><p class="privacy-link"><a href="/privacy.html">${localText('الخصوصية وبياناتك','Privacy & your data')}</a></p><div class="auth-security">${icon('shield',14)}${localText('بيانات مؤسستك معزولة ومحمية بصلاحيات الوصول','Your workspace is isolated and protected by access controls')}</div></form></section></main>`;
  api('auth/providers').then(p=>{if(!p.google)$('#google-note')&&( $('#google-note').textContent=localText('الدخول بجوجل بانتظار تفعيل إعدادات الحساب. يمكنك استخدام البريد الآن.','Google is awaiting account setup. Email sign-in is available.'));}).catch(()=>{});
  $('#google-login').onclick=()=>{location.href='/api/auth/google/start';};
  const googleError=new URLSearchParams(location.search).get('google_error');if(googleError)$('#autherror').textContent=googleError;
@@ -192,12 +190,12 @@ function auth(register=false){
 
 function role(){return me?.organizations.find(x=>x.id===org)?.role;}
 function baseAllowed(){
- if(role()==='technician')return ['properties','units','tickets','assets','technicians','announcements','notifications','support_tickets','profile','settings'];
+ if(role()==='technician')return ['properties','units','tickets','announcements','notifications','support_tickets','profile','settings'];
  if(role()==='resident')return ['portal','invoices','payment_proofs','tickets','announcements','notifications','support_tickets','profile','settings'];
- return ['dashboard','properties','units','parties','leases','ownerships','invoices','receipts','expenses','payment_proofs','credit_balances','fines','money_accounts','journals','accounts','tickets','assets','technicians','vendor_contracts','budgets','reports','announcements','notifications','support_tickets','audit_logs',...(['admin','manager'].includes(role())?['members']:[]),'profile','settings'];
+ return ['dashboard','collections','properties','units','expenses','tickets','payment_proofs','reports','announcements','notifications','support_tickets',...(['admin','manager'].includes(role())?['members']:[]),'profile','settings'];
 }
 function allowed(){
- return [...new Set([...baseAllowed(),...(['admin','manager'].includes(role())?['resident_messages']:[]),...(['admin','manager','accountant'].includes(role())?['recurring_charges','accounting_periods']:[]),...(['admin','manager','technician'].includes(role())?['maintenance_plans']:[])])];
+ return [...new Set([...baseAllowed(),...(['admin','manager'].includes(role())?['resident_messages']:[])])];
 }
 async function boot(){
  try{me=await api('me');org=me.organizations.some(x=>x.id===localStorage.tfOrg)?localStorage.tfOrg:me.organizations[0]?.id||'';if(role()==='resident')page='portal';await render();}catch{me=null;auth();}
@@ -209,21 +207,38 @@ function head(title,action=''){
 }
 
 function sidebar(){
- const available=allowed(),groups=[
-   ['portfolio',localText('المحفظة العقارية','Portfolio'),['properties','units','parties','ownerships']],
-   ['finance',localText('المالية والتحصيل','Finance & Billing'),['collections','invoices','receipts','expenses','payment_proofs','reports']],
-   ['operations',localText('التشغيل والصيانة','Operations & Service'),['tickets','assets','technicians','maintenance_plans']],
-   ['workspace',localText('التواصل والدعم','Communications & Support'),['resident_messages','announcements','notifications','support_tickets','members']],
-   ['advanced',localText('سجلات ومحاسبة متقدمة','Advanced Records'),['credit_balances','fines','journals','accounts','recurring_charges','accounting_periods','vendor_contracts','budgets','audit_logs']]
+ const available=allowed();
+ const mainItems=[
+   ['dashboard', localText('خزينة وصندوق العمارة','Sandok & Dashboard'), 'grid'],
+   ['collections', localText('التحصيل الشهري','Monthly Collections'), 'wallet'],
+   ['properties', localText('الأبراج والعمارات','Towers & Buildings'), 'building'],
+   ['units', localText('الشقق والوحدات','Units & Apartments'), 'home'],
+   ['expenses', localText('مصروفات الصندوق','Sandok Expenses'), 'chart'],
+   ['tickets', localText('الصيانة والخدمات','Maintenance'), 'tool'],
+   ['payment_proofs', localText('إثباتات التحويل','Payment Proofs'), 'check'],
+   ['announcements', localText('إعلانات السكان','Announcements'), 'bell'],
+   ['reports', localText('التقارير المالية','Financial Reports'), 'chart']
  ];
- const item=k=>`<button data-page="${k}" class="nav-item ${k===page?'active':''}" ${k===page?'aria-current="page"':''}>${icon(iconNames[k]||'file',18)}<span>${t(k)}</span></button>`;
- return `<aside class="sidebar" id="navigation" aria-label="${localText('التنقل الرئيسي','Main navigation')}">${brand()}<nav><div class="sidebar-caption">${localText('مساحة العمل','WORKSPACE')}</div>${available.includes('dashboard')?item('dashboard'):''}${available.includes('portal')?item('portal'):''}${groups.map(([key,label,keys])=>{const visible=keys.filter(k=>available.includes(k));return visible.length?`<details class="nav-group" ${keys.includes(page)||(['portfolio','finance'].includes(key)&&key!=='advanced')?'open':''}><summary>${label}</summary>${visible.map(item).join('')}</details>`:''}).join('')}</nav><div class="sidebar-bottom">${item('profile')}${item('settings')}<p>TOWERFLOW</p></div></aside>`;
+ const item=([k,label,ic])=>`<button data-page="${k}" class="nav-item ${k===page?'active':''}" ${k===page?'aria-current="page"':''}>${icon(ic,18)}<span>${label}</span></button>`;
+ return `<aside class="sidebar" id="navigation" aria-label="${localText('التنقل الرئيسي','Main navigation')}">
+   ${brand()}
+   <nav>
+     <div class="sidebar-caption">${localText('إدارة البرج وصندوق العمارة','BUILDING MANAGEMENT')}</div>
+     ${available.includes('portal')?item(['portal',t('portal'),'home']):''}
+     ${mainItems.filter(([k])=>available.includes(k)).map(item).join('')}
+   </nav>
+   <div class="sidebar-bottom">
+     <button data-page="profile" class="nav-item ${page==='profile'?'active':''}">${icon('people',18)}<span>${t('profile')}</span></button>
+     <button data-page="settings" class="nav-item ${page==='settings'?'active':''}">${icon('settings',18)}<span>${t('settings')}</span></button>
+     <p>TOWERFLOW v0.8.2</p>
+   </div>
+ </aside>`;
 }
 
 async function render(){
  if(busy)return;busy=true;theme();localStorage.tfOrg=org;
  if(!allowed().includes(page))page=allowed()[0];
- $('#app').innerHTML=`<div class="layout">${sidebar()}<button class="sidebar-overlay" aria-label="${localText('إغلاق القائمة','Close menu')}"></button><main class="workspace"><header class="topbar"><div class="topbar-start"><button class="mobile-toggle icon-button" id="menu" aria-label="${localText('فتح القائمة','Open navigation')}" aria-expanded="false" aria-controls="navigation">${icon('menu')}</button><div class="breadcrumb">TowerFlow <span> / </span><strong>${t(page)}</strong></div><select id="org" aria-label="${t('organization')}">${me.organizations.map(x=>`<option value="${x.id}" ${x.id===org?'selected':''}>${escape(x.name)}</option>`).join('')}</select></div><div class="topbar-end"><div class="actions">${toggles()}<button class="icon-button" data-go="notifications" aria-label="${t('notifications')}">${icon('bell',18)}</button></div><button class="profile profile-link" data-go="profile"><div class="avatar">${me.user.avatar?`<img src="${escape(me.user.avatar)}" alt="">`:escape(me.user.name.slice(0,1))}</div><div><b>${escape(me.user.name)}</b><small>${t(me.user.platform_owner?'platform_owner':role())}</small></div></button><button class="icon-button" id="logout" aria-label="${t('logout')}" title="${t('logout')}">${icon('logout',17)}</button></div></header><div class="content-wrap"><section id="content" aria-live="polite"><div class="loading">${t('loading')}</div></section><footer class="footer"><span>© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow</span><span>${localText('مساحة واحدة. كل التفاصيل.','One workspace. Every detail.')}</span></footer></div></main></div>`;
+ $('#app').innerHTML=`<div class="layout">${sidebar()}<button class="sidebar-overlay" aria-label="${localText('إغلاق القائمة','Close menu')}"></button><main class="workspace"><header class="topbar"><div class="topbar-start"><button class="mobile-toggle icon-button" id="menu" aria-label="${localText('فتح القائمة','Open navigation')}" aria-expanded="false" aria-controls="navigation">${icon('menu')}</button><div class="breadcrumb">TowerFlow <span> / </span><strong>${t(page)}</strong></div><select id="org" aria-label="${t('organization')}">${me.organizations.map(x=>`<option value="${x.id}" ${x.id===org?'selected':''}>${escape(x.name)}</option>`).join('')}</select></div><div class="topbar-end"><div class="actions">${toggles()}<button class="icon-button" data-go="notifications" aria-label="${t('notifications')}">${icon('bell',18)}</button></div><button class="profile profile-link" data-go="profile"><div class="avatar">${me.user.avatar?`<img src="${escape(me.user.avatar)}" alt="">`:escape(me.user.name.slice(0,1))}</div><div><b>${escape(me.user.name)}</b><small>${t(me.user.platform_owner?'platform_owner':role())}</small></div></button><button class="icon-button" id="logout" aria-label="${t('logout')}" title="${t('logout')}">${icon('logout',17)}</button></div></header><div class="content-wrap"><section id="content" aria-live="polite"><div class="loading">${t('loading')}</div></section><footer class="footer"><span>© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow</span><span>${localText('إدارة الأبراج وصندوق العمارة','Building Sandok & Management')}</span></footer></div></main></div>`;
  document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>navigate(b.dataset.page));
  $('#org').onchange=e=>{org=e.target.value;cache={};render();};
  $('#logout').onclick=async()=>{await api('auth/logout',{method:'POST',body:'{}'});me=null;cache={};auth();};
@@ -246,125 +261,265 @@ async function render(){
 }
 
 async function dashboard(){
- const [units,invoices,tickets,receipts,proofs,summary]=await Promise.all([
-   ...['units','invoices','tickets','receipts','payment_proofs'].map(rows),
-   api('dashboard')
+ const month = localStorage.tfCollectionMonth || new Date().toISOString().slice(0, 7);
+ const [colData, expList, recList, ticketsList, proofsList, summary] = await Promise.all([
+   api('collections/monthly?month=' + month).catch(() => ({ summary: {}, units: [], property_settings: {} })),
+   rows('expenses').catch(() => []),
+   rows('receipts').catch(() => []),
+   rows('tickets').catch(() => []),
+   rows('payment_proofs').catch(() => []),
+   api('dashboard').catch(() => ({ units: { total: 0, occupied: 0, vacant: 0, maintenance: 0 } }))
  ]);
- const due=invoices.filter(i=>i.status!=='draft').reduce((s,x)=>s+Number(x.amount),0)-receipts.reduce((s,x)=>s+Number(x.amount),0);
- const occupied=summary.units.occupied,vacant=summary.units.vacant,unitTotal=summary.units.total;
- const percent=unitTotal?Math.round(occupied/unitTotal*100):0;
- const collected=receipts.reduce((s,x)=>s+Number(x.amount),0);
- const open=tickets.filter(x=>!['closed','resolved'].includes(x.status));
- const pendingProofs=proofs.filter(p=>p.status==='pending');
 
- const quickActionsHtml = role()==='resident' ? `
+ const s = colData.summary || {};
+ const units = colData.units || [];
+ const prop = colData.property_settings || {};
+
+ const totalIn = recList.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+ const totalOut = expList.filter(e => e.status === 'approved' || !e.status).reduce((acc, e) => acc + Number(e.amount || 0), 0);
+ const sandokBalance = totalIn - totalOut;
+
+ const totalArrears = s.total_remaining !== undefined ? s.total_remaining : 0;
+ const monthCollected = s.total_collected !== undefined ? s.total_collected : 0;
+ const monthRate = s.collection_rate || 0;
+
+ const openTickets = ticketsList.filter(x => !['closed', 'resolved'].includes(x.status));
+ const pendingProofs = proofsList.filter(p => p.status === 'pending');
+
+ const parts = month.split('-');
+ const mNum = parseInt(parts[1], 10) || 1;
+ const monthNamesAr = ['', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+ const monthNamesEn = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+ const monthDisplay = (lang === 'ar' ? monthNamesAr[mNum] : monthNamesEn[mNum]) + ' ' + parts[0];
+
+ const quickActionsHtml = role() === 'resident' ? `
    <button class="primary" data-quick="submit_proof">${icon('plus',17)}${t('quick_proof')}</button>
    <button data-quick="new_ticket">${icon('tool',17)}${localText('طلب صيانة','Request Maintenance')}</button>
    <button data-quick="new_support">${icon('shield',17)}${localText('تذكرة دعم','Support Ticket')}</button>
  ` : `
-   <button class="primary" data-quick="collect">${icon('plus',17)}${t('quick_collect')}</button>
-   <button data-quick="expense">${icon('wallet',17)}${t('quick_expense')}</button>
+   <button class="primary" data-go="collections">${icon('wallet',17)}${localText('⚡ جدول التحصيل الشهري','Monthly Collections')}</button>
+   <button data-quick="expense">${icon('chart',17)}${localText('💸 إضافة مصروف','Add Expense')}</button>
    <button data-go="payment_proofs">${icon('check',17)}${t('payment_proofs')} ${pendingProofs.length?`<span class="badge warn">${pendingProofs.length}</span>`:''}</button>
-   <button data-quick="units_batch">${icon('grid',17)}${localText('توليد شقق','Batch Units')}</button>
+   <button data-go="properties">${icon('building',17)}${localText('إدارة الأبراج','Towers')}</button>
  `;
 
- $('#content').innerHTML=head(t(page), quickActionsHtml)+`
-   <div class="card hero">
+ $('#content').innerHTML = head(localText('خزينة وصندوق العمارة', 'Building Sandok & Dashboard'), quickActionsHtml) + `
+   <div class="card hero" style="background:linear-gradient(135deg, #0f766e 0%, #115e59 100%);color:#fff">
      <div class="hero-copy">
-       <div class="eyebrow">${localText('مساحة واحدة. كل التفاصيل.','ONE WORKSPACE. EVERY DETAIL.')}</div>
-       <h2>${localText('أهلًا، ','Hello, ')}${escape(me.user.name)}</h2>
-       <p>${localText('رؤية واضحة لعقاراتك، وحساباتك، وكل ما يجري في مؤسستك.','A clear view of your properties, finances and operations.')}</p>
-       <span class="hero-tag">${escape(me.organizations.find(o=>o.id===org)?.name||'')}</span>
+       <div class="eyebrow" style="color:#5eead4">${localText('منظومة إدارة الأبراج والعمارات · اتحاد الشاغلين','TOWER & OCCUPANTS MANAGEMENT')}</div>
+       <h2 style="color:#fff">${localText('صندوق وخزينة ','Treasury: ')}${escape(me.organizations.find(o=>o.id===org)?.name || 'البرج')}</h2>
+       <p style="color:#ccfbf1">${localText('متابعة رصيد الصندوق، الاشتراكات الشهرية، متأخرات السكان، والتحصيل عبر إنستاباي والمحافظ.','Track treasury balance, monthly dues, arrears, and electronic collections.')}</p>
+       <span class="hero-tag" style="background:rgba(255,255,255,0.2);color:#fff">${monthDisplay}</span>
      </div>
      ${architecture()}
-    </div>
-    <div class="quick-hub">
-      ${role()==='resident'?`
-        <button class="quick-hub-btn primary" data-quick="submit_proof">${icon('plus',18)}<span>${localText('إرسال إثبات سداد','Submit Payment Proof')}</span></button>
-        <button class="quick-hub-btn" data-quick="new_ticket">${icon('tool',18)}<span>${localText('طلب صيانة جديد','Request Maintenance')}</span></button>
-        <button class="quick-hub-btn" data-go="invoices">${icon('wallet',18)}<span>${localText('فواتيري ومستحقاتي','My Invoices')}</span></button>
-        <button class="quick-hub-btn" data-quick="new_support">${icon('shield',18)}<span>${localText('الدعم الفني','Support Ticket')}</span></button>
-      `:`
-        <button class="quick-hub-btn primary" data-quick="collect">${icon('plus',18)}<span>${localText('تحصيل فوري','Quick Collect')}</span></button>
-        <button class="quick-hub-btn" data-go="invoices">${icon('wallet',18)}<span>${localText('الفواتير والمطالبات','Invoices')}</span></button>
-        <button class="quick-hub-btn" data-go="units">${icon('grid',18)}<span>${localText('إدارة الشقق والوحدات','Units & Apartments')}</span></button>
-        <button class="quick-hub-btn" data-go="payment_proofs">${icon('check',18)}<span>${localText('إثباتات التحويل','Payment Proofs')} ${pendingProofs.length?`<span class="badge warn">${pendingProofs.length}</span>`:''}</span></button>
-        <button class="quick-hub-btn" data-quick="new_ticket">${icon('tool',18)}<span>${localText('بلاغ صيانة جديد','New Ticket')}</span></button>
-      `}
-    </div>
-    <div class="metrics">
-     ${[
-       [t('units'),unitTotal,'building'],
-       [localText('المبالغ المستحقة','Outstanding balance'),money(due),'wallet'],
-       [localText('إجمالي التحصيل','Total collected'),money(collected),'chart'],
-       [localText('طلبات صيانة مفتوحة','Open maintenance'),open.length,'tool']
-     ].map(([label,value,i])=>`
-       <article class="card metric">
-         <div class="metric-top"><small>${label}</small><span class="metric-icon">${icon(i,18)}</span></div>
-         <strong title="${escape(value)}">${value}</strong>
-         <div class="metric-foot"><span class="dot"></span>${localText('حسب سجلات مؤسستك','Based on workspace records')}</div>
-       </article>
-     `).join('')}
    </div>
-   <div class="grid">
-     <article class="card">
-       <div class="card-header"><h2>${localText('إشغال الوحدات','Unit occupancy')}</h2><button class="text-button" data-go="units">${localText('عرض الوحدات','View units')}</button></div>
-       <div class="occupancy-body">
-         <div class="donut">
-           <svg viewBox="0 0 120 120" role="img" aria-label="${localText('متأجرة','Rented')} ${occupied} ${localText('من','of')} ${unitTotal}">
-             <circle cx="60" cy="60" r="52"/><circle class="donut-fill" id="occupancy" cx="60" cy="60" r="52"/>
-           </svg>
-           <div class="donut-label"><b>${percent}%</b><small>${localText('نسبة التأجير','Rental rate')}</small></div>
+
+   <div class="card" style="margin-top:1.25rem;background:var(--bg-accent, #eff6ff);border:1px solid #bfdbfe;padding:1.1rem 1.4rem">
+     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">
+       <div>
+         <h4 style="margin:0 0 0.4rem 0;color:#1d4ed8;font-size:1.05rem;display:flex;align-items:center;gap:0.5rem">
+           <span>⚡📱</span> ${localText('قنوات الدفع اللحظي والمحافظ الإلكترونية للبرج:','Tower Electronic & InstaPay Channels:')}
+         </h4>
+         <div style="display:flex;gap:2rem;flex-wrap:wrap;align-items:center">
+           <div>
+             <span class="muted" style="font-size:0.85rem">${localText('معرف إنستاباي (InstaPay IPA):','InstaPay IPA:')}</span>
+             <br><strong style="font-size:1.1rem;color:#1e3a8a">${prop.instapay_id ? escape(prop.instapay_id) : `<span class="muted" style="font-weight:normal;font-size:0.9rem">${localText('غير محدد (أضفه من إعدادات البرج)','Not set')}</span>`}</strong>
+           </div>
+           <div>
+             <span class="muted" style="font-size:0.85rem">${localText('المحفظة الإلكترونية (فودافون كاش / وي):','E-Wallet Mobile:')}</span>
+             <br><strong style="font-size:1.1rem;color:#1e3a8a">${prop.wallet_number ? escape(prop.wallet_number) : `<span class="muted" style="font-weight:normal;font-size:0.9rem">${localText('غير محدد (أضفه من إعدادات البرج)','Not set')}</span>`}</strong>
+           </div>
          </div>
-         <div class="legend">
-           <h3>${localText('حالة التأجير','Rental status')}</h3>
-           <p>${t('occupied')}<b>${occupied}</b></p>
-           <p>${t('vacant')}<b>${vacant}</b></p>
-           <p>${localText('تحت الصيانة','Under maintenance')}<b>${summary.units.maintenance}</b></p>
+       </div>
+       <div>
+         <button class="ghost small" data-go="properties" style="font-size:0.85rem;color:#1d4ed8;border-color:#93c5fd">${localText('⚙️ تعديل بيانات الدفع والبرج','Edit Tower Payment Info')}</button>
+       </div>
+     </div>
+   </div>
+
+   <div class="quick-hub" style="margin-top:1.25rem">
+     ${role() === 'resident' ? `
+       <button class="quick-hub-btn primary" data-quick="submit_proof">${icon('plus',18)}<span>${localText('إرسال إثبات سداد','Submit Payment Proof')}</span></button>
+       <button class="quick-hub-btn" data-quick="new_ticket">${icon('tool',18)}<span>${localText('طلب صيانة جديد','Request Maintenance')}</span></button>
+       <button class="quick-hub-btn" data-go="invoices">${icon('wallet',18)}<span>${localText('مستحقاتي','My Invoices')}</span></button>
+     ` : `
+       <button class="quick-hub-btn primary" data-go="collections">${icon('wallet',18)}<span>${localText('⚡ التحصيل الشهري','Monthly Collections')}</span></button>
+       <button class="quick-hub-btn" data-quick="expense">${icon('chart',18)}<span>${localText('💸 تسجيل مصروف','Add Expense')}</span></button>
+       <button class="quick-hub-btn" data-go="units">${icon('home',18)}<span>${localText('🚪 الشقق والوحدات','Units & Condos')}</span></button>
+       <button class="quick-hub-btn" data-go="payment_proofs">${icon('check',18)}<span>${localText('📱 إثباتات التحويل','Payment Proofs')} ${pendingProofs.length?`<span class="badge warn">${pendingProofs.length}</span>`:''}</span></button>
+       <button class="quick-hub-btn" data-quick="new_ticket">${icon('tool',18)}<span>${localText('🛠️ بلاغ صيانة','New Ticket')}</span></button>
+     `}
+   </div>
+
+   <div class="metrics" style="margin-top:1.25rem">
+     <article class="card metric">
+       <div class="metric-top"><small>${localText('رصيد الخزينة والصندوق الفعلي','Treasury & Sandok Balance')}</small><span class="metric-icon">${icon('wallet',18)}</span></div>
+       <strong style="color:var(--primary,#0f766e)" title="${money(sandokBalance)}">${money(sandokBalance)}</strong>
+       <div class="metric-foot"><span class="dot"></span>${localText('صافي الرصيد الحالي بعد خصم المصروفات','Current net balance')}</div>
+     </article>
+
+     <article class="card metric">
+       <div class="metric-top"><small>${localText('إجمالي المتأخرات على الشقق','Total Resident Arrears')}</small><span class="metric-icon" style="color:#ef4444">${icon('clock',18)}</span></div>
+       <strong style="color:#ef4444" title="${money(totalArrears)}">${money(totalArrears)}</strong>
+       <div class="metric-foot"><span class="dot" style="background:#ef4444"></span>${localText('مستحقات معلقة غير مسددة','Pending uncollected dues')}</div>
+     </article>
+
+     <article class="card metric">
+       <div class="metric-top"><small>${localText('تحصيل شهر ' + monthDisplay,'Collections for ' + monthDisplay)}</small><span class="metric-icon" style="color:#10b981">${icon('chart',18)}</span></div>
+       <strong style="color:#10b981" title="${money(monthCollected)}">${money(monthCollected)}</strong>
+       <div class="metric-foot"><span class="dot" style="background:#10b981"></span>${localText('نسبة التحصيل: ','Collection rate: ')}<strong>${monthRate}%</strong></div>
+     </article>
+
+     <article class="card metric">
+       <div class="metric-top"><small>${localText('الشقق والوحدات','Units & Condos')}</small><span class="metric-icon">${icon('building',18)}</span></div>
+       <strong title="${summary.units.total||units.length}">${summary.units.total||units.length}</strong>
+       <div class="metric-foot"><span class="dot"></span>${localText('كل الوحدات مسجلة كـ تمليك','All registered as owned')}</div>
+     </article>
+   </div>
+
+   <div class="grid" style="margin-top:1.5rem">
+     <article class="card">
+       <div class="card-header">
+         <h2>${localText('حالات إشغال الوحدات','Unit Occupancy States')}</h2>
+         <button class="text-button" data-go="units">${localText('إدارة الوحدات','View all units')}</button>
+       </div>
+       <div style="display:flex;flex-direction:column;gap:1rem">
+         <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:0.75rem;text-align:center">
+           <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:0.75rem">
+             <span style="font-size:1.5rem">🟢</span>
+             <h4 style="margin:0.25rem 0 0 0;font-size:0.85rem;color:#065f46">${localText('مشغولة مقيمة','Residing')}</h4>
+             <b style="font-size:1.25rem;color:#047857">${units.filter(u=>u.occupancy_state==='residing'||(!u.occupancy_state&&u.is_paid)).length}</b>
+           </div>
+           <div style="background:#fefce8;border:1px solid #fef08a;border-radius:8px;padding:0.75rem">
+             <span style="font-size:1.5rem">🟡</span>
+             <h4 style="margin:0.25rem 0 0 0;font-size:0.85rem;color:#854d0e">${localText('مغلقة','Closed')}</h4>
+             <b style="font-size:1.25rem;color:#a16207">${units.filter(u=>u.occupancy_state==='closed').length}</b>
+           </div>
+           <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:0.75rem">
+             <span style="font-size:1.5rem">🔵</span>
+             <h4 style="margin:0.25rem 0 0 0;font-size:0.85rem;color:#1e40af">${localText('تحت التشطيب','Finishing')}</h4>
+             <b style="font-size:1.25rem;color:#2563eb">${units.filter(u=>u.occupancy_state==='finishing').length}</b>
+           </div>
+         </div>
+         <div style="margin-top:0.5rem;padding:0.75rem;background:var(--bg-muted,#f8fafc);border-radius:8px;font-size:0.85rem;color:var(--text-muted,#64748b)">
+           <span>ℹ️ ${localText('الهدف من المنظومة هو إدارة البرج واتحاد الشاغلين فقط. جميع الوحدات تمليك ولا توجد عقود تأجير خاصة.','Condo management scope only. All units are owned (تمليك).')}</span>
          </div>
        </div>
      </article>
+
      <article class="card">
-       <div class="card-header"><h2>${localText('آخر طلبات الصيانة','Recent maintenance')}</h2><button class="text-button" data-go="tickets">${localText('عرض الكل','View all')}</button></div>
-       ${tickets.length?tickets.slice(-4).reverse().map(x=>`
+       <div class="card-header">
+         <h2>${localText('طلبات الصيانة المفتوحة','Open Maintenance')}</h2>
+         <button class="text-button" data-go="tickets">${localText('عرض الكل','View all')}</button>
+       </div>
+       ${openTickets.length ? openTickets.slice(-4).reverse().map(x => `
          <div class="listrow">
            <div class="listrow-main"><span class="list-icon">${icon('tool',17)}</span><div><b>${escape(x.title)}</b><p class="muted">${t(x.priority)}</p></div></div>
            <span class="badge ${x.priority==='urgent'?'warn':''}">${t(x.status)}</span>
          </div>
-       `).join(''):`<div class="empty"><span class="empty-icon">${icon('check',25)}</span><strong>${localText('كل شيء هادئ هنا','Everything is quiet here')}</strong><p>${localText('لا توجد طلبات صيانة مسجلة حتى الآن.','There are no maintenance requests yet.')}</p></div>`}
+       `).join('') : `<div class="empty"><span class="empty-icon">${icon('check',25)}</span><strong>${localText('لا توجد بلاغات صيانة مفتوحة','Everything is fine')}</strong><p>${localText('مرافق وخدمات البرج تعمل بشكل سليم.','All tower facilities are in good condition.')}</p></div>`}
      </article>
    </div>
-   <div class="dashboard-bottom">
+
+   <div class="dashboard-bottom" style="margin-top:1.5rem">
      <article class="card">
-       <div class="card-header"><h2>${localText('آخر الفواتير','Recent invoices')}</h2><button class="text-button" data-go="invoices">${localText('عرض الكل','View all')}</button></div>
-       ${invoices.length?`
+       <div class="card-header">
+         <h2>${localText('موقف تحصيل شقق البرج لشهر ' + monthDisplay, 'Tower Units Collection Status')}</h2>
+         <button class="primary small" data-go="collections">${localText('فتح شاشة التحصيل الكاملة ⚡','Open Full Collections')}</button>
+       </div>
+       ${units.length ? `
          <div class="tablewrap">
            <table>
-             <thead><tr><th>${t('number')}</th><th>${t('amount')}</th><th>${t('due_date')}</th><th>${t('status')}</th></tr></thead>
+             <thead>
+               <tr>
+                 <th>${t('unit')}</th>
+                 <th>${localText('الساكن / المالك','Resident')}</th>
+                 <th>${localText('الحالة','State')}</th>
+                 <th>${localText('المبلغ الشهري','Monthly Fee')}</th>
+                 <th>${localText('حالة السداد','Status')}</th>
+                 <th>${localText('التواصل والإجراء','Action')}</th>
+               </tr>
+             </thead>
              <tbody>
-               ${invoices.slice(-4).reverse().map(x=>`<tr><td>${escape(x.number)}</td><td>${money(x.amount)}</td><td>${escape(x.due_date)}</td><td><span class="badge ${x.status==='draft'?'warn':''}">${t(x.status)}</span></td></tr>`).join('')}
+               ${units.slice(0, 8).map(u => {
+                 const stateBadge = u.occupancy_state === 'closed'
+                   ? `<span class="badge" style="background:#fef9c3;color:#854d0e">🟡 ${localText('مغلقة','Closed')}</span>`
+                   : (u.occupancy_state === 'finishing'
+                     ? `<span class="badge" style="background:#dbeafe;color:#1e40af">🔵 ${localText('تشطيب','Finishing')}</span>`
+                     : `<span class="badge" style="background:#dcfce7;color:#166534">🟢 ${localText('مشغولة مقيمة','Residing')}</span>`);
+                 return `
+                   <tr>
+                     <td><strong>${localText('شقة','Unit')} ${escape(u.unit_number||u.unit_name)}</strong><br><small class="muted">${localText('طابق','Floor')} ${u.floor||0} · ${localText('تمليك','Owned')}</small></td>
+                     <td>
+                       <strong>${escape(u.resident_name || localText('مالك الوحدة (تمليك)','Owner'))}</strong>
+                       ${u.resident_phone ? `<br><small class="muted">📞 ${escape(u.resident_phone)}</small>` : ''}
+                     </td>
+                     <td>${stateBadge}</td>
+                     <td><strong>${money(u.monthly_fee)}</strong></td>
+                     <td>${u.is_paid ? `<span class="badge ok">${localText('✅ تم السداد','Paid')}</span>` : `<span class="badge warn">${localText('⏳ غير مسدد','Unpaid')}</span>`}</td>
+                     <td>
+                       ${u.resident_phone ? `<a href="https://api.whatsapp.com/send?phone=${encodeURIComponent((u.resident_phone.startsWith('0')?'20'+u.resident_phone.substring(1):u.resident_phone).replace(/[^0-9]/g,''))}&text=${encodeURIComponent(u.is_paid ? localText('مرحباً ساكن شقة ' + (u.unit_number||u.unit_name) + '، تم استلام اشتراك صيانة شهر ' + month + ' بسند رقم ' + (u.receipt_reference||'-') + '. شكراً لتعاونكم - إدارة البرج.', 'Dues for ' + month + ' received.') : localText('مرحباً ساكن شقة ' + (u.unit_number||u.unit_name) + '، نذكركم بسداد اشتراك صيانة شهر ' + month + ' بمبلغ ' + u.monthly_fee + ' ج.م. شاكرين حسن تعاونكم - إدارة البرج.', 'Dues for ' + month + ' reminder.'))}" target="_blank" class="button small ghost" style="color:#059669;border-color:#a7f3d0" title="WhatsApp">💬 واتساب</a>` : ''}
+                       ${!u.is_paid ? `<button class="primary small btn-quick-collect" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-res="${escape(u.resident_name || localText('مالك الوحدة','Owner'))}" data-fee="${u.monthly_fee}" style="margin-inline-start:4px">${localText('⚡ تحصيل','Collect')}</button>` : ''}
+                     </td>
+                   </tr>
+                 `;
+               }).join('')}
              </tbody>
            </table>
          </div>
-       `:emptyState('invoices',false)}
-     </article>
-     <article class="card">
-       <div class="card-header"><h2>${localText('إجراءات سريعة ومباشرة','Quick Actions')}</h2></div>
-       <p class="muted">${localText('كل ما تحتاجه لإدارة برجك في خطوات بسيطة.','Everyday actions in minimal clicks.')}</p>
-       <div class="quick-actions">
-         ${['properties','invoices','payment_proofs','tickets','money_accounts','reports'].filter(k=>allowed().includes(k)).map(k=>`
-           <button data-go="${k}">${icon(iconNames[k],18)}${t(k)}</button>
-         `).join('')}
-       </div>
+       ` : `<div class="empty"><p>${localText('لم يتم تسجيل شقق في هذا البرج بعد.','No units registered yet.')}</p><button class="primary" data-go="units">${localText('إضافة الشقق','Add Units')}</button></div>`}
      </article>
    </div>
  `;
- $('#occupancy').style.setProperty('--fill',String(percent*3.27));
+
+ document.querySelectorAll('.btn-quick-collect').forEach(btn => {
+   btn.onclick = () => {
+     const uId = btn.dataset.unit;
+     const uName = btn.dataset.name;
+     const uRes = btn.dataset.res;
+     const uFee = btn.dataset.fee || '500';
+
+     modal(localText('⚡ تسجيل تحصيل فوري - شقة ' + uName, 'Quick Collection - Unit ' + uName),
+       `<p class="muted" style="margin-bottom:0.75rem">${localText('الساكن المسدد: ','Resident: ')}<strong>${escape(uRes)}</strong></p>` +
+       field('amount', uFee, { placeholder: localText('المبلغ المراد تحصيله (ج.م)', 'Amount to collect') }) +
+       field('payment_channel', 'cash', {
+         choices: [
+           ['cash', localText('💵 نقدي / كاش', 'Cash')],
+           ['instapay', localText('⚡ إنستاباي InstaPay', 'InstaPay')],
+           ['wallet', localText('📱 محفظة إلكترونية (فودافون كاش / وي)', 'E-Wallet')],
+           ['bank_transfer', localText('🏦 تحويل بنكي مباشر', 'Bank Transfer')]
+         ]
+       }) +
+       field('reference', '', { placeholder: localText('رقم المرجع / الإيصال (اختياري)', 'Reference / Receipt No') }),
+       async (b) => {
+         if (!b.amount || Number(b.amount) <= 0) return alert(localText('يرجى إدخال مبلغ صحيح', 'Invalid amount'));
+         try {
+           const res = await api('collections/quick-collect', {
+             method: 'POST',
+             body: JSON.stringify({
+               unit_id: uId,
+               amount: b.amount,
+               payment_channel: b.payment_channel,
+               method: b.payment_channel,
+               reference: b.reference,
+               month: month
+             })
+           });
+           toast(localText('تم التحصيل بنجاح! سند قبض رقم: ' + res.receipt_reference, 'Collection successful! Receipt: ' + res.receipt_reference));
+           cache = {};
+           await render();
+         } catch (err) {
+           alert(err.message);
+         }
+       }
+     );
+   };
+ });
 }
 
 const columns={
- properties:['name','kind','currency','country','status'],
- units:['unit_number','name','property_id','floor','area','status','ownership_type','payer_responsibility'],
+ properties:['name','kind','address','instapay_id','wallet_number'],
+ units:['unit_number','name','property_id','floor','occupancy_state','resident_phone'],
  parties:['name','kind','phone','email'],
  leases:['unit_id','party_id','start_date','end_date','rent','status'],
  ownerships:['unit_id','party_id','share'],
