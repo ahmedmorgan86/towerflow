@@ -1,4 +1,3 @@
-import {mountCameras,cleanupCameras} from './cameras.js';
 import {mountMessages} from './resident-messages.js';
 import {mountReports} from './reports.js';
 import {mountWorkflows} from './workflows.js';
@@ -6,10 +5,10 @@ import {mountProfile} from './profile.js';
 import {icon,architecture} from './design.js';
 
 const $=s=>document.querySelector(s), escape=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
-let lang=localStorage.tfLang||'ar',dark=localStorage.tfDark==='true',me=null,org='',page='dashboard',cache={},busy=false,renderAgain=false;
+let lang=localStorage.tfLang||'ar',dark=localStorage.tfDark==='true',me=null,org='',page='dashboard',cache={},busy=false;
 
 const words={
- cameras:['كاميرات العقار','Cameras'],dashboard:['نظرة عامة','Overview'],properties:['العقارات والأبراج','Properties'],units:['الوحدات','Units'],
+ dashboard:['نظرة عامة','Overview'],properties:['العقارات والأبراج','Properties'],instapay_id:['عنوان إنستاباي InstaPay IPA','InstaPay IPA'],wallet_number:['رقم المحفظة الإلكترونية','E-Wallet Mobile'],occupancy_state:['حالة إشغال الوحدة','Occupancy State'],units:['الوحدات','Units'],
  parties:['الملاك والمستأجرون','People'],leases:['العقود','Leases'],ownerships:['ملكيات الوحدات','Ownerships'],
  invoices:['الفواتير والمستحقات','Invoices'],receipts:['التحصيل','Receipts'],expenses:['المصروفات والموافقات','Expenses'],
  journals:['دفتر اليومية','Journal'],accounts:['دليل الحسابات','Accounts'],tickets:['الصيانة','Maintenance'],
@@ -79,7 +78,7 @@ Object.assign(words,{
 const t=(k)=>words[k]?.[lang==='ar'?0:1]||k;
 
 const schemas={
- properties:['name','address','kind'],
+ properties:['name','address','kind','instapay_id','wallet_number'],
  units:['property_id','unit_number','name','floor','area','status','ownership_type'],
  parties:['name','kind','email','phone'],
  leases:['unit_id','party_id','start_date','end_date','rent','status'],
@@ -172,15 +171,15 @@ document.addEventListener('click',async e=>{
 
 function auth(register=false){
  theme();document.body.classList.remove('nav-open');
- $('#app').innerHTML=`<main class="auth"><section class="auth-art">${brand()}<div class="auth-story"><div class="eyebrow">${localText('عقاراتك. رؤيتك. مساحتك.','YOUR PROPERTIES. YOUR PERSPECTIVE.')}</div><h1>${localText('إدارة أذكى للعقارات.<br>ومساحة أكبر للنمو.','A clearer way to manage.<br>More room to grow.')}</h1><p class="story-desc">${localText('من العقود والتحصيل إلى الصيانة والحسابات، كل تفاصيل محفظتك في مكان واحد.','From leases and collections to maintenance and accounting, bring your entire portfolio together.')}</p>${architecture()}<div class="auth-benefits"><span>${icon('check',15)}${localText('عقارات ووحدات','Properties & units')}</span><span>${icon('check',15)}${localText('محاسبة وتحصيل','Accounting & collections')}</span><span>${icon('check',15)}${localText('صيانة وسكان','Maintenance & residents')}</span></div><a href="/TowerFlow-latest.apk" download="TowerFlow-v0.8.1.apk" class="auth-app-badge">${icon('android',16)} ${localText('تطبيق أندرويد أصلي متاح الآن (APK)','Native Android APK Available')}</a></div><div class="foot">© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow ${localText('لإدارة العقارات','Property Management')}</div></section><section class="auth-main"><div class="auth-mobile-brand">${brand()}</div><div class="auth-tools">${toggles()}</div><form id="authform"><div class="login-symbol">${icon(register?'building':'shield',24)}</div><h1>${localText(register?'ابدأ مع TowerFlow':'أهلًا بعودتك',register?'Your workspace starts here':'Welcome back')}</h1><p>${localText(register?'أنشئ حسابك وابدأ تنظيم محفظتك العقارية.':'سجّل دخولك لمتابعة عقاراتك وأعمالك اليومية.',register?'Create an account and organize your portfolio.':'Sign in to your workspace and pick up where you left off.')}</p>${register?`<label>${t('name')}<input name="name" required maxlength="160" autocomplete="name" placeholder="${localText('اسمك الكامل','Your full name')}"></label><label>${t('organization')}<input name="organization" required maxlength="160" autocomplete="organization" placeholder="${localText('اسم شركتك أو مؤسستك','Your organization name')}"></label>`:''}<label>${t('email')}<input name="email" type="email" required autocomplete="email" placeholder="name@company.com"></label><label>${localText('كلمة المرور','Password')}<input name="password" type="password" minlength="12" maxlength="128" required autocomplete="${register?'new-password':'current-password'}" placeholder="${localText('12 حرفًا على الأقل','At least 12 characters')}"></label><div class="error" id="autherror" role="alert"></div><button class="primary" type="submit">${t(register?'signup':'signin')}${icon('arrow',17)}</button><div class="auth-divider">${localText('أو','or')}</div><button type="button" class="google-button" id="google-login"><span aria-hidden="true">G</span>${localText('المتابعة باستخدام Google','Continue with Google')}</button><p id="google-note" class="muted" role="status"></p><div class="auth-switch"><span>${localText(register?'لديك حساب بالفعل؟':'ليس لديك حساب بعد؟',register?'Already have an account?':'New to TowerFlow?')}</span><button type="button" class="text-button" id="switchauth">${localText(register?'تسجيل الدخول':'إنشاء حساب',register?'Sign in':'Create an account')}</button></div><div class="app-download-card">
+ $('#app').innerHTML=`<main class="auth"><section class="auth-art">${brand()}<div class="auth-story"><div class="eyebrow">${localText('عقاراتك. رؤيتك. مساحتك.','YOUR PROPERTIES. YOUR PERSPECTIVE.')}</div><h1>${localText('إدارة أذكى للعقارات.<br>ومساحة أكبر للنمو.','A clearer way to manage.<br>More room to grow.')}</h1><p class="story-desc">${localText('من العقود والتحصيل إلى الصيانة والحسابات، كل تفاصيل محفظتك في مكان واحد.','From leases and collections to maintenance and accounting, bring your entire portfolio together.')}</p>${architecture()}<div class="auth-benefits"><span>${icon('check',15)}${localText('عقارات ووحدات','Properties & units')}</span><span>${icon('check',15)}${localText('محاسبة وتحصيل','Accounting & collections')}</span><span>${icon('check',15)}${localText('صيانة وسكان','Maintenance & residents')}</span></div><a href="/TowerFlow-latest.apk" download="TowerFlow-v0.7.3.apk" class="auth-app-badge">${icon('android',16)} ${localText('تطبيق أندرويد أصلي متاح الآن (APK)','Native Android APK Available')}</a></div><div class="foot">© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow ${localText('لإدارة العقارات','Property Management')}</div></section><section class="auth-main"><div class="auth-mobile-brand">${brand()}</div><div class="auth-tools">${toggles()}</div><form id="authform"><div class="login-symbol">${icon(register?'building':'shield',24)}</div><h1>${localText(register?'ابدأ مع TowerFlow':'أهلًا بعودتك',register?'Your workspace starts here':'Welcome back')}</h1><p>${localText(register?'أنشئ حسابك وابدأ تنظيم محفظتك العقارية.':'سجّل دخولك لمتابعة عقاراتك وأعمالك اليومية.',register?'Create an account and organize your portfolio.':'Sign in to your workspace and pick up where you left off.')}</p>${register?`<label>${t('name')}<input name="name" required maxlength="160" autocomplete="name" placeholder="${localText('اسمك الكامل','Your full name')}"></label><label>${t('organization')}<input name="organization" required maxlength="160" autocomplete="organization" placeholder="${localText('اسم شركتك أو مؤسستك','Your organization name')}"></label>`:''}<label>${t('email')}<input name="email" type="email" required autocomplete="email" placeholder="name@company.com"></label><label>${localText('كلمة المرور','Password')}<input name="password" type="password" minlength="12" maxlength="128" required autocomplete="${register?'new-password':'current-password'}" placeholder="${localText('12 حرفًا على الأقل','At least 12 characters')}"></label><div class="error" id="autherror" role="alert"></div><button class="primary" type="submit">${t(register?'signup':'signin')}${icon('arrow',17)}</button><div class="auth-divider">${localText('أو','or')}</div><button type="button" class="google-button" id="google-login"><span aria-hidden="true">G</span>${localText('المتابعة باستخدام Google','Continue with Google')}</button><p id="google-note" class="muted" role="status"></p><div class="auth-switch"><span>${localText(register?'لديك حساب بالفعل؟':'ليس لديك حساب بعد؟',register?'Already have an account?':'New to TowerFlow?')}</span><button type="button" class="text-button" id="switchauth">${localText(register?'تسجيل الدخول':'إنشاء حساب',register?'Sign in':'Create an account')}</button></div><div class="app-download-card">
   <div class="app-download-content">
     <div class="app-download-icon">${icon('android',22)}</div>
     <div class="app-download-text">
       <strong>${localText('تطبيق TowerFlow للأندرويد','TowerFlow Android App')}</strong>
-      <small>${localText('تحميل مباشر للأجهزة الذكية · إصدار v0.8.1','Direct APK installation · v0.8.1')}</small>
+      <small>${localText('تحميل مباشر للأجهزة الذكية · إصدار v0.7.3','Direct APK installation · v0.7.3')}</small>
     </div>
   </div>
-  <a href="/TowerFlow-latest.apk" download="TowerFlow-v0.8.1.apk" class="app-download-btn">
+  <a href="/TowerFlow-latest.apk" download="TowerFlow-v0.7.3.apk" class="app-download-btn">
     ${icon('android',17)} ${localText('تحميل التطبيق للأندرويد','Download for Android')}
   </a>
 </div><details class="install-guide"><summary>${localText('تعليمات التثبيت وتخطي تحذير الحماية المعتاد','Installation guide & Play Protect steps')}</summary><div class="install-steps"><p>1. ${localText('عند بدء التنزيل: اختر <b>تنزيل على أي حال (Download anyway)</b>.','When downloading: tap <b>Download anyway</b>.')}</p><p>2. ${localText('عند فتح الملف: اضغط <b>الإعدادات</b> ثم فعّل <b>السماح بتثبيت التطبيقات من هذا المصدر</b>.','When opening: tap <b>Settings</b> and enable <b>Allow from this source</b>.')}</p><p>3. ${localText('إذا ظهر تنبيه Play Protect: اضغط <b>مزيد من التفاصيل (More details)</b> ثم <b>التثبيت على أي حال (Install anyway)</b> — الحزمة أصلية وموقعة بشهادة TowerFlow الرسمية.','If Play Protect warns: tap <b>More details</b> then <b>Install anyway</b> — The APK is clean and officially signed.')}</p><p>4. ${localText('إذا ظهر تعارض في الحزمة (Package conflicts): احذف النسخة التجريبية القديمة من الهاتف أولاً ثم ثبّت هذه الحزمة الإنتاجية.','If you get a package conflict error: uninstall the previous test version from your phone first, then install.')}</p></div></details><p class="privacy-link"><a href="/privacy.html">${localText('الخصوصية وبياناتك','Privacy & your data')}</a></p><div class="auth-security">${icon('shield',14)}${localText('بيانات مؤسستك معزولة ومحمية بصلاحيات الوصول','Your workspace is isolated and protected by access controls')}</div></form></section></main>`;
@@ -194,11 +193,11 @@ function auth(register=false){
 function role(){return me?.organizations.find(x=>x.id===org)?.role;}
 function baseAllowed(){
  if(role()==='technician')return ['properties','units','tickets','assets','technicians','announcements','notifications','support_tickets','profile','settings'];
- if(role()==='resident')return ['portal','invoices','payment_proofs','leases','tickets','announcements','notifications','support_tickets','profile','settings'];
+ if(role()==='resident')return ['portal','invoices','payment_proofs','tickets','announcements','notifications','support_tickets','profile','settings'];
  return ['dashboard','properties','units','parties','leases','ownerships','invoices','receipts','expenses','payment_proofs','credit_balances','fines','money_accounts','journals','accounts','tickets','assets','technicians','vendor_contracts','budgets','reports','announcements','notifications','support_tickets','audit_logs',...(['admin','manager'].includes(role())?['members']:[]),'profile','settings'];
 }
 function allowed(){
- return [...new Set([...baseAllowed(),'cameras',...(['admin','manager'].includes(role())?['resident_messages']:[]),...(['admin','manager','accountant'].includes(role())?['recurring_charges','accounting_periods']:[]),...(['admin','manager','technician'].includes(role())?['maintenance_plans']:[])])];
+ return [...new Set([...baseAllowed(),...(['admin','manager'].includes(role())?['resident_messages']:[]),...(['admin','manager','accountant'].includes(role())?['recurring_charges','accounting_periods']:[]),...(['admin','manager','technician'].includes(role())?['maintenance_plans']:[])])];
 }
 async function boot(){
  try{me=await api('me');org=me.organizations.some(x=>x.id===localStorage.tfOrg)?localStorage.tfOrg:me.organizations[0]?.id||'';if(role()==='resident')page='portal';await render();}catch{me=null;auth();}
@@ -211,9 +210,9 @@ function head(title,action=''){
 
 function sidebar(){
  const available=allowed(),groups=[
-   ['portfolio',localText('المحفظة العقارية','Portfolio'),['properties','units','parties','leases','ownerships']],
+   ['portfolio',localText('المحفظة العقارية','Portfolio'),['properties','units','parties','ownerships']],
    ['finance',localText('المالية والتحصيل','Finance & Billing'),['collections','invoices','receipts','expenses','payment_proofs','reports']],
-   ['operations',localText('التشغيل والصيانة','Operations & Service'),['cameras','tickets','assets','technicians','maintenance_plans']],
+   ['operations',localText('التشغيل والصيانة','Operations & Service'),['tickets','assets','technicians','maintenance_plans']],
    ['workspace',localText('التواصل والدعم','Communications & Support'),['resident_messages','announcements','notifications','support_tickets','members']],
    ['advanced',localText('سجلات ومحاسبة متقدمة','Advanced Records'),['credit_balances','fines','journals','accounts','recurring_charges','accounting_periods','vendor_contracts','budgets','audit_logs']]
  ];
@@ -222,8 +221,7 @@ function sidebar(){
 }
 
 async function render(){
- cleanupCameras();
- if(busy){renderAgain=true;return;}busy=true;theme();localStorage.tfOrg=org;
+ if(busy)return;busy=true;theme();localStorage.tfOrg=org;
  if(!allowed().includes(page))page=allowed()[0];
  $('#app').innerHTML=`<div class="layout">${sidebar()}<button class="sidebar-overlay" aria-label="${localText('إغلاق القائمة','Close menu')}"></button><main class="workspace"><header class="topbar"><div class="topbar-start"><button class="mobile-toggle icon-button" id="menu" aria-label="${localText('فتح القائمة','Open navigation')}" aria-expanded="false" aria-controls="navigation">${icon('menu')}</button><div class="breadcrumb">TowerFlow <span> / </span><strong>${t(page)}</strong></div><select id="org" aria-label="${t('organization')}">${me.organizations.map(x=>`<option value="${x.id}" ${x.id===org?'selected':''}>${escape(x.name)}</option>`).join('')}</select></div><div class="topbar-end"><div class="actions">${toggles()}<button class="icon-button" data-go="notifications" aria-label="${t('notifications')}">${icon('bell',18)}</button></div><button class="profile profile-link" data-go="profile"><div class="avatar">${me.user.avatar?`<img src="${escape(me.user.avatar)}" alt="">`:escape(me.user.name.slice(0,1))}</div><div><b>${escape(me.user.name)}</b><small>${t(me.user.platform_owner?'platform_owner':role())}</small></div></button><button class="icon-button" id="logout" aria-label="${t('logout')}" title="${t('logout')}">${icon('logout',17)}</button></div></header><div class="content-wrap"><section id="content" aria-live="polite"><div class="loading">${t('loading')}</div></section><footer class="footer"><span>© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow</span><span>${localText('مساحة واحدة. كل التفاصيل.','One workspace. Every detail.')}</span></footer></div></main></div>`;
  document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>navigate(b.dataset.page));
@@ -236,7 +234,6 @@ async function render(){
    if(['dashboard','portal'].includes(page))await dashboard();
    else if(['recurring_charges','maintenance_plans','accounting_periods'].includes(page))await mountWorkflows({api,lang,page,escape,toast,money});
    else if(page==='collections')await collectionsView();else if(page==='reports')await mountReports({api,lang,escape,money});
-   else if(page==='cameras')await mountCameras({api,lang,escape,toast,org});
    else if(page==='resident_messages')await mountMessages({api,lang,escape,toast});
    else if(page==='profile')await mountProfile({api,me,lang,escape,toast,onSave:async user=>{me.user=user;lang=user.locale||lang;await render();}});
    else if(page==='settings')settings();
@@ -245,7 +242,7 @@ async function render(){
  }catch(e){
    $('#content').innerHTML=head(t(page))+`<div class="notice" role="alert">${escape(e.message)}</div><button id="retry">${localText('إعادة المحاولة','Retry')}</button>`;
    $('#retry').onclick=render;
- }finally{busy=false;if(renderAgain){renderAgain=false;await render();}}
+ }finally{busy=false;}
 }
 
 async function dashboard(){
@@ -594,6 +591,15 @@ async function collectionsView(){
 
   $('#content').innerHTML = `
     ${head(t('collections'), `<button class="primary" id="btn-batch-generate">${localText('⚡ توليد مطالبات الشهر','⚡ Generate Monthly Dues')}</button>`)}
+    ${data.property_settings && (data.property_settings.instapay_id || data.property_settings.wallet_number) ? `
+      <div class="card" style="margin-bottom:1rem;background:var(--bg-accent, #eff6ff);border:1px solid #bfdbfe;padding:1rem 1.25rem">
+        <h4 style="margin:0 0 0.5rem 0;color:#1d4ed8;font-size:0.95rem">📱 ${localText('قنوات الدفع اللحظي والمحافظ الإلكترونية للبرج:','Tower Electronic & InstaPay Channels:')}</h4>
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+          ${data.property_settings.instapay_id ? `<div><small class="muted">${localText('معرف إنستاباي:','InstaPay IPA:')}</small> <strong style="font-size:1.05rem;color:#1e3a8a">⚡ ${escape(data.property_settings.instapay_id)}</strong></div>` : ''}
+          ${data.property_settings.wallet_number ? `<div><small class="muted">${localText('محفظة إلكترونية (فودافون كاش / إنستاباي):','E-Wallet Mobile:')}</small> <strong style="font-size:1.05rem;color:#1e3a8a">💳 ${escape(data.property_settings.wallet_number)}</strong></div>` : ''}
+        </div>
+      </div>
+    ` : ''}
     <div class="card" style="margin-bottom:1rem">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <button class="ghost" id="btn-prev-month">‹ ${localText('الشهر السابق','Previous Month')}</button>
@@ -643,6 +649,7 @@ async function collectionsView(){
                 <td>${u.is_paid?`<small>🧾 ${escape(u.receipt_reference||'-')}<br>${escape(u.collected_at||'')}</small>`:'-'}</td>
                 <td>
                   ${u.is_paid?'<span class="muted">'+localText('مكتمل','Done')+'</span>':`<button class="primary small btn-quick-collect" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-res="${escape(resDisplay)}" data-fee="${u.monthly_fee}">${localText('⚡ تحصيل فوري','Quick Collect')}</button>`}
+                  ${u.resident_phone ? `<a href="https://api.whatsapp.com/send?phone=${encodeURIComponent((u.resident_phone.startsWith('0')?'20'+u.resident_phone.substring(1):u.resident_phone).replace(/[^0-9]/g,''))}&text=${encodeURIComponent(u.is_paid ? localText('مرحباً ساكن شقة ' + (u.unit_number||u.unit_name) + '، تم استلام اشتراك صيانة شهر ' + month + ' بسند رقم ' + (u.receipt_reference||'-') + '. شكراً لتعاونكم - إدارة البرج.', 'Dues for ' + month + ' received.') : localText('مرحباً ساكن شقة ' + (u.unit_number||u.unit_name) + '، نذكركم بسداد اشتراك صيانة شهر ' + month + ' بمبلغ ' + u.monthly_fee + ' ج.م. شاكرين حسن تعاونكم - إدارة البرج.', 'Dues for ' + month + ' reminder.'))}" target="_blank" class="button small ghost" style="margin-inline-start:4px;color:#059669;border-color:#a7f3d0" title="${localText('مراسلة على واتساب','WhatsApp message')}">💬 واتساب</a>` : ''}
                 </td>
               </tr>
               `;
@@ -685,6 +692,49 @@ async function collectionsView(){
               body: JSON.stringify({ name: b.name.trim(), phone: (b.phone || '').trim(), kind: b.kind })
             });
             toast(localText('تم حفظ وتعيين المالك بنجاح', 'Assigned successfully'));
+            collectionsView();
+          } catch (err) {
+            alert(err.message);
+          }
+        }
+      );
+    };
+  });
+
+  document.querySelectorAll('.btn-quick-collect').forEach(btn => {
+    btn.onclick = () => {
+      const uId = btn.dataset.unit;
+      const uName = btn.dataset.name;
+      const uRes = btn.dataset.res;
+      const uFee = btn.dataset.fee || '500';
+
+      modal(localText('⚡ تسجيل تحصيل فوري - شقة ' + uName, 'Quick Collection - Unit ' + uName),
+        `<p class="muted" style="margin-bottom:0.75rem">${localText('الساكن المسدد: ','Resident: ')}<strong>${escape(uRes)}</strong></p>` +
+        field('amount', uFee, { placeholder: localText('المبلغ المراد تحصيله (ج.م)', 'Amount to collect') }) +
+        field('payment_channel', 'cash', {
+          choices: [
+            ['cash', localText('💵 نقدي / كاش', 'Cash')],
+            ['instapay', localText('⚡ إنستاباي InstaPay', 'InstaPay')],
+            ['wallet', localText('📱 محفظة إلكترونية (فودافون كاش / وي)', 'E-Wallet')],
+            ['bank_transfer', localText('🏦 تحويل بنكي مباشر', 'Bank Transfer')]
+          ]
+        }) +
+        field('reference', '', { placeholder: localText('رقم المرجع / الإيصال (اختياري)', 'Reference / Receipt No') }),
+        async (b) => {
+          if (!b.amount || Number(b.amount) <= 0) return alert(localText('يرجى إدخال مبلغ صحيح', 'Invalid amount'));
+          try {
+            const res = await api('collections/quick-collect', {
+              method: 'POST',
+              body: JSON.stringify({
+                unit_id: uId,
+                amount: b.amount,
+                payment_channel: b.payment_channel,
+                method: b.payment_channel,
+                reference: b.reference,
+                month: month
+              })
+            });
+            toast(localText('تم التحصيل بنجاح! سند قبض رقم: ' + res.receipt_reference, 'Collection successful! Receipt: ' + res.receipt_reference));
             collectionsView();
           } catch (err) {
             alert(err.message);

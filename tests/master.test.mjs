@@ -23,7 +23,7 @@ before(async () => {
   await db.waitReady;
   for (const f of [
     'schema.sql','002_workflows.sql','003_read_permissions.sql','004_platform.sql',
-    '005_identity.sql','006_owner_push.sql','007_master_system.sql','008_units_ownership_and_fixes.sql','009_unit_number.sql'
+    '005_identity.sql','006_owner_push.sql','007_master_system.sql','008_units_ownership_and_fixes.sql','009_unit_number.sql','010_cameras.sql','011_mulakhub_sandok_instapay.sql'
   ]) {
     await db.exec(await readFile(new URL('../db/' + f, import.meta.url), 'utf8'));
   }

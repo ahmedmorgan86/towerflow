@@ -53,7 +53,6 @@ class MainActivity : Activity() {
     private lateinit var screen: LinearLayout
 
     private val names = linkedMapOf(
-        "cameras" to Pair("كاميرات العقار", "Cameras"),
         "properties" to Pair("العقارات والأبراج", "Properties"),
         "units" to Pair("الوحدات والشقق", "Units"),
         "parties" to Pair("الملاك والمستأجرون", "Residents & Owners"),
@@ -286,12 +285,12 @@ class MainActivity : Activity() {
                 text = if (arabic) "› عودة" else "‹ Back"
                 textSize = 13.5f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                 gravity = Gravity.CENTER
                 background = roundedDrawable(
-                    if (dark) Color.parseColor("#0B3136") else Color.parseColor("#F0FDFA"),
+                    if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"),
                     10f,
-                    if (dark) Color.parseColor("#134E4A") else Color.parseColor("#99F6E4")
+                    if (dark) Color.parseColor("#312E81") else Color.parseColor("#C7D2FE")
                 )
                 setPadding(dp(12), dp(6), dp(12), dp(6))
                 isClickable = true
@@ -312,7 +311,7 @@ class MainActivity : Activity() {
                 text = "TowerFlow"
                 textSize = 10.5f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0D9488"))
+                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#6366F1"))
                 gravity = if (arabic) Gravity.RIGHT else Gravity.LEFT
             })
             titleCol.addView(TextView(this).apply {
@@ -466,7 +465,7 @@ class MainActivity : Activity() {
             text = titleText
             textSize = 12f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
-            setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             setPadding(dp(4), dp(16), dp(4), dp(8))
         }
         screen.addView(tv)
@@ -504,7 +503,7 @@ class MainActivity : Activity() {
             minHeight = 0
             minimumHeight = 0
             setPadding(dp(12), dp(11), dp(12), dp(11))
-            background = gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 12f)
+            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
             setOnClickListener { fn() }
         }
         val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -517,7 +516,7 @@ class MainActivity : Activity() {
     private fun outlineButton(value: String, fn: () -> Unit) {
         val btn = Button(this).apply {
             text = value
-            setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             textSize = 13f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             isAllCaps = false
@@ -595,9 +594,9 @@ class MainActivity : Activity() {
                 marginEnd = dp(12)
             }
             background = roundedDrawable(
-                if (dark) Color.parseColor("#0B3136") else Color.parseColor("#F0FDFA"),
+                if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"),
                 10f,
-                if (dark) Color.parseColor("#134E4A") else Color.parseColor("#99F6E4")
+                if (dark) Color.parseColor("#312E81") else Color.parseColor("#C7D2FE")
             )
             addView(TextView(this@MainActivity).apply {
                 text = iconGlyph
@@ -845,7 +844,7 @@ class MainActivity : Activity() {
             minHeight = 0
             minimumHeight = 0
             setPadding(dp(12), dp(12), dp(12), dp(12))
-            background = gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 12f)
+            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 topMargin = dp(14)
                 bottomMargin = dp(4)
@@ -941,7 +940,7 @@ class MainActivity : Activity() {
                 text = text(if (register) "تسجيل الدخول" else "إنشاء حساب", if (register) "Sign in" else "Create account")
                 textSize = 13f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                 setPadding(dp(4), dp(4), dp(4), dp(4))
                 isClickable = true
                 isFocusable = true
@@ -1072,7 +1071,6 @@ class MainActivity : Activity() {
 
     private fun home() {
         scaffold(text("لوحة التحكم", "Dashboard"))
-        outlineButton(text("كاميرات العقار", "Building cameras")) { cameraScreen() }
 
         // Active Workspace Selector
         if (organizations.length() > 0) {
@@ -1081,7 +1079,7 @@ class MainActivity : Activity() {
                     text = text("المؤسسة / البرج النشط", "Active Workspace / Tower")
                     textSize = 11f
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                 }
                 addView(h)
 
@@ -1111,13 +1109,13 @@ class MainActivity : Activity() {
                         text = text("＋ إضافة برج جديد", "＋ Add Tower")
                         textSize = 11.5f
                         typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                        setTextColor(Color.parseColor("#0F766E"))
+                        setTextColor(Color.parseColor("#4F46E5"))
                         isAllCaps = false
                         includeFontPadding = false
                         minHeight = 0
                         minimumHeight = 0
                         setPadding(dp(4), dp(7), dp(4), dp(7))
-                        background = roundedDrawable(if (dark) Color.parseColor("#0B3136") else Color.parseColor("#F0FDFA"), 8f, Color.parseColor(if (dark) "#134E4A" else "#99F6E4"))
+                        background = roundedDrawable(if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"), 8f, Color.parseColor(if (dark) "#312E81" else "#C7D2FE"))
                         layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(4) }
                         setOnClickListener { showTowerDialog(null) { loadMe() } }
                     }
@@ -1156,7 +1154,7 @@ class MainActivity : Activity() {
                 layoutParams = LinearLayout.LayoutParams(dp(44), dp(44)).apply {
                     marginEnd = dp(12)
                 }
-                background = gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 14f)
+                background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 14f)
                 addView(TextView(this@MainActivity).apply {
                     text = initial
                     textSize = 18f
@@ -1194,9 +1192,9 @@ class MainActivity : Activity() {
                 text = roleName
                 textSize = 11f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor("#0F766E"))
+                setTextColor(Color.parseColor("#4F46E5"))
                 setPadding(dp(8), dp(2), dp(8), dp(2))
-                background = roundedDrawable(Color.parseColor(if (dark) "#0B3136" else "#F0FDFA"), 99f)
+                background = roundedDrawable(Color.parseColor(if (dark) "#1E1B4B" else "#EEF2FF"), 99f)
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                     topMargin = dp(2)
                 }
@@ -1251,7 +1249,7 @@ class MainActivity : Activity() {
                         addView(TextView(this@MainActivity).apply {
                             text = kpiValue
                             textSize = 19f
-                            setTextColor(Color.parseColor("#0F766E"))
+                            setTextColor(Color.parseColor("#4F46E5"))
                             typeface = Typeface.create(cairoFont, Typeface.BOLD)
                             setPadding(0, dp(2), 0, dp(2))
                         })
@@ -1302,7 +1300,7 @@ class MainActivity : Activity() {
                 val heroCollect = LinearLayout(this@MainActivity).apply {
                     orientation = LinearLayout.VERTICAL
                     setPadding(dp(16), dp(16), dp(16), dp(16))
-                    background = gradientDrawable(Color.parseColor("#0B5E58"), Color.parseColor("#134E4A"), 16f)
+                    background = gradientDrawable(Color.parseColor("#4338CA"), Color.parseColor("#312E81"), 16f)
                     isClickable = true
                     isFocusable = true
                     setOnClickListener { monthlyCollections() }
@@ -1330,13 +1328,13 @@ class MainActivity : Activity() {
                     text = text("متابعة وسداد اشتراكات الصيانة والخدمات الشهرية للشقق فورياً", "Track & collect apartment monthly maintenance dues")
                     textSize = 11.5f
                     typeface = cairoFont
-                    setTextColor(Color.parseColor("#99F6E4"))
+                    setTextColor(Color.parseColor("#C7D2FE"))
                 })
                 topRow.addView(titleWrap)
                 topRow.addView(TextView(this@MainActivity).apply {
                     text = if (arabic) "‹" else "›"
                     textSize = 22f
-                    setTextColor(Color.parseColor("#5EEAD4"))
+                    setTextColor(Color.parseColor("#A5B4FC"))
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
                 })
                 heroCollect.addView(topRow)
@@ -1381,7 +1379,7 @@ class MainActivity : Activity() {
             minHeight = 0
             minimumHeight = 0
             setPadding(dp(4), dp(10), dp(4), dp(10))
-            background = gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 12f)
+            background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 12f)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(3) }
             setOnClickListener { if (role == "resident") listing("invoices") else recordForm("units") }
         }
@@ -1389,7 +1387,7 @@ class MainActivity : Activity() {
 
         val q3 = Button(this).apply {
             text = text("🔧 بلاغ صيانة", "Ticket")
-            setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             textSize = 12f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
             isAllCaps = false
@@ -1419,7 +1417,7 @@ class MainActivity : Activity() {
             navTile("tickets", title("tickets"), text("طلبات وبلاغات الصيانة وتتبع إنجازها", "Maintenance tickets tracking"))
 
             sectionHeader(text("📂 السجلات والتقارير", "Records & Reports"))
-            navTile("leases", title("leases"), text("عقود الإيجار السارية ومواعيد التجديد", "Active lease contracts and renewals"))
+            // leases removed
             navTile("receipts", title("receipts"), text("سندات القبض والتحصيل المسددة", "Payment receipts and collections"))
             navTile("expenses", title("expenses"), text("أوامر الصرف ومصروفات التشغيل والصيانة", "Operational and maintenance expenses"))
             navTile("reports", title("reports"), text("التقارير المالية والتحصيل وميزان الحركة", "Financial and collection reports"))
@@ -1428,7 +1426,7 @@ class MainActivity : Activity() {
         } else {
             sectionHeader(text("خدماتي السكنية", "My Resident Services"))
             navTile("units", title("units"), text("بيانات وحدتي السكنية ورقم الشقة", "My apartment details"))
-            navTile("leases", title("leases"), text("عقد الإيجار النشط ومواعيده", "My active lease contract"))
+            // resident lease removed
             navTile("invoices", title("invoices"), text("الفواتير والمستحقات الشهرية", "My invoices and dues"))
             navTile("payment_proofs", title("payment_proofs"), text("إرسال إثبات تحويل بنكي للمراجعة", "Submit bank transfer slip"))
             navTile("tickets", title("tickets"), text("طلب صيانة أو إصلاح داخل الوحدة", "Maintenance requests"))
@@ -1525,9 +1523,9 @@ class MainActivity : Activity() {
                             text = text("$count شقة مسجلة", "$count units registered")
                             textSize = 11f
                             typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                            setTextColor(Color.parseColor("#0F766E"))
+                            setTextColor(Color.parseColor("#4F46E5"))
                             setPadding(dp(8), dp(2), dp(8), dp(2))
-                            background = roundedDrawable(Color.parseColor(if (dark) "#0B3136" else "#F0FDFA"), 8f)
+                            background = roundedDrawable(Color.parseColor(if (dark) "#1E1B4B" else "#EEF2FF"), 8f)
                             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                                 topMargin = dp(4)
                             }
@@ -1549,13 +1547,13 @@ class MainActivity : Activity() {
                                 text = text("✏️ تعديل", "✏️ Edit")
                                 textSize = 12f
                                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+                                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                                 isAllCaps = false
                                 includeFontPadding = false
                                 minHeight = 0
                                 minimumHeight = 0
                                 setPadding(dp(4), dp(8), dp(4), dp(8))
-                                background = roundedDrawable(if (dark) Color.parseColor("#0B3136") else Color.parseColor("#F0FDFA"), 10f, Color.parseColor(if (dark) "#134E4A" else "#99F6E4"))
+                                background = roundedDrawable(if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"), 10f, Color.parseColor(if (dark) "#312E81" else "#C7D2FE"))
                                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dp(4) }
                                 setOnClickListener { showTowerDialog(prop) { manageTowers() } }
                             }
@@ -1651,6 +1649,49 @@ class MainActivity : Activity() {
         }
         formLayout.addView(addrInput)
 
+        val ipaLabel = TextView(this).apply {
+            text = text("عنوان إنستاباي InstaPay IPA:", "InstaPay IPA:")
+            textSize = 12f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            setTextColor(Color.parseColor(if (dark) "#CBD5E1" else "#334155"))
+            setPadding(0, dp(12), 0, dp(4))
+        }
+        formLayout.addView(ipaLabel)
+
+        val ipaInput = EditText(this).apply {
+            hint = text("مثال: tower@instapay", "e.g. tower@instapay")
+            setText(prop?.optString("instapay_id", "") ?: "")
+            textSize = 14f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+            setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+            background = roundedDrawable(if (dark) Color.parseColor("#1E2330") else Color.WHITE, 10f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+        }
+        formLayout.addView(ipaInput)
+
+        val walletLabel = TextView(this).apply {
+            text = text("رقم المحفظة الإلكترونية (فودافون كاش / إنستاباي / وي):", "E-Wallet Mobile:")
+            textSize = 12f
+            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+            setTextColor(Color.parseColor(if (dark) "#CBD5E1" else "#334155"))
+            setPadding(0, dp(12), 0, dp(4))
+        }
+        formLayout.addView(walletLabel)
+
+        val walletInput = EditText(this).apply {
+            hint = text("01xxxxxxxxx", "01xxxxxxxxx")
+            inputType = android.text.InputType.TYPE_CLASS_PHONE
+            setText(prop?.optString("wallet_number", "") ?: "")
+            textSize = 14f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+            setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+            background = roundedDrawable(if (dark) Color.parseColor("#1E2330") else Color.WHITE, 10f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+        }
+        formLayout.addView(walletInput)
+
         AlertDialog.Builder(this)
             .setTitle(dlgTitle)
             .setView(formLayout)
@@ -1663,6 +1704,8 @@ class MainActivity : Activity() {
                 val payload = JSONObject().apply {
                     put("name", tName)
                     put("address", addrInput.text.toString().trim())
+                    put("instapay_id", ipaInput.text.toString().trim())
+                    put("wallet_number", walletInput.text.toString().trim())
                 }
                 val path = if (isEdit) "properties/" + prop!!.optString("id") else "properties"
                 val method = if (isEdit) "PATCH" else "POST"
@@ -1710,14 +1753,14 @@ class MainActivity : Activity() {
                 val currentMonth = data.optString("month", "")
                 val summary = data.optJSONObject("summary") ?: JSONObject()
                 val unitsArr = data.optJSONArray("units") ?: JSONArray()
-                renderMonthlyCollections(currentMonth, summary, unitsArr)
+                renderMonthlyCollections(currentMonth, summary, unitsArr, data)
             } catch (e: Exception) {
                 error(e)
             }
         }
     }
 
-    private fun renderMonthlyCollections(currentMonth: String, summary: JSONObject, unitsArr: JSONArray) {
+    private fun renderMonthlyCollections(currentMonth: String, summary: JSONObject, unitsArr: JSONArray, data: JSONObject = JSONObject()) {
         scaffold(text("التحصيل الشهري للشقق", "Monthly Collections"), true) { home() }
 
         // 1. Month Switcher Card
@@ -1742,7 +1785,7 @@ class MainActivity : Activity() {
                 text = text("‹ السابق", "‹ Prev")
                 textSize = 12f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                 isAllCaps = false
                 includeFontPadding = false
                 minHeight = 0
@@ -1772,7 +1815,7 @@ class MainActivity : Activity() {
                 text = text("التالي ›", "Next ›")
                 textSize = 12f
                 typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+                setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                 isAllCaps = false
                 includeFontPadding = false
                 minHeight = 0
@@ -1846,7 +1889,7 @@ class MainActivity : Activity() {
             weightSum = 2f
         }
         kpiRow2.addView(makeKpiBox(text("المتبقي للتحصيل", "Remaining"), "$totalRemaining ج.م", Color.parseColor("#EF4444"), text("مستحقات معلقة", "Pending dues"), true))
-        kpiRow2.addView(makeKpiBox(text("حالة الإشغال", "Occupancy"), summary.optInt("occupied_units", 0).toString() + " / " + summary.optInt("total_units", 0), Color.parseColor("#0F766E"), text("شقة مأهولة", "Occupied units"), false))
+        kpiRow2.addView(makeKpiBox(text("حالة الإشغال", "Occupancy"), summary.optInt("occupied_units", 0).toString() + " / " + summary.optInt("total_units", 0), Color.parseColor("#4F46E5"), text("شقة مأهولة", "Occupied units"), false))
         screen.addView(kpiRow2)
 
         // 3. Batch Generate Monthly Dues Button
@@ -1860,11 +1903,50 @@ class MainActivity : Activity() {
             minHeight = 0
             minimumHeight = 0
             setPadding(dp(12), dp(10), dp(12), dp(10))
-            background = gradientDrawable(Color.parseColor("#0B5E58"), Color.parseColor("#3730A3"), 12f)
+            background = gradientDrawable(Color.parseColor("#4338CA"), Color.parseColor("#3730A3"), 12f)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                 bottomMargin = dp(10)
             }
-            setOnClickListener {
+            // InstaPay & Wallets payment banner
+            val propSettings = data.optJSONObject("property_settings")
+            val ipaId = propSettings?.optString("instapay_id", "") ?: ""
+            val walletNo = propSettings?.optString("wallet_number", "") ?: ""
+            if (ipaId.isNotEmpty() || walletNo.isNotEmpty()) {
+                val payBanner = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    setPadding(dp(14), dp(12), dp(14), dp(12))
+                    background = roundedDrawable(if (dark) Color.parseColor("#172554") else Color.parseColor("#EFF6FF"), 12f, Color.parseColor(if (dark) "#1E40AF" else "#BFDBFE"))
+                    layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                        bottomMargin = dp(10)
+                    }
+                }
+                payBanner.addView(TextView(this@MainActivity).apply {
+                    text = text("📱 قنوات الدفع الإلكتروني المعتمدة للبرج:", "📱 Tower Electronic Payment Channels:")
+                    textSize = 12f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(if (dark) "#93C5FD" else "#1D4ED8"))
+                })
+                if (ipaId.isNotEmpty()) {
+                    payBanner.addView(TextView(this@MainActivity).apply {
+                        text = "⚡ InstaPay IPA: " + ipaId
+                        textSize = 13.5f
+                        typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                        setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
+                        setPadding(0, dp(4), 0, dp(2))
+                    })
+                }
+                if (walletNo.isNotEmpty()) {
+                    payBanner.addView(TextView(this@MainActivity).apply {
+                        text = "💳 " + text("المحفظة الإلكترونية (فودافون كاش / إنستاباي): ", "E-Wallet Phone: ") + walletNo
+                        textSize = 12.5f
+                        typeface = cairoFont
+                        setTextColor(Color.parseColor(if (dark) "#CBD5E1" else "#334155"))
+                    })
+                }
+                screen.addView(payBanner)
+            }
+
+                        setOnClickListener {
                 val input = EditText(this@MainActivity).apply {
                     hint = text("قيمة اشتراك الصيانة والخدمات للبرج (مثال: 500)", "Default maintenance fee (e.g. 500)")
                     inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
@@ -2006,7 +2088,7 @@ class MainActivity : Activity() {
                     text = u.optString("monthly_fee", "0.00") + " ج.م"
                     textSize = 13f
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                    setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+                    setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                 })
                 feeRow.addView(TextView(this@MainActivity).apply {
                     text = "  (" + text("اشتراك صيانة البرج", "Tower Maintenance") + ")"
@@ -2058,13 +2140,13 @@ class MainActivity : Activity() {
                         text = text("👤 بيانات المالك", "👤 Set Owner")
                         textSize = 11f
                         typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                        setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+                        setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                         isAllCaps = false
                         includeFontPadding = false
                         minHeight = 0
                         minimumHeight = 0
                         setPadding(dp(10), dp(8), dp(10), dp(8))
-                        background = roundedDrawable(if (dark) Color.parseColor("#0B3136") else Color.parseColor("#F0FDFA"), 10f)
+                        background = roundedDrawable(if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"), 10f)
                         layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
                             marginStart = dp(8)
                         }
@@ -2074,6 +2156,40 @@ class MainActivity : Activity() {
                     }
                     actionRow.addView(assignBtn)
                 }
+                if (resPhone.isNotEmpty()) {
+                    val waBtn = Button(this@MainActivity).apply {
+                        text = "💬 واتساب"
+                        textSize = 11f
+                        typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                        setTextColor(Color.parseColor("#059669"))
+                        isAllCaps = false
+                        includeFontPadding = false
+                        minHeight = 0
+                        minimumHeight = 0
+                        setPadding(dp(8), dp(8), dp(8), dp(8))
+                        background = roundedDrawable(if (dark) Color.parseColor("#064E3B") else Color.parseColor("#ECFDF5"), 10f, Color.parseColor(if (dark) "#047857" else "#A7F3D0"))
+                        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                            marginStart = dp(6)
+                        }
+                        setOnClickListener {
+                            try {
+                                var cleanPhone = resPhone.replace("+", "").replace(" ", "").replace("-", "")
+                                if (cleanPhone.startsWith("0")) cleanPhone = "20" + cleanPhone.substring(1)
+                                val msg = if (isPaid) {
+                                    text("مرحباً ساكن شقة $unitNumber، تم تأكيد استلام اشتراك صيانة البرج لشهر $currentMonth بسند رقم " + u.optString("receipt_reference") + ". شكراً لتعاونكم - إدارة البرج.", "Hello resident of unit $unitNumber, dues for $currentMonth received.")
+                                } else {
+                                    text("مرحباً ساكن شقة $unitNumber، تذكير بسداد اشتراك صيانة البرج لشهر $currentMonth بمبلغ " + u.optString("monthly_fee") + " ج.م. شاكرين حسن تعاونكم - إدارة البرج.", "Hello unit $unitNumber, reminder for dues for $currentMonth.")
+                                }
+                                val uri = Uri.parse("https://api.whatsapp.com/send?phone=" + cleanPhone + "&text=" + Uri.encode(msg))
+                                startActivity(Intent(Intent.ACTION_VIEW, uri))
+                            } catch (e: Exception) {
+                                Toast.makeText(this@MainActivity, text("تعذر فتح واتساب: " + e.message, "Could not open WhatsApp"), Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                    actionRow.addView(waBtn)
+                }
+
                 uCard.addView(actionRow)
 
                 unitsContainer.addView(uCard)
@@ -2107,7 +2223,7 @@ class MainActivity : Activity() {
                 fun updateStyle() {
                     if (activeFilter == fKey) {
                         setTextColor(Color.WHITE)
-                        background = gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 10f)
+                        background = gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 10f)
                     } else {
                         setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                         background = roundedDrawable(if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"), 10f)
@@ -2121,7 +2237,7 @@ class MainActivity : Activity() {
                         if (b != null) {
                             val isActive = (k == 0 && fKey == "all") || (k == 1 && fKey == "unpaid") || (k == 2 && fKey == "paid") || (k == 3 && fKey == "owned")
                             b.setTextColor(if (isActive) Color.WHITE else Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
-                            b.background = if (isActive) gradientDrawable(Color.parseColor("#0F766E"), Color.parseColor("#0D9488"), 10f)
+                            b.background = if (isActive) gradientDrawable(Color.parseColor("#4F46E5"), Color.parseColor("#6366F1"), 10f)
                                            else roundedDrawable(if (dark) Color.parseColor("#17243B") else Color.parseColor("#EDF2F7"), 10f)
                         }
                     }
@@ -2196,6 +2312,28 @@ class MainActivity : Activity() {
         }
         dialogView.addView(phoneInput)
 
+        val stateLabel = TextView(this).apply {
+            text = text("حالة إشغال الشقة:", "Occupancy State:")
+            textSize = 11.5f
+            typeface = cairoFont
+            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
+            setPadding(0, dp(10), 0, dp(4))
+        }
+        dialogView.addView(stateLabel)
+
+        val states = listOf(
+            Pair(text("مشغولة (ساكن مقيم) 🟢", "Residing 🟢"), "residing"),
+            Pair(text("مغلقة 🟡", "Closed 🟡"), "closed"),
+            Pair(text("تحت التشطيب 🔵", "Finishing 🔵"), "finishing")
+        )
+        val stateSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, states.map { it.first })
+            val currentState = u.optString("occupancy_state", "residing")
+            val defaultIdx = states.indexOfFirst { it.second == currentState }.takeIf { it >= 0 } ?: 0
+            setSelection(defaultIdx)
+        }
+        dialogView.addView(stateSpinner)
+
         AlertDialog.Builder(this)
             .setView(dialogView)
             .setPositiveButton(text("حفظ وتعيين", "Save & Assign")) { _, _ ->
@@ -2205,10 +2343,12 @@ class MainActivity : Activity() {
                     error(IllegalStateException(text("يرجى إدخال اسم المالك أو الساكن", "Please enter a name")))
                     return@setPositiveButton
                 }
+                val selectedState = states[stateSpinner.selectedItemPosition].second
                 val payload = JSONObject().apply {
                     put("name", name)
                     put("phone", phone)
                     put("kind", if (isOwned) "owner" else "tenant")
+                    put("occupancy_state", selectedState)
                 }
                 call("units/" + unitId + "/assign-resident", "POST", payload) {
                     Toast.makeText(this@MainActivity, text("تم حفظ بيانات المالك بنجاح", "Saved successfully"), Toast.LENGTH_SHORT).show()
@@ -2233,7 +2373,7 @@ class MainActivity : Activity() {
             text = text("شقة: $unitNumber · الساكن: $resName", "Unit: $unitNumber · Resident: $resName")
             textSize = 13f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
-            setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
             setPadding(0, 0, 0, dp(10))
         })
 
@@ -2257,10 +2397,10 @@ class MainActivity : Activity() {
             setPadding(0, dp(8), 0, 0)
         })
         val methods = listOf(
-            Pair("نقدي / كاش", "cash"),
-            Pair("فودافون كاش / محفظة", "vodafone_cash"),
-            Pair("إنستاباي / تحويل بنكي", "bank_transfer"),
-            Pair("شيك بنكي", "cheque")
+            Pair(text("نقدي / كاش", "Cash"), "cash"),
+            Pair(text("إنستاباي InstaPay ⚡", "InstaPay ⚡"), "instapay"),
+            Pair(text("فودافون كاش / محفظة إلكترونية 📱", "E-Wallet 📱"), "wallet"),
+            Pair(text("تحويل بنكي مباشر 🏦", "Bank Transfer 🏦"), "bank_transfer")
         )
         val methodSpinner = Spinner(this).apply {
             adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, methods.map { it.first })
@@ -2296,6 +2436,7 @@ class MainActivity : Activity() {
                     put("party_id", u.optString("party_id"))
                     put("amount", amt)
                     put("method", selectedMethod)
+                    put("payment_channel", selectedMethod)
                     put("reference", ref)
                     put("month", currentMonth)
                 }
@@ -2312,7 +2453,6 @@ class MainActivity : Activity() {
     }
 
     private fun listing(entity: String) {
-        if (entity == "cameras") { cameraScreen(); return }
         scaffold(title(entity), true) { home() }
 
         // Action Toolbar
@@ -2368,9 +2508,9 @@ class MainActivity : Activity() {
             text = text("0 سجل", "0 items")
             textSize = 11.5f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
-            setTextColor(Color.parseColor("#0F766E"))
+            setTextColor(Color.parseColor("#4F46E5"))
             setPadding(dp(10), dp(6), dp(10), dp(6))
-            background = roundedDrawable(Color.parseColor(if (dark) "#0B3136" else "#F0FDFA"), 10f)
+            background = roundedDrawable(Color.parseColor(if (dark) "#1E1B4B" else "#EEF2FF"), 10f)
         }
         searchRow.addView(searchInput)
         searchRow.addView(countBadge)
@@ -2477,7 +2617,7 @@ class MainActivity : Activity() {
                             setPadding(dp(8), dp(3), dp(8), dp(3))
                             val (bgColor, textColor) = when (status) {
                                 "active", "paid", "approved", "owned" -> Pair(Color.parseColor("#ECFDF5"), Color.parseColor("#059669"))
-                                "pending", "draft", "open" -> Pair(Color.parseColor("#F0FDFA"), Color.parseColor("#0F766E"))
+                                "pending", "draft", "open" -> Pair(Color.parseColor("#EEF2FF"), Color.parseColor("#4F46E5"))
                                 "exempted" -> Pair(Color.parseColor("#FEF3C7"), Color.parseColor("#D97706"))
                                 "rejected" -> Pair(Color.parseColor("#FFF1F2"), Color.parseColor("#E11D48"))
                                 else -> Pair(Color.parseColor("#F1F5F9"), Color.parseColor("#64748B"))
@@ -2576,7 +2716,7 @@ class MainActivity : Activity() {
                             text = text("تعديل", "Edit")
                             textSize = 11.5f
                             typeface = Typeface.create(cairoFont, Typeface.BOLD)
-                            setTextColor(Color.parseColor(if (dark) "#5EEAD4" else "#0F766E"))
+                            setTextColor(Color.parseColor(if (dark) "#818CF8" else "#4F46E5"))
                             isAllCaps = false
                             includeFontPadding = false
                             minHeight = 0
@@ -2669,7 +2809,7 @@ class MainActivity : Activity() {
                                 minHeight = 0
                                 minimumHeight = 0
                                 setPadding(dp(4), dp(8), dp(4), dp(8))
-                                background = roundedDrawable(Color.parseColor("#0F766E"), 8f)
+                                background = roundedDrawable(Color.parseColor("#4F46E5"), 8f)
                                 setOnClickListener { call("invoices/$id/issue", "POST", JSONObject()) { listing(entity) } }
                             }
                             actionsRow.addView(issueBtn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(3); marginEnd = dp(3) })
@@ -3174,24 +3314,5 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         super.onDestroy()
         worker.shutdownNow()
-    }
-
-    private fun cameraScreen() {
-        scaffold(text("كاميرات العقار", "Building cameras"), true) { home() }
-        call("cameras") { raw -> val result = JSONObject(raw); val cameras = result.getJSONArray("cameras"); val manage = result.optBoolean("can_manage")
-            label(text("المشاهدة بصلاحية خاصة لكل كاميرا. التسجيل والتحريك غير مفعّلين في هذا الإصدار.", "Viewing requires permission per camera. Recording and PTZ are not enabled in this release."))
-            if (manage) outlineButton(text("إضافة كاميرا أو قناة تسجيل", "Add camera or recorder channel")) { cameraForm() }
-            if (cameras.length() == 0) label(text("لا توجد كاميرات متاحة لحسابك", "No cameras available to this account"))
-            for (i in 0 until cameras.length()) { val camera = cameras.getJSONObject(i); val id = camera.getString("id"); sectionHeader(camera.getString("name")); label(camera.optString("location") + " · " + camera.optString("vendor") + " " + camera.optString("model")); label(camera.optString("last_test_status"))
-                if (camera.optBoolean("enabled")) primaryButton(text("مشاهدة مباشرة", "Watch live")) { startActivity(Intent(this, CameraPlayerActivity::class.java).putExtra("origin", base).putExtra("token", token).putExtra("camera", id).putExtra("org", org).putExtra("arabic", arabic)) }
-                if (manage) { outlineButton(text("اختبار الاتصال والقنوات", "Test connection and channels")) { call("cameras/$id/test", "POST", JSONObject()) { response -> val r = JSONObject(response); val message = if (r.optBoolean("connected")) text("نجح اختبار الاتصال. القنوات: ", "Connection passed. Profiles: ") + r.optJSONArray("profiles").toString() else r.optString("error"); AlertDialog.Builder(this).setMessage(message).setPositiveButton("OK", null).show() } }; outlineButton(text("صلاحيات المشاهدة", "Viewing permissions")) { cameraAccessForm(id) }; outlineButton(text(if (camera.optBoolean("enabled")) "تعطيل الكاميرا" else "تفعيل الكاميرا", if (camera.optBoolean("enabled")) "Disable camera" else "Enable camera")) { call("cameras/$id", "PATCH", JSONObject().put("enabled", !camera.optBoolean("enabled"))) { cameraScreen() } } }
-            }
-        }
-    }
-    private fun cameraForm() {
-        scaffold(text("إضافة كاميرا", "Add camera"), true) { cameraScreen() }; call("properties?limit=500") { raw -> val properties = JSONArray(raw); if (properties.length() == 0) { label(text("أضف برجًا أولًا", "Add a building first")) } else { val property = Spinner(this); property.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until properties.length()).map { properties.getJSONObject(it).getString("name") }); screen.addView(property); val name = input(text("اسم الكاميرا", "Camera name")); val vendor = input(text("الشركة", "Manufacturer")); val model = input(text("الموديل", "Model")); val location = input(text("الموقع", "Location")); val protocol = Spinner(this); protocol.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, listOf("onvif", "rtsp", "vendor")); screen.addView(protocol); val endpoint = input(text("عنوان الجهاز داخل شبكة العقار", "Device endpoint in building network")); val username = input(text("اسم المستخدم", "Username")); val password = input(text("كلمة المرور", "Password"), true); val profile = input(text("معرّف القناة — اختياري", "Profile token — optional")); val adapter = input(text("معرّف التكامل الخاص — اختياري", "Vendor adapter — optional")); label(text("يتطلب البث بوابة فيديو في العقار. لا تُحفظ كلمات المرور داخل التطبيق.", "Streaming needs a gateway in the building. Passwords are not stored in the app.")); primaryButton(text("حفظ الكاميرا", "Save camera")) { call("cameras", "POST", JSONObject().put("property_id", properties.getJSONObject(property.selectedItemPosition).getString("id")).put("name", name.text.toString()).put("vendor", vendor.text.toString()).put("model", model.text.toString()).put("location", location.text.toString()).put("protocol", protocol.selectedItem.toString()).put("endpoint", endpoint.text.toString()).put("username", username.text.toString()).put("password", password.text.toString()).put("profile_token", profile.text.toString()).put("adapter", adapter.text.toString())) { password.text.clear(); cameraScreen() } } } }
-    }
-    private fun cameraAccessForm(camera: String) {
-        scaffold(text("صلاحيات مشاهدة الكاميرا", "Camera viewing access"), true) { cameraScreen() }; call("members") { raw -> val members = JSONArray(raw); val selected = Spinner(this); selected.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, (0 until members.length()).map { members.getJSONObject(it).getString("name") }); screen.addView(selected); val expiry = input(text("انتهاء الصلاحية ISO — اختياري", "Access expiry ISO — optional")); for (allow in listOf(true, false)) outlineButton(text(if (allow) "منح المشاهدة" else "سحب المشاهدة", if (allow) "Grant viewing" else "Revoke viewing")) { if (members.length() > 0) call("cameras/$camera/grants", "POST", JSONObject().put("user_id", members.getJSONObject(selected.selectedItemPosition).getString("id")).put("allowed", allow).put("expires_at", expiry.text.toString())) { cameraScreen() } } }
     }
 }
