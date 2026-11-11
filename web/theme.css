@@ -1693,3 +1693,318 @@ dialog .actions { justify-content: flex-end; border-top: 1px solid var(--line); 
     padding: 14px 12px 84px !important;
   }
 }
+
+
+/* ==========================================================================
+   ENHANCED UI POLISH & FIXES (Screenshots Audit & Design Realignment)
+   ========================================================================== */
+
+/* Fix Arabic Typography & Number Spacing in RTL */
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3,
+html[dir="rtl"] h4,
+html[dir="rtl"] .metric strong,
+html[dir="rtl"] .kpi b,
+html[dir="rtl"] .app-title {
+  letter-spacing: 0 !important;
+}
+
+.metric strong, .kpi b {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* KPI Grid & Cards (Collections & Management) */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 540px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.kpi {
+  padding: 18px 20px !important;
+  border-radius: var(--radius-lg, 14px) !important;
+  background: var(--surface, #ffffff) !important;
+  border: 1px solid var(--line, #e2e8f0) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+  border-color: #cbd5e1 !important;
+}
+
+.kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpi-top h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted, #64748b);
+}
+
+.kpi-top-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(15, 118, 110, 0.08);
+  color: var(--primary, #0f766e);
+}
+
+.kpi b {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--text, #0f172a);
+  line-height: 1.2;
+}
+
+.kpi-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--text-muted, #94a3b8);
+}
+
+/* Month Pill Toolbar (Compact & Sleek) */
+.month-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: var(--radius-lg, 14px);
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.month-pill-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-muted, #f8fafc);
+  border: 1px solid var(--line, #e2e8f0);
+  padding: 4px 8px;
+  border-radius: 30px;
+}
+
+[data-theme="dark"] .month-pill-nav {
+  background: #151b28;
+  border-color: #273142;
+}
+
+.month-pill-nav .month-btn {
+  background: transparent;
+  border: 0;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary, #0f766e);
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.15s ease;
+}
+
+.month-pill-nav .month-btn:hover {
+  background: rgba(15, 118, 110, 0.1);
+}
+
+.month-pill-nav .current-month {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text, #0f172a);
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .month-pill-nav .current-month {
+  color: #f1f5f9;
+}
+
+/* Occupancy Breakdown Widget */
+.occupancy-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.occupancy-summary-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .occupancy-summary-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+.occupancy-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.occupancy-pill:hover {
+  transform: translateY(-1px);
+}
+
+.occupancy-pill.residing {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
+.occupancy-pill.closed {
+  background: #fefce8;
+  border-color: #fef08a;
+  color: #854d0e;
+}
+
+.occupancy-pill.finishing {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1e40af;
+}
+
+.occupancy-pill-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.occupancy-pill-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.occupancy-pill-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
+.occupancy-pill-count {
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+[data-theme="dark"] .occupancy-pill.residing {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+}
+
+[data-theme="dark"] .occupancy-pill.closed {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.25);
+  color: #fcd34d;
+}
+
+[data-theme="dark"] .occupancy-pill.finishing {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+
+/* Payment Channels Banner (MulakHub Brand Style) */
+.tower-payment-banner {
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.06) 0%, rgba(13, 148, 136, 0.04) 100%);
+  border: 1px solid rgba(15, 118, 110, 0.22);
+  border-radius: var(--radius-lg, 14px);
+  padding: 16px 20px;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+[data-theme="dark"] .tower-payment-banner {
+  background: rgba(45, 212, 191, 0.05);
+  border-color: rgba(45, 212, 191, 0.18);
+}
+
+.tower-payment-title {
+  margin: 0 0 8px 0;
+  color: var(--primary, #0f766e);
+  font-size: 0.95rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-theme="dark"] .tower-payment-title {
+  color: #2dd4bf;
+}
+
+.tower-payment-channels {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tower-channel-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tower-channel-label {
+  font-size: 0.78rem;
+  color: var(--text-muted, #64748b);
+  font-weight: 600;
+}
+
+.tower-channel-val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text, #0f172a);
+}
+
+[data-theme="dark"] .tower-channel-val {
+  color: #f1f5f9;
+}

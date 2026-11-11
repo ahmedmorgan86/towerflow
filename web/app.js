@@ -396,27 +396,21 @@ async function dashboard(){
      ${architecture()}
    </div>
 
-   <div class="card" style="margin-top:1.25rem;background:var(--bg-accent, #eff6ff);border:1px solid #bfdbfe;padding:1.1rem 1.4rem">
-     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">
-       <div>
-         <h4 style="margin:0 0 0.4rem 0;color:#1d4ed8;font-size:1.05rem;display:flex;align-items:center;gap:0.5rem">
-           <span>⚡📱</span> ${localText('قنوات الدفع اللحظي والمحافظ الإلكترونية للبرج:','Tower Electronic & InstaPay Channels:')}
-         </h4>
-         <div style="display:flex;gap:2rem;flex-wrap:wrap;align-items:center">
-           <div>
-             <span class="muted" style="font-size:0.85rem">${localText('معرف إنستاباي (InstaPay IPA):','InstaPay IPA:')}</span>
-             <br><strong style="font-size:1.1rem;color:#1e3a8a">${prop.instapay_id ? escape(prop.instapay_id) : `<span class="muted" style="font-weight:normal;font-size:0.9rem">${localText('غير محدد (أضفه من إعدادات البرج)','Not set')}</span>`}</strong>
-           </div>
-           <div>
-             <span class="muted" style="font-size:0.85rem">${localText('المحفظة الإلكترونية (فودافون كاش / وي):','E-Wallet Mobile:')}</span>
-             <br><strong style="font-size:1.1rem;color:#1e3a8a">${prop.wallet_number ? escape(prop.wallet_number) : `<span class="muted" style="font-weight:normal;font-size:0.9rem">${localText('غير محدد (أضفه من إعدادات البرج)','Not set')}</span>`}</strong>
-           </div>
+   <div class="tower-payment-banner">
+     <div>
+       <div class="tower-payment-title">⚡📱 ${localText('قنوات الدفع اللحظي والمحافظ الإلكترونية للبرج:','Tower Electronic & InstaPay Channels:')}</div>
+       <div class="tower-payment-channels">
+         <div class="tower-channel-item">
+           <span class="tower-channel-label">${localText('معرف إنستاباي (InstaPay IPA):','InstaPay IPA:')}</span>
+           <span class="tower-channel-val" style="color:#0f766e">⚡ ${prop.instapay_id ? escape(prop.instapay_id) : `<span class="muted" style="font-weight:normal;font-size:0.85rem">${localText('غير محدد (أضفه من إعدادات البرج)','Not set')}</span>`}</span>
+         </div>
+         <div class="tower-channel-item">
+           <span class="tower-channel-label">${localText('المحفظة الإلكترونية (فودافون كاش / وي):','E-Wallet Mobile:')}</span>
+           <span class="tower-channel-val" style="color:#0f766e">💳 ${prop.wallet_number ? escape(prop.wallet_number) : `<span class="muted" style="font-weight:normal;font-size:0.85rem">${localText('غير محدد (أضفه من إعدادات البرج)','Not set')}</span>`}</span>
          </div>
        </div>
-       <div>
-         <button class="ghost small" data-go="properties" style="font-size:0.85rem;color:#1d4ed8;border-color:#93c5fd">${localText('⚙️ تعديل بيانات الدفع والبرج','Edit Tower Payment Info')}</button>
-       </div>
      </div>
+     <button class="ghost small" data-go="properties" style="font-size:0.82rem">${localText('⚙️ تعديل بيانات الدفع والبرج','Edit Payment Info')}</button>
    </div>
 
    <div class="quick-hub" style="margin-top:1.25rem">
@@ -465,26 +459,33 @@ async function dashboard(){
          <h2>${localText('حالات إشغال الوحدات','Unit Occupancy States')}</h2>
          <button class="text-button" data-go="units">${localText('إدارة الوحدات','View all units')}</button>
        </div>
-       <div style="display:flex;flex-direction:column;gap:1rem">
-         <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:0.75rem;text-align:center">
-           <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:0.75rem">
-             <span style="font-size:1.5rem">🟢</span>
-             <h4 style="margin:0.25rem 0 0 0;font-size:0.85rem;color:#065f46">${localText('مشغولة مقيمة','Residing')}</h4>
-             <b style="font-size:1.25rem;color:#047857">${units.filter(u=>u.occupancy_state==='residing'||(!u.occupancy_state&&u.is_paid)).length}</b>
+       <div class="occupancy-widget">
+         <div class="occupancy-summary-row">
+           <div class="occupancy-pill residing">
+             <span class="occupancy-pill-icon">🟢</span>
+             <div class="occupancy-pill-info">
+               <span class="occupancy-pill-label">${localText('مشغولة ومقيمة','Residing')}</span>
+               <strong class="occupancy-pill-count">${units.filter(u=>u.occupancy_state==='residing'||(!u.occupancy_state&&u.is_paid)).length}</strong>
+             </div>
            </div>
-           <div style="background:#fefce8;border:1px solid #fef08a;border-radius:8px;padding:0.75rem">
-             <span style="font-size:1.5rem">🟡</span>
-             <h4 style="margin:0.25rem 0 0 0;font-size:0.85rem;color:#854d0e">${localText('مغلقة','Closed')}</h4>
-             <b style="font-size:1.25rem;color:#a16207">${units.filter(u=>u.occupancy_state==='closed').length}</b>
+           <div class="occupancy-pill closed">
+             <span class="occupancy-pill-icon">🟡</span>
+             <div class="occupancy-pill-info">
+               <span class="occupancy-pill-label">${localText('مغلقة','Closed')}</span>
+               <strong class="occupancy-pill-count">${units.filter(u=>u.occupancy_state==='closed').length}</strong>
+             </div>
            </div>
-           <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:0.75rem">
-             <span style="font-size:1.5rem">🔵</span>
-             <h4 style="margin:0.25rem 0 0 0;font-size:0.85rem;color:#1e40af">${localText('تحت التشطيب','Finishing')}</h4>
-             <b style="font-size:1.25rem;color:#2563eb">${units.filter(u=>u.occupancy_state==='finishing').length}</b>
+           <div class="occupancy-pill finishing">
+             <span class="occupancy-pill-icon">🔵</span>
+             <div class="occupancy-pill-info">
+               <span class="occupancy-pill-label">${localText('تحت التشطيب','Finishing')}</span>
+               <strong class="occupancy-pill-count">${units.filter(u=>u.occupancy_state==='finishing').length}</strong>
+             </div>
            </div>
          </div>
-         <div style="margin-top:0.5rem;padding:0.75rem;background:var(--bg-muted,#f8fafc);border-radius:8px;font-size:0.85rem;color:var(--text-muted,#64748b)">
-           <span>ℹ️ ${localText('الهدف من المنظومة هو إدارة البرج واتحاد الشاغلين فقط. جميع الوحدات تمليك ولا توجد عقود تأجير خاصة.','Condo management scope only. All units are owned (تمليك).')}</span>
+         <div style="padding:10px 14px;background:var(--bg-muted,#f8fafc);border-radius:10px;font-size:0.82rem;color:var(--text-muted,#64748b);display:flex;align-items:center;gap:8px">
+           <span>ℹ️</span>
+           <span>${localText('الهدف من المنظومة هو إدارة البرج واتحاد الشاغلين فقط. جميع الوحدات تمليك ولا توجد عقود تأجير خاصة.','Condo management scope only. All units are owned (تمليك).')}</span>
          </div>
        </div>
      </article>
@@ -1143,34 +1144,101 @@ async function collectionsView(){
   `;
 
   $('#content').innerHTML = `
-    ${head(t('collections'), `<button class="primary" id="btn-batch-generate">${localText('⚡ توليد مطالبات الشهر','⚡ Generate Monthly Dues')}</button>`)}
-    ${data.property_settings && (data.property_settings.instapay_id || data.property_settings.wallet_number) ? `
-      <div class="card" style="margin-bottom:1rem;background:var(--bg-accent, #eff6ff);border:1px solid #bfdbfe;padding:1rem 1.25rem">
-        <h4 style="margin:0 0 0.5rem 0;color:#1d4ed8;font-size:0.95rem">📱 ${localText('قنوات الدفع اللحظي والمحافظ الإلكترونية للبرج:','Tower Electronic & InstaPay Channels:')}</h4>
-        <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
-          ${data.property_settings.instapay_id ? `<div><small class="muted">${localText('معرف إنستاباي:','InstaPay IPA:')}</small> <strong style="font-size:1.05rem;color:#1e3a8a">⚡ ${escape(data.property_settings.instapay_id)}</strong></div>` : ''}
-          ${data.property_settings.wallet_number ? `<div><small class="muted">${localText('محفظة إلكترونية (فودافون كاش / إنستاباي):','E-Wallet Mobile:')}</small> <strong style="font-size:1.05rem;color:#1e3a8a">💳 ${escape(data.property_settings.wallet_number)}</strong></div>` : ''}
-        </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:1.25rem">
+      <div>
+        <h1 style="margin:0 0 4px 0;font-size:1.6rem;font-weight:800;color:var(--text)">${t('collections')}</h1>
+        <p class="muted" style="margin:0;font-size:0.9rem">${localText('جدول التحصيل الشهري واشتراكات الصيانة وقنوات الدفع للبرج','Monthly collection dues, maintenance fees, and payment channels.')}</p>
       </div>
-    ` : ''}
-    <div class="card" style="margin-bottom:1rem">
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <button class="ghost" id="btn-prev-month">‹ ${localText('الشهر السابق','Previous Month')}</button>
-        <h2 style="margin:0;font-size:1.25rem">${monthDisplay}</h2>
-        <button class="ghost" id="btn-next-month">${localText('الشهر التالي','Next Month')} ›</button>
+      <div>
+        <button class="primary" id="btn-batch-generate">${localText('⚡ توليد مطالبات الشهر','⚡ Generate Monthly Dues')}</button>
       </div>
-    </div>
-    <div class="kpi-grid">
-      <article class="card kpi"><h3>${localText('إجمالي المطلوب','Total Due')}</h3><b>${money(s.total_due||0)}</b><small>${localText('اشتراكات صيانة وخدمات البرج','Tower maintenance dues')}</small></article>
-      <article class="card kpi"><h3>${localText('المحصل فعلياً','Collected')}</h3><b style="color:var(--success,#10b981)">${money(s.total_collected||0)}</b><small>${localText('نسبة التحصيل','Rate')} ${s.collection_rate||0}%</small></article>
-      <article class="card kpi"><h3>${localText('المتبقي للتحصيل','Remaining')}</h3><b style="color:var(--danger,#ef4444)">${money(s.total_remaining||0)}</b><small>${localText('مستحقات معلقة','Pending')}</small></article>
-      <article class="card kpi"><h3>${localText('الوحدات المأهولة','Occupancy')}</h3><b>${s.occupied_units||0} / ${s.total_units||0}</b><small>${localText('وحدة مسجلة','registered units')}</small></article>
     </div>
 
-    <!-- Units Control Bar: Switcher (Cards vs Table) & Filter Tabs -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:1.5rem">
-      <div class="view-switcher">
-        <button class="view-btn ${viewMode === 'cards' ? 'active' : ''}" id="btn-view-cards">🗂️ ${localText('بطاقات ذكية', 'Smart Cards')}</button>
+    ${data.property_settings && (data.property_settings.instapay_id || data.property_settings.wallet_number) ? `
+      <div class="tower-payment-banner" style="margin-top:0;margin-bottom:1.25rem">
+        <div>
+          <div class="tower-payment-title">⚡📱 ${localText('قنوات التحصيل الإلكتروني للبرج:','Tower Electronic & InstaPay Channels:')}</div>
+          <div class="tower-payment-channels">
+            ${data.property_settings.instapay_id ? `
+              <div class="tower-channel-item">
+                <span class="tower-channel-label">${localText('معرف إنستاباي (InstaPay IPA):','InstaPay IPA:')}</span>
+                <span class="tower-channel-val" style="color:#0f766e">⚡ ${escape(data.property_settings.instapay_id)}</span>
+              </div>
+            ` : ''}
+            ${data.property_settings.wallet_number ? `
+              <div class="tower-channel-item">
+                <span class="tower-channel-label">${localText('محفظة إلكترونية (فودافون كاش / وي):','E-Wallet Mobile:')}</span>
+                <span class="tower-channel-val" style="color:#0f766e">💳 ${escape(data.property_settings.wallet_number)}</span>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+        <button class="ghost small" data-go="properties" style="font-size:0.82rem">${localText('⚙️ تعديل بيانات الدفع','Edit Info')}</button>
+      </div>
+    ` : ''}
+
+    <div class="month-toolbar">
+      <div class="month-pill-nav">
+        <button class="month-btn" id="btn-prev-month">‹ ${localText('السابق','Prev')}</button>
+        <span class="current-month">📅 ${monthDisplay}</span>
+        <button class="month-btn" id="btn-next-month">${localText('التالي','Next')} ›</button>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="view-switch" style="display:inline-flex;background:var(--bg-muted,#f1f5f9);padding:3px;border-radius:10px;border:1px solid var(--line,#e2e8f0)">
+          <button class="view-btn ${viewMode==='cards'?'active':''}" id="btn-view-cards" style="padding:5px 12px;border:0;border-radius:7px;font-size:0.82rem;font-weight:700;cursor:pointer;background:${viewMode==='cards'?'var(--surface,#fff)':'transparent'};color:${viewMode==='cards'?'var(--primary,#0f766e)':'var(--text-muted,#64748b)'}">🎴 ${localText('كروت','Cards')}</button>
+          <button class="view-btn ${viewMode==='table'?'active':''}" id="btn-view-table" style="padding:5px 12px;border:0;border-radius:7px;font-size:0.82rem;font-weight:700;cursor:pointer;background:${viewMode==='table'?'var(--surface,#fff)':'transparent'};color:${viewMode==='table'?'var(--primary,#0f766e)':'var(--text-muted,#64748b)'}">📋 ${localText('جدول','Table')}</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <article class="kpi">
+        <div class="kpi-top">
+          <h3>${localText('إجمالي المطلوب','Total Due')}</h3>
+          <span class="kpi-top-icon">💰</span>
+        </div>
+        <b>${money(s.total_due||0)}</b>
+        <div class="kpi-foot"><span>🏢</span> ${localText('اشتراكات صيانة وخدمات البرج','Tower maintenance dues')}</div>
+      </article>
+
+      <article class="kpi">
+        <div class="kpi-top">
+          <h3>${localText('المحصل فعلياً','Collected')}</h3>
+          <span class="kpi-top-icon" style="background:#ecfdf5;color:#059669">✅</span>
+        </div>
+        <b style="color:#059669">${money(s.total_collected||0)}</b>
+        <div class="kpi-foot"><span class="dot" style="background:#059669"></span> ${localText('نسبة التحصيل: ','Collection rate: ')}<strong>${s.collection_rate||0}%</strong></div>
+      </article>
+
+      <article class="kpi">
+        <div class="kpi-top">
+          <h3>${localText('المتبقي للتحصيل','Remaining')}</h3>
+          <span class="kpi-top-icon" style="background:#fef2f2;color:#dc2626">⏳</span>
+        </div>
+        <b style="color:#dc2626">${money(s.total_remaining||0)}</b>
+        <div class="kpi-foot"><span class="dot" style="background:#dc2626"></span> ${localText('مستحقات معلقة غير مسددة','Pending uncollected dues')}</div>
+      </article>
+
+      <article class="kpi">
+        <div class="kpi-top">
+          <h3>${localText('الوحدات المأهولة','Occupancy')}</h3>
+          <span class="kpi-top-icon" style="background:#eff6ff;color:#2563eb">🚪</span>
+        </div>
+        <b>${s.occupied_units||0} <span style="font-size:0.7em;font-weight:600;color:var(--text-muted)">/ ${s.total_units||0}</span></b>
+        <div class="kpi-foot"><span>🟢</span> ${localText('وحدات مشغولة ومسجلة','Registered units')}</div>
+      </article>
+    </div>
+
+    <!-- Filter Pills Row -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap">
+      <span class="muted" style="font-size:0.85rem;font-weight:700">${localText('تصفية الشقق:','Filter Units:')}</span>
+      <button class="ghost small filter-btn ${filterState==='all'?'primary':''}" id="filter-all" style="border-radius:20px;font-size:0.82rem">${localText('الكل (' + allUnits.length + ')', 'All (' + allUnits.length + ')')}</button>
+      <button class="ghost small filter-btn ${filterState==='unpaid'?'primary':''}" id="filter-unpaid" style="border-radius:20px;font-size:0.82rem;color:#dc2626;border-color:#fca5a5">${localText('غير مسدد (' + unpaidCount + ')', 'Unpaid (' + unpaidCount + ')')}</button>
+      <button class="ghost small filter-btn ${filterState==='paid'?'primary':''}" id="filter-paid" style="border-radius:20px;font-size:0.82rem;color:#059669;border-color:#a7f3d0">${localText('مسدد (' + paidCount + ')', 'Paid (' + paidCount + ')')}</button>
+    </div>
+
+    ${viewMode === 'cards' ? 'active' : ''}" id="btn-view-cards">🗂️ ${localText('بطاقات ذكية', 'Smart Cards')}</button>
         <button class="view-btn ${viewMode === 'table' ? 'active' : ''}" id="btn-view-table">📋 ${localText('جدول تفصيلي', 'Table')}</button>
       </div>
 
