@@ -702,6 +702,12 @@ async function listing(entity){
                    ${entity==='expenses'&&x.status==='pending'&&['admin','manager'].includes(role())?`<button data-approve="${x.id}">${t('approve')}</button><button data-reject="${x.id}" class="danger">${t('reject')}</button>`:''}
                    ${entity==='payment_proofs'&&x.status==='pending'&&['admin','manager'].includes(role())?`<button data-approve-proof="${x.id}">${t('approve')}</button><button data-reject-proof="${x.id}" class="danger">${t('reject')}</button>`:''}
                    ${entity==='fines'&&x.status==='pending'&&['admin','manager'].includes(role())?`<button data-exempt-fine="${x.id}">${t('exempt_btn')}</button>`:''}
+                   ${entity==='tickets'&&['admin','manager','technician'].includes(role())?(
+                     x.status==='open'?`<button data-ticket-move="${x.id}" data-to="in_progress" class="small ghost" style="color:#0f766e;border-color:#a7f3d0">▶️ ${localText('بدء العمل','Start')}</button>`:
+                     x.status==='assigned'?`<button data-ticket-move="${x.id}" data-to="in_progress" class="small ghost" style="color:#0f766e;border-color:#a7f3d0">▶️ ${localText('بدء العمل','Start')}</button>`:
+                     x.status==='in_progress'?`<button data-ticket-move="${x.id}" data-to="resolved" class="small ghost" style="color:#059669;border-color:#a7f3d0">✅ ${localText('تم الحل','Resolve')}</button>`:
+                     x.status==='resolved'&&['admin','manager'].includes(role())?`<button data-ticket-move="${x.id}" data-to="closed" class="small ghost" style="color:#64748b;border-color:#cbd5e1">🔒 ${localText('إغلاق','Close')}</button>`:''
+                   ):''}
                  </div>
                </td>
              </tr>
@@ -712,6 +718,7 @@ async function listing(entity){
    `:`<div class="card">${emptyState(entity,!!schemas[entity]&&canWrite(entity))}</div>`;
 
    document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editor(entity,data.find(x=>x.id===b.dataset.edit)));
+   document.querySelectorAll('[data-ticket-move]').forEach(b=>b.onclick=()=>perform(()=>api(`tickets/${b.dataset.ticketMove}`,{method:'PATCH',body:JSON.stringify({status:b.dataset.to})})));
    document.querySelectorAll('[data-del-prop]').forEach(b=>b.onclick=async()=>{
       const ok = await uiConfirm(
         localText('حذف البرج السكني', 'Delete Tower'),
@@ -903,7 +910,16 @@ function modal(title,fields,submit){
  $('#cancel').onclick=()=>d.close();
  $('#editor').onsubmit=async e=>{
    e.preventDefault();e.submitter.disabled=true;
-   try{await submit(Object.fromEntries(new FormData(e.target)));d.close();toast(t('saved'));cache={};await render();}catch(error){$('#formerror').textContent=error.message;}finally{e.submitter.disabled=false;}
+   try{await submit(Object.fromEntries(new FormData(e.target)));d.close();toast(t('saved'));cache={};await render();}catch(error){
+     let msg = error.message;
+     if (msg && msg.includes('Invalid ticket status transition')) {
+       msg = localText(
+         'مسار حالة التذكرة غير متاح مباشرة. التسلسل النظامي: مفتوح ⬅️ جارٍ العمل ⬅️ تم الحل ⬅️ إغلاق نهائي.',
+         'Invalid ticket transition. Allowed order: Open -> In Progress -> Resolved -> Closed.'
+       );
+     }
+     $('#formerror').textContent = msg;
+   }finally{e.submitter.disabled=false;}
  };
  d.showModal();
 }
@@ -918,7 +934,35 @@ async function editor(entity,record={}){
    let keys=schemas[entity]||[];
    if(role()==='resident'&&entity==='tickets')keys=['title','description','unit_id','priority'];
    await Promise.all([...new Set(keys.filter(k=>relations[k]).map(k=>relations[k]))].map(rows));
-   modal(t(entity),keys.map(k=>field(k,record[k],{optional:optional.has(k)||(entity==='invoices'&&k==='unit_id'),choices:relations[k]?cache[relations[k]].map(x=>({value:x.id,label:x.name})):enums[entity]?.[k]})).join(''),b=>api(entity+(record.id?'/'+record.id:''),{method:record.id?'PATCH':'POST',body:JSON.stringify(b)}));
+
+   const getChoices = (k) => {
+     if (relations[k]) return cache[relations[k]].map(x => ({ value: x.id, label: x.name }));
+     if (entity === 'tickets' && k === 'status' && record.id && record.status) {
+       const allowedTransitions = {
+         open: ['open', 'in_progress', 'assigned'],
+         assigned: ['assigned', 'in_progress', 'open'],
+         in_progress: ['in_progress', 'resolved', 'assigned'],
+         resolved: ['resolved', 'closed', 'in_progress'],
+         closed: ['closed']
+       };
+       return allowedTransitions[record.status] || enums.tickets.status;
+     }
+     return enums[entity]?.[k];
+   };
+
+   const fieldsMarkup = keys.map(k => field(k, record[k], {
+     optional: optional.has(k) || (entity === 'invoices' && k === 'unit_id'),
+     choices: getChoices(k)
+   })).join('') + (entity === 'tickets' && record.id ? `
+     <div style="font-size:0.8rem;color:var(--text-muted,#64748b);padding:8px 12px;background:var(--bg-muted,#f8fafc);border-radius:8px;margin-top:6px">
+       ℹ️ ${localText('تسلسل حالات التذكرة: مفتوح ⬅️ جارٍ العمل ⬅️ تم الحل ⬅️ إغلاق نهائي', 'Workflow: Open -> In Progress -> Resolved -> Closed')}
+     </div>
+   ` : '');
+
+   modal(t(entity), fieldsMarkup, b => api(entity + (record.id ? '/' + record.id : ''), {
+     method: record.id ? 'PATCH' : 'POST',
+     body: JSON.stringify(b)
+   }));
  }catch(e){toast(e.message);}
 }
 

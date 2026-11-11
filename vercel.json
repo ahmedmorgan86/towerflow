@@ -23,7 +23,7 @@
         },
         {
           "key": "Content-Disposition",
-          "value": "attachment; filename=\"TowerFlow-v0.8.2.apk\""
+          "value": "attachment; filename=\"TowerFlow-latest.apk\""
         },
         {
           "key": "Cache-Control",
@@ -48,7 +48,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; media-src 'self' blob:; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+          "value": "default-src 'self'; media-src 'self' blob:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
         }
       ]
     }
