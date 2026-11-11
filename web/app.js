@@ -723,10 +723,6 @@ async function listing(entity){
         uiAlert(localText('تعذر حذف البرج', 'Delete Error'), err.message, 'danger');
       }
     });
-       toast(localText('تم حذف البرج بنجاح','Tower deleted successfully'));
-       cache={};await render();
-     }catch(err){uiAlert(localText('تنبيه', 'Notice'), err.message, 'danger');}
-   });
    document.querySelectorAll('[data-issue]').forEach(b=>b.onclick=()=>perform(()=>api(`invoices/${b.dataset.issue}/issue`,{method:'POST',body:'{}'})));
    document.querySelectorAll('[data-collect]').forEach(b=>b.onclick=()=>collection(b.dataset.collect));
    for(const [attr,decision] of [['approve','approved'],['reject','rejected']]) {
