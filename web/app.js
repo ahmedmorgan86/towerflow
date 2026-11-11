@@ -543,7 +543,7 @@ async function dashboard(){
        }) +
        field('reference', '', { placeholder: localText('رقم المرجع / الإيصال (اختياري)', 'Reference / Receipt No') }),
        async (b) => {
-         if (!b.amount || Number(b.amount) <= 0) return alert(localText('يرجى إدخال مبلغ صحيح', 'Invalid amount'));
+         if (!b.amount || Number(b.amount) <= 0) return uiAlert(localText('مبلغ غير صحيح', 'Invalid Amount'), localText('يرجى إدخال مبلغ تحصيل صحيح بالجنيه المصري', 'Invalid amount'), 'danger');
          try {
            const res = await api('collections/quick-collect', {
              method: 'POST',
@@ -560,7 +560,7 @@ async function dashboard(){
            cache = {};
            await render();
          } catch (err) {
-           alert(err.message);
+           uiAlert(localText('تنبيه', 'Notice'), err.message, 'danger');
          }
        }
      );
@@ -652,12 +652,23 @@ async function listing(entity){
 
    document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editor(entity,data.find(x=>x.id===b.dataset.edit)));
    document.querySelectorAll('[data-del-prop]').forEach(b=>b.onclick=async()=>{
-     if(!confirm(localText('تحذير: هل أنت متأكد من حذف هذا البرج نهائياً بما يشمل وحداته وسجلاته؟','Warning: Are you sure you want to permanently delete this tower and all its units and records?'))) return;
-     try{
-       await api('properties/'+b.dataset.delProp+'?force=true',{method:'DELETE'});
+      const ok = await uiConfirm(
+        localText('حذف البرج السكني', 'Delete Tower'),
+        localText('تحذير هام: هل أنت متأكد من حذف هذا البرج نهائياً بما يشمل كافة وحداته وسجلاته المالية؟ هذا الإجراء لا يمكن التراجع عنه.', 'Warning: Are you sure you want to permanently delete this tower and all its units and records?'),
+        { danger: true, confirmText: localText('نعم، حذف البرج نهائياً', 'Yes, Delete Tower') }
+      );
+      if(!ok) return;
+      try{
+        await api('properties/'+b.dataset.delProp+'?force=true',{method:'DELETE'});
+        toast(localText('تم حذف البرج بنجاح','Tower deleted successfully'));
+        cache={};await render();
+      }catch(err){
+        uiAlert(localText('تعذر حذف البرج', 'Delete Error'), err.message, 'danger');
+      }
+    });
        toast(localText('تم حذف البرج بنجاح','Tower deleted successfully'));
        cache={};await render();
-     }catch(err){alert(err.message);}
+     }catch(err){uiAlert(localText('تنبيه', 'Notice'), err.message, 'danger');}
    });
    document.querySelectorAll('[data-issue]').forEach(b=>b.onclick=()=>perform(()=>api(`invoices/${b.dataset.issue}/issue`,{method:'POST',body:'{}'})));
    document.querySelectorAll('[data-collect]').forEach(b=>b.onclick=()=>collection(b.dataset.collect));
@@ -682,6 +693,152 @@ function csv(name,cols,data){
  const a=document.createElement('a');a.href=url;a.download='towerflow-'+name+'.csv';a.click();
  setTimeout(()=>URL.revokeObjectURL(url),500);
 }
+
+function uiConfirm(title, message, options = {}) {
+  return new Promise((resolve) => {
+    const d = $('#modal');
+    const isDanger = options.danger ?? true;
+    const confirmLabel = options.confirmText || (isDanger ? localText('تأكيد الحذف', 'Delete') : localText('تأكيد', 'Confirm'));
+    const cancelLabel = options.cancelText || localText('إلغاء', 'Cancel');
+    const iconGlyph = options.icon || (isDanger ? '🗑️' : '⚠️');
+
+    d.innerHTML = `
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <span class="dialog-icon">${iconGlyph}</span>
+          <h3>${escape(title)}</h3>
+        </div>
+        <div class="dialog-body">
+          <p>${escape(message)}</p>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="ghost" id="dlg-cancel">${cancelLabel}</button>
+          <button type="button" class="${isDanger ? 'danger' : 'primary'}" id="dlg-confirm">${confirmLabel}</button>
+        </div>
+      </div>
+    `;
+
+    const cancelBtn = $('#dlg-cancel');
+    const confirmBtn = $('#dlg-confirm');
+
+    cancelBtn.onclick = () => {
+      d.close();
+      resolve(false);
+    };
+
+    confirmBtn.onclick = () => {
+      d.close();
+      resolve(true);
+    };
+
+    d.oncancel = (e) => {
+      e.preventDefault();
+      d.close();
+      resolve(false);
+    };
+
+    d.showModal();
+    confirmBtn.focus();
+  });
+}
+
+function uiAlert(title, message, type = 'info') {
+  return new Promise((resolve) => {
+    const d = $('#modal');
+    const iconGlyph = type === 'danger' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+    const okLabel = localText('حسناً', 'OK');
+
+    d.innerHTML = `
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <span class="dialog-icon">${iconGlyph}</span>
+          <h3>${escape(title)}</h3>
+        </div>
+        <div class="dialog-body">
+          <p>${escape(message)}</p>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="primary" id="dlg-ok">${okLabel}</button>
+        </div>
+      </div>
+    `;
+
+    const okBtn = $('#dlg-ok');
+    okBtn.onclick = () => {
+      d.close();
+      resolve();
+    };
+
+    d.oncancel = (e) => {
+      e.preventDefault();
+      d.close();
+      resolve();
+    };
+
+    d.showModal();
+    okBtn.focus();
+  });
+}
+
+function uiPrompt(title, message, defaultValue = '', options = {}) {
+  return new Promise((resolve) => {
+    const d = $('#modal');
+    const inputType = options.inputType || 'text';
+    const confirmLabel = options.confirmText || localText('متابعة', 'Continue');
+    const cancelLabel = options.cancelText || localText('إلغاء', 'Cancel');
+    const iconGlyph = options.icon || '⚡';
+
+    d.innerHTML = `
+      <form id="dlg-prompt-form" class="dialog-content">
+        <div class="dialog-header">
+          <span class="dialog-icon">${iconGlyph}</span>
+          <h3>${escape(title)}</h3>
+        </div>
+        <div class="dialog-body">
+          <p>${escape(message)}</p>
+          <div class="dialog-input-wrap">
+            <input id="dlg-prompt-input" type="${inputType}" value="${escape(defaultValue)}" required autofocus>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="ghost" id="dlg-prompt-cancel">${cancelLabel}</button>
+          <button type="submit" class="primary">${confirmLabel}</button>
+        </div>
+      </form>
+    `;
+
+    const cancelBtn = $('#dlg-prompt-cancel');
+    const form = $('#dlg-prompt-form');
+    const input = $('#dlg-prompt-input');
+
+    cancelBtn.onclick = () => {
+      d.close();
+      resolve(null);
+    };
+
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const val = input.value;
+      d.close();
+      resolve(val);
+    };
+
+    d.oncancel = (e) => {
+      e.preventDefault();
+      d.close();
+      resolve(null);
+    };
+
+    d.showModal();
+    input.focus();
+    input.select();
+  });
+}
+
+// Global window fallbacks for safety
+window.alert = (msg) => uiAlert(localText('تنبيه', 'Notice'), String(msg));
+window.confirm = (msg) => uiConfirm(localText('تأكيد الإجراء', 'Confirm Action'), String(msg));
+window.prompt = (msg, dflt) => uiPrompt(localText('إدخال مطلوب', 'Input Required'), String(msg), dflt || '');
 
 function modal(title,fields,submit){
  const d=$('#modal');
@@ -1000,14 +1157,19 @@ async function collectionsView(){
   $('#filter-paid').onclick = () => { localStorage.tfCollectionFilter = 'paid'; collectionsView(); };
 
   $('#btn-batch-generate').onclick = async () => {
-    const fee = prompt(localText('أدخل قيمة اشتراك الصيانة والخدمات الشهري للشقق (مثال: 500):','Enter default monthly maintenance fee for units:'), '500');
+    const fee = await uiPrompt(
+      localText('⚡ توليد مطالبات اشتراك الصيانة والخدمات', 'Generate Monthly Maintenance Dues'),
+      localText('أدخل قيمة اشتراك الصيانة والخدمات الشهري المستحق على الشقق (بالجنيه المصري):', 'Enter default monthly maintenance fee for units (EGP):'),
+      '500',
+      { inputType: 'number', confirmText: localText('توليد المطالبات الآن ⚡', 'Generate Now ⚡'), icon: '⚡' }
+    );
     if (!fee) return;
     try {
       const res = await api('collections/generate-month', { method: 'POST', body: JSON.stringify({ month, default_fee: fee }) });
       toast(localText('تم توليد ' + res.generated_count + ' مطالبة بنجاح', 'Generated ' + res.generated_count + ' dues successfully'));
       collectionsView();
     } catch (err) {
-      alert(err.message);
+      uiAlert(localText('تعذر توليد المطالبات', 'Generation Error'), err.message, 'danger');
     }
   };
 
@@ -1027,7 +1189,7 @@ async function collectionsView(){
           ]
         }),
         async (b) => {
-          if (!b.name || !b.name.trim()) return alert(localText('يرجى إدخال الاسم', 'Please enter a name'));
+          if (!b.name || !b.name.trim()) return uiAlert(localText('بيانات ناقصة', 'Missing Data'), localText('يرجى إدخال اسم المالك أو الساكن بالكامل', 'Please enter a name'), 'danger');
           try {
             await api('units/' + uId + '/assign-resident', {
               method: 'POST',
@@ -1041,7 +1203,7 @@ async function collectionsView(){
             toast(localText('تم حفظ وتعيين المالك وحالة الشقة بنجاح', 'Assigned successfully'));
             collectionsView();
           } catch (err) {
-            alert(err.message);
+            uiAlert(localText('تنبيه', 'Notice'), err.message, 'danger');
           }
         }
       );
@@ -1068,7 +1230,7 @@ async function collectionsView(){
         }) +
         field('reference', '', { placeholder: localText('رقم المرجع / الإيصال (اختياري)', 'Reference / Receipt No') }),
         async (b) => {
-          if (!b.amount || Number(b.amount) <= 0) return alert(localText('يرجى إدخال مبلغ صحيح', 'Invalid amount'));
+          if (!b.amount || Number(b.amount) <= 0) return uiAlert(localText('مبلغ غير صحيح', 'Invalid Amount'), localText('يرجى إدخال مبلغ تحصيل صحيح بالجنيه المصري', 'Invalid amount'), 'danger');
           try {
             const res = await api('collections/quick-collect', {
               method: 'POST',
@@ -1084,7 +1246,7 @@ async function collectionsView(){
             toast(localText('تم التحصيل بنجاح! سند قبض رقم: ' + res.receipt_reference, 'Collection successful! Receipt: ' + res.receipt_reference));
             collectionsView();
           } catch (err) {
-            alert(err.message);
+            uiAlert(localText('تنبيه', 'Notice'), err.message, 'danger');
           }
         }
       );
