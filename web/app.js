@@ -235,10 +235,35 @@ function sidebar(){
  </aside>`;
 }
 
+function bottomNav(){
+  const isRes = role() === 'resident';
+  const navItems = isRes ? [
+    ['portal', localText('الرئيسية','Home'), 'home'],
+    ['invoices', localText('مستحقاتي','Invoices'), 'wallet'],
+    ['tickets', localText('الصيانة','Maintenance'), 'tool'],
+    ['announcements', localText('الإعلانات','News'), 'bell'],
+    ['profile', localText('حسابي','Profile'), 'people']
+  ] : [
+    ['collections', localText('التحصيل','Collect'), 'wallet'],
+    ['properties', localText('الأبراج','Towers'), 'building'],
+    ['units', localText('الشقق','Units'), 'home'],
+    ['expenses', localText('المصروفات','Expenses'), 'chart'],
+    ['tickets', localText('الصيانة','Tickets'), 'tool']
+  ];
+  return `<nav class="mobile-bottom-nav" aria-label="${localText('شريط التنقل السريع','Mobile Navigation')}">
+    ${navItems.map(([k, label, ic]) => `
+      <button data-page="${k}" class="mobile-bottom-nav-item ${k === page ? 'active' : ''}">
+        ${icon(ic, 19)}
+        <span>${label}</span>
+      </button>
+    `).join('')}
+  </nav>`;
+}
+
 async function render(){
  if(busy)return;busy=true;theme();localStorage.tfOrg=org;
  if(!allowed().includes(page))page=allowed()[0];
- $('#app').innerHTML=`<div class="layout">${sidebar()}<button class="sidebar-overlay" aria-label="${localText('إغلاق القائمة','Close menu')}"></button><main class="workspace"><header class="topbar"><div class="topbar-start"><button class="mobile-toggle icon-button" id="menu" aria-label="${localText('فتح القائمة','Open navigation')}" aria-expanded="false" aria-controls="navigation">${icon('menu')}</button><div class="breadcrumb">TowerFlow <span> / </span><strong>${t(page)}</strong></div><select id="org" aria-label="${t('organization')}">${me.organizations.map(x=>`<option value="${x.id}" ${x.id===org?'selected':''}>${escape(x.name)}</option>`).join('')}</select></div><div class="topbar-end"><div class="actions">${toggles()}<button class="icon-button" data-go="notifications" aria-label="${t('notifications')}">${icon('bell',18)}</button></div><button class="profile profile-link" data-go="profile"><div class="avatar">${me.user.avatar?`<img src="${escape(me.user.avatar)}" alt="">`:escape(me.user.name.slice(0,1))}</div><div><b>${escape(me.user.name)}</b><small>${t(me.user.platform_owner?'platform_owner':role())}</small></div></button><button class="icon-button" id="logout" aria-label="${t('logout')}" title="${t('logout')}">${icon('logout',17)}</button></div></header><div class="content-wrap"><section id="content" aria-live="polite"><div class="loading">${t('loading')}</div></section><footer class="footer"><span>© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow</span><span>${localText('إدارة الأبراج وصندوق العمارة','Building Sandok & Management')}</span></footer></div></main></div>`;
+ $('#app').innerHTML=`<div class="layout">${sidebar()}<button class="sidebar-overlay" aria-label="${localText('إغلاق القائمة','Close menu')}"></button><main class="workspace"><header class="topbar"><div class="topbar-start"><button class="mobile-toggle icon-button" id="menu" aria-label="${localText('فتح القائمة','Open navigation')}" aria-expanded="false" aria-controls="navigation">${icon('menu')}</button><div class="breadcrumb">TowerFlow <span> / </span><strong>${t(page)}</strong></div><select id="org" aria-label="${t('organization')}">${me.organizations.map(x=>`<option value="${x.id}" ${x.id===org?'selected':''}>${escape(x.name)}</option>`).join('')}</select></div><div class="topbar-end"><div class="actions">${toggles()}<button class="icon-button" data-go="notifications" aria-label="${t('notifications')}">${icon('bell',18)}</button></div><button class="profile profile-link" data-go="profile"><div class="avatar">${me.user.avatar?`<img src="${escape(me.user.avatar)}" alt="">`:escape(me.user.name.slice(0,1))}</div><div><b>${escape(me.user.name)}</b><small>${t(me.user.platform_owner?'platform_owner':role())}</small></div></button><button class="icon-button" id="logout" aria-label="${t('logout')}" title="${t('logout')}">${icon('logout',17)}</button></div></header><div class="content-wrap"><section id="content" aria-live="polite"><div class="loading">${t('loading')}</div></section><footer class="footer"><span>© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow</span><span>${localText('إدارة الأبراج وصندوق العمارة','Building Sandok & Management')}</span></footer></div></main>${bottomNav()}</div>`;
  document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>navigate(b.dataset.page));
  $('#org').onchange=e=>{org=e.target.value;cache={};render();};
  $('#logout').onclick=async()=>{await api('auth/logout',{method:'POST',body:'{}'});me=null;cache={};auth();};
@@ -726,9 +751,11 @@ boot();
 
 async function collectionsView(){
   const month = localStorage.tfCollectionMonth || new Date().toISOString().slice(0, 7);
+  let viewMode = localStorage.tfCollectionView || 'cards';
+  let filterState = localStorage.tfCollectionFilter || 'all';
   const data = await api('collections/monthly?month=' + month);
   const s = data.summary || {};
-  const units = data.units || [];
+  const allUnits = data.units || [];
 
   const parts = month.split('-');
   const mNum = parseInt(parts[1], 10) || 1;
@@ -743,6 +770,141 @@ async function collectionsView(){
     if (m > 12) { m = 1; y++; }
     return y + '-' + (m < 10 ? '0' + m : m);
   };
+
+  const paidCount = allUnits.filter(u => u.is_paid).length;
+  const unpaidCount = allUnits.filter(u => !u.is_paid).length;
+  const filteredUnits = allUnits.filter(u => {
+    if (filterState === 'paid') return u.is_paid;
+    if (filterState === 'unpaid') return !u.is_paid;
+    if (filterState === 'closed') return u.occupancy_state === 'closed';
+    if (filterState === 'finishing') return u.occupancy_state === 'finishing';
+    return true;
+  });
+
+  const renderUnitCard = (u) => {
+    let resDisplay = u.resident_name;
+    if (!resDisplay || resDisplay.includes('شاغرة') || resDisplay === 'vacant') {
+      resDisplay = localText('مالك الوحدة (تمليك)', 'Unit Owner (Owned)');
+    }
+    const occState = u.occupancy_state || 'residing';
+    const occBadge = occState === 'closed'
+      ? `<span class="badge" style="background:#fef9c3;color:#854d0e">🟡 ${localText('مغلقة','Closed')}</span>`
+      : (occState === 'finishing'
+        ? `<span class="badge" style="background:#dbeafe;color:#1e40af">🔵 ${localText('تحت التشطيب','Finishing')}</span>`
+        : `<span class="badge" style="background:#dcfce7;color:#166534">🟢 ${localText('مشغولة مقيمة','Residing')}</span>`);
+    const cleanPhone = (u.resident_phone || '').replace(/[^0-9]/g, '');
+    const waPhone = cleanPhone.startsWith('0') ? '20' + cleanPhone.substring(1) : cleanPhone;
+    const waMsg = u.is_paid
+      ? localText('مرحباً ساكن شقة ' + (u.unit_number || u.unit_name) + '، تم استلام اشتراك صيانة شهر ' + month + ' بسند رقم ' + (u.receipt_reference || '-') + '. شكراً لتعاونكم - إدارة البرج.', 'Dues received.')
+      : localText('مرحباً ساكن شقة ' + (u.unit_number || u.unit_name) + '، نذكركم بسداد اشتراك صيانة شهر ' + month + ' بمبلغ ' + u.monthly_fee + ' ج.م. شاكرين حسن تعاونكم - إدارة البرج.', 'Dues reminder.');
+
+    return `
+      <div class="unit-card ${u.is_paid ? 'paid' : 'unpaid'}">
+        <div class="unit-card-header">
+          <div class="unit-card-title">
+            <span class="unit-num-badge">🏢 ${localText('شقة', 'Unit')} ${escape(u.unit_number || u.unit_name)}</span>
+            <span class="unit-floor-badge">${localText('طابق', 'Floor')} ${u.floor || 0}</span>
+          </div>
+          <div class="unit-card-pills">
+            ${occBadge}
+            ${u.is_paid ? `<span class="badge ok">${localText('✅ تم السداد', 'Paid')}</span>` : `<span class="badge warn">${localText('⏳ غير مسدد', 'Unpaid')}</span>`}
+          </div>
+        </div>
+
+        <div class="unit-card-body">
+          <div class="unit-owner-row">
+            <div class="unit-owner-name">
+              <span>👤 ${escape(resDisplay)}</span>
+              ${!u.party_id ? `<button class="ghost micro btn-assign-owner" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-kind="owner" data-occ="${escape(occState)}" style="padding:2px 6px;font-size:0.75rem">${localText('✏️ تعيين','Set')}</button>` : ''}
+            </div>
+            ${u.resident_phone ? `<div class="unit-owner-phone"><a href="tel:${escape(u.resident_phone)}">📞 ${escape(u.resident_phone)}</a></div>` : ''}
+          </div>
+
+          <div class="unit-fee-row">
+            <span class="unit-fee-label">${localText('الاشتراك المطلوب لشهر ' + monthDisplay + ':', 'Dues for ' + monthDisplay + ':')}</span>
+            <span class="unit-fee-amount">${money(u.monthly_fee)}</span>
+          </div>
+
+          ${u.is_paid ? `
+            <div class="unit-paid-info">
+              <span>🧾 ${localText('سند قبض:', 'Receipt:')} <strong>${escape(u.receipt_reference || '-')}</strong></span>
+              ${u.collected_at ? `<small class="muted">${escape(u.collected_at)}</small>` : ''}
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="unit-card-actions">
+          ${!u.is_paid ? `
+            <button class="primary btn-quick-collect" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-res="${escape(resDisplay)}" data-fee="${u.monthly_fee}">
+              ⚡ ${localText('تحصيل فوري', 'Quick Collect')}
+            </button>
+          ` : `
+            <span class="unit-paid-info" style="flex:1;text-align:center;justify-content:center;background:#ecfdf5;font-weight:600">✓ ${localText('مكتمل السداد', 'Paid')}</span>
+          `}
+          ${u.resident_phone ? `
+            <a href="https://api.whatsapp.com/send?phone=${encodeURIComponent(waPhone)}&text=${encodeURIComponent(waMsg)}" target="_blank" class="button whatsapp-btn">
+              💬 ${localText('واتساب', 'WhatsApp')}
+            </a>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  };
+
+  const renderTable = (list) => `
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>${t('unit')}</th>
+            <th>${localText('الساكن / المالك','Resident / Owner')}</th>
+            <th>${localText('المبلغ الشهري','Monthly Fee')}</th>
+            <th>${t('status')}</th>
+            <th>${localText('بيانات السداد','Payment Details')}</th>
+            <th>${localText('إجراء','Action')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.map(u => {
+            let resDisplay = u.resident_name;
+            if (!resDisplay || resDisplay.includes('شاغرة') || resDisplay === 'vacant') {
+              resDisplay = localText('مالك الوحدة (تمليك)', 'Unit Owner (Owned)');
+            }
+            const occState = u.occupancy_state || 'residing';
+            const occBadge = occState === 'closed'
+              ? `<span class="badge" style="background:#fef9c3;color:#854d0e">🟡 ${localText('مغلقة','Closed')}</span>`
+              : (occState === 'finishing'
+                ? `<span class="badge" style="background:#dbeafe;color:#1e40af">🔵 ${localText('تحت التشطيب','Finishing')}</span>`
+                : `<span class="badge" style="background:#dcfce7;color:#166534">🟢 ${localText('مشغولة مقيمة','Residing')}</span>`);
+            const kindBadge = `<span class="badge" style="background:#e0f2fe;color:#0369a1">${localText('تمليك','Owned')}</span>`;
+            const cleanPhone = (u.resident_phone || '').replace(/[^0-9]/g, '');
+            const waPhone = cleanPhone.startsWith('0') ? '20' + cleanPhone.substring(1) : cleanPhone;
+            const waMsg = u.is_paid
+              ? localText('مرحباً ساكن شقة ' + (u.unit_number || u.unit_name) + '، تم استلام اشتراك صيانة شهر ' + month + ' بسند رقم ' + (u.receipt_reference || '-') + '. شكراً لتعاونكم - إدارة البرج.', 'Dues received.')
+              : localText('مرحباً ساكن شقة ' + (u.unit_number || u.unit_name) + '، نذكركم بسداد اشتراك صيانة شهر ' + month + ' بمبلغ ' + u.monthly_fee + ' ج.م. شاكرين حسن تعاونكم - إدارة البرج.', 'Dues reminder.');
+
+            return `
+            <tr>
+              <td><strong>${localText('شقة','Unit')} ${escape(u.unit_number||u.unit_name)}</strong><br><small class="muted">${localText('طابق','Floor')} ${u.floor||0} · ${localText('تمليك','Owned')}</small></td>
+              <td>
+                <strong>${escape(resDisplay)}</strong><br>
+                <small class="muted">${kindBadge} · ${occBadge}${u.resident_phone?' · 📞 '+escape(u.resident_phone):''}</small>
+                ${!u.party_id ? `<br><button class="ghost small btn-assign-owner" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-kind="owner" data-occ="${escape(occState)}" style="margin-top:4px;padding:2px 6px;font-size:0.75rem">${localText('👤 تحديد المالك/الساكن والحالة','👤 Set Resident & State')}</button>` : ''}
+              </td>
+              <td><strong>${money(u.monthly_fee)}</strong></td>
+              <td>${u.is_paid?'<span class="badge ok">'+localText('✅ تم السداد','Paid')+'</span>':'<span class="badge warn">'+localText('⏳ غير مسدد','Unpaid')+'</span>'}</td>
+              <td>${u.is_paid?`<small>🧾 ${escape(u.receipt_reference||'-')}<br>${escape(u.collected_at||'')}</small>`:'-'}</td>
+              <td>
+                ${u.is_paid?'<span class="muted">'+localText('مكتمل','Done')+'</span>':`<button class="primary small btn-quick-collect" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-res="${escape(resDisplay)}" data-fee="${u.monthly_fee}">${localText('⚡ تحصيل فوري','Quick Collect')}</button>`}
+                ${u.resident_phone ? `<a href="https://api.whatsapp.com/send?phone=${encodeURIComponent(waPhone)}&text=${encodeURIComponent(waMsg)}" target="_blank" class="button small ghost" style="margin-inline-start:4px;color:#059669;border-color:#a7f3d0" title="${localText('مراسلة على واتساب','WhatsApp message')}">💬 واتساب</a>` : ''}
+              </td>
+            </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
 
   $('#content').innerHTML = `
     ${head(t('collections'), `<button class="primary" id="btn-batch-generate">${localText('⚡ توليد مطالبات الشهر','⚡ Generate Monthly Dues')}</button>`)}
@@ -768,58 +930,48 @@ async function collectionsView(){
       <article class="card kpi"><h3>${localText('المتبقي للتحصيل','Remaining')}</h3><b style="color:var(--danger,#ef4444)">${money(s.total_remaining||0)}</b><small>${localText('مستحقات معلقة','Pending')}</small></article>
       <article class="card kpi"><h3>${localText('الوحدات المأهولة','Occupancy')}</h3><b>${s.occupied_units||0} / ${s.total_units||0}</b><small>${localText('وحدة مسجلة','registered units')}</small></article>
     </div>
-    <article class="card" style="margin-top:1.5rem">
-      <div class="tablewrap">
-        <table>
-          <thead>
-            <tr>
-              <th>${t('unit')}</th>
-              <th>${localText('الساكن / المالك','Resident / Owner')}</th>
-              <th>${localText('المبلغ الشهري','Monthly Fee')}</th>
-              <th>${t('status')}</th>
-              <th>${localText('بيانات السداد','Payment Details')}</th>
-              <th>${localText('إجراء','Action')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${units.map(u => {
-              let resDisplay = u.resident_name;
-              if (!resDisplay || resDisplay.includes('شاغرة') || resDisplay === 'vacant') {
-                resDisplay = localText('مالك الوحدة (تمليك)', 'Unit Owner (Owned)');
-              }
-              const occState = u.occupancy_state || 'residing';
-              const occBadge = occState === 'closed'
-                ? `<span class="badge" style="background:#fef9c3;color:#854d0e">🟡 ${localText('مغلقة','Closed')}</span>`
-                : (occState === 'finishing'
-                  ? `<span class="badge" style="background:#dbeafe;color:#1e40af">🔵 ${localText('تحت التشطيب','Finishing')}</span>`
-                  : `<span class="badge" style="background:#dcfce7;color:#166534">🟢 ${localText('مشغولة مقيمة','Residing')}</span>`);
-              const kindBadge = `<span class="badge" style="background:#e0f2fe;color:#0369a1">${localText('تمليك','Owned')}</span>`;
-              return `
-              <tr>
-                <td><strong>${localText('شقة','Unit')} ${escape(u.unit_number||u.unit_name)}</strong><br><small class="muted">${localText('طابق','Floor')} ${u.floor||0} · ${localText('تمليك','Owned')}</small></td>
-                <td>
-                  <strong>${escape(resDisplay)}</strong><br>
-                  <small class="muted">${kindBadge} · ${occBadge}${u.resident_phone?' · 📞 '+escape(u.resident_phone):''}</small>
-                  ${!u.party_id ? `<br><button class="ghost small btn-assign-owner" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-kind="owner" data-occ="${escape(occState)}" style="margin-top:4px;padding:2px 6px;font-size:0.75rem">${localText('👤 تحديد المالك/الساكن والحالة','👤 Set Resident & State')}</button>` : ''}
-                </td>
-                <td><strong>${money(u.monthly_fee)}</strong></td>
-                <td>${u.is_paid?'<span class="badge ok">'+localText('✅ تم السداد','Paid')+'</span>':'<span class="badge warn">'+localText('⏳ غير مسدد','Unpaid')+'</span>'}</td>
-                <td>${u.is_paid?`<small>🧾 ${escape(u.receipt_reference||'-')}<br>${escape(u.collected_at||'')}</small>`:'-'}</td>
-                <td>
-                  ${u.is_paid?'<span class="muted">'+localText('مكتمل','Done')+'</span>':`<button class="primary small btn-quick-collect" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-res="${escape(resDisplay)}" data-fee="${u.monthly_fee}">${localText('⚡ تحصيل فوري','Quick Collect')}</button>`}
-                  ${u.resident_phone ? `<a href="https://api.whatsapp.com/send?phone=${encodeURIComponent((u.resident_phone.startsWith('0')?'20'+u.resident_phone.substring(1):u.resident_phone).replace(/[^0-9]/g,''))}&text=${encodeURIComponent(u.is_paid ? localText('مرحباً ساكن شقة ' + (u.unit_number||u.unit_name) + '، تم استلام اشتراك صيانة شهر ' + month + ' بسند رقم ' + (u.receipt_reference||'-') + '. شكراً لتعاونكم - إدارة البرج.', 'Dues for ' + month + ' received.') : localText('مرحباً ساكن شقة ' + (u.unit_number||u.unit_name) + '، نذكركم بسداد اشتراك صيانة شهر ' + month + ' بمبلغ ' + u.monthly_fee + ' ج.م. شاكرين حسن تعاونكم - إدارة البرج.', 'Dues for ' + month + ' reminder.'))}" target="_blank" class="button small ghost" style="margin-inline-start:4px;color:#059669;border-color:#a7f3d0" title="${localText('مراسلة على واتساب','WhatsApp message')}">💬 واتساب</a>` : ''}
-                </td>
-              </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
+
+    <!-- Units Control Bar: Switcher (Cards vs Table) & Filter Tabs -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:1.5rem">
+      <div class="view-switcher">
+        <button class="view-btn ${viewMode === 'cards' ? 'active' : ''}" id="btn-view-cards">🗂️ ${localText('بطاقات ذكية', 'Smart Cards')}</button>
+        <button class="view-btn ${viewMode === 'table' ? 'active' : ''}" id="btn-view-table">📋 ${localText('جدول تفصيلي', 'Table')}</button>
       </div>
-    </article>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="view-btn ${filterState === 'all' ? 'active' : ''}" id="filter-all">${localText('الكل (' + allUnits.length + ')', 'All (' + allUnits.length + ')')}</button>
+        <button class="view-btn ${filterState === 'unpaid' ? 'active' : ''}" id="filter-unpaid" style="color:var(--danger,#ef4444)">⏳ ${localText('غير مسدد (' + unpaidCount + ')', 'Unpaid (' + unpaidCount + ')')}</button>
+        <button class="view-btn ${filterState === 'paid' ? 'active' : ''}" id="filter-paid" style="color:var(--success,#10b981)">✅ ${localText('مسدد (' + paidCount + ')', 'Paid (' + paidCount + ')')}</button>
+      </div>
+    </div>
+
+    <div id="units-view-container" style="margin-top:1rem">
+      ${viewMode === 'cards' ? `
+        <div class="units-grid">
+          ${filteredUnits.map(renderUnitCard).join('')}
+        </div>
+      ` : `
+        <article class="card">
+          ${renderTable(filteredUnits)}
+        </article>
+      `}
+      ${filteredUnits.length === 0 ? `
+        <div class="card" style="text-align:center;padding:2rem;color:var(--text-muted,#64748b)">
+          ${localText('لا توجد شقق مطابقة للفلتر المحدد.', 'No units matching the selected filter.')}
+        </div>
+      ` : ''}
+    </div>
   `;
 
   $('#btn-prev-month').onclick = () => { localStorage.tfCollectionMonth = shift(-1); collectionsView(); };
   $('#btn-next-month').onclick = () => { localStorage.tfCollectionMonth = shift(1); collectionsView(); };
+
+  $('#btn-view-cards').onclick = () => { localStorage.tfCollectionView = 'cards'; collectionsView(); };
+  $('#btn-view-table').onclick = () => { localStorage.tfCollectionView = 'table'; collectionsView(); };
+
+  $('#filter-all').onclick = () => { localStorage.tfCollectionFilter = 'all'; collectionsView(); };
+  $('#filter-unpaid').onclick = () => { localStorage.tfCollectionFilter = 'unpaid'; collectionsView(); };
+  $('#filter-paid').onclick = () => { localStorage.tfCollectionFilter = 'paid'; collectionsView(); };
 
   $('#btn-batch-generate').onclick = async () => {
     const fee = prompt(localText('أدخل قيمة اشتراك الصيانة والخدمات الشهري للشقق (مثال: 500):','Enter default monthly maintenance fee for units:'), '500');

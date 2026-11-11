@@ -1119,3 +1119,288 @@ dialog .actions { justify-content: flex-end; border-top: 1px solid var(--line); 
 #camera-form label{display:grid;gap:7px}#camera-form .full{grid-column:1/-1}#camera-form input[type=checkbox]{width:auto;justify-self:start}
 #camera-form input[name=endpoint],#camera-form input[name=profile_token],#camera-form input[name=adapter]{direction:ltr;text-align:left}
 @media(max-width:600px){#camera-form{grid-template-columns:1fr}.camera-card .actions button{flex:1 1 140px}}
+
+/* ==========================================================================
+   MODERN UNIT CARDS & BOTTOM NAVIGATION (Executive Style)
+   ========================================================================== */
+
+/* Units Grid */
+.units-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (max-width: 600px) {
+  .units-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.unit-card {
+  background: var(--card, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.unit-card:hover {
+  border-color: var(--primary, #0f766e);
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.08);
+}
+
+.unit-card.paid {
+  border-inline-start: 4px solid var(--success, #10b981);
+}
+
+.unit-card.unpaid {
+  border-inline-start: 4px solid var(--danger, #ef4444);
+}
+
+.unit-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.unit-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unit-num-badge {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text, #0f172a);
+}
+
+.unit-floor-badge {
+  font-size: 0.75rem;
+  background: var(--bg-muted, #f1f5f9);
+  color: var(--text-muted, #64748b);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.unit-card-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.unit-card-body {
+  background: var(--bg-muted, #f8fafc);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.88rem;
+}
+
+[data-theme="dark"] .unit-card-body {
+  background: #111827;
+}
+
+.unit-owner-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.unit-owner-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text, #0f172a);
+}
+
+.unit-owner-phone a {
+  color: var(--primary, #0f766e);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.unit-fee-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border, #e2e8f0);
+}
+
+.unit-fee-label {
+  color: var(--text-muted, #64748b);
+  font-size: 0.82rem;
+}
+
+.unit-fee-amount {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary, #0f766e);
+}
+
+.unit-paid-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--success, #059669);
+  background: #ecfdf5;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+[data-theme="dark"] .unit-paid-info {
+  background: #064e3b;
+  color: #34d399;
+}
+
+.unit-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.unit-card-actions button,
+.unit-card-actions a.button {
+  flex: 1;
+  text-align: center;
+  justify-content: center;
+  min-height: 38px;
+  font-size: 0.88rem;
+}
+
+.whatsapp-btn {
+  background: #ecfdf5 !important;
+  color: #059669 !important;
+  border: 1px solid #a7f3d0 !important;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.whatsapp-btn:hover {
+  background: #d1fae5 !important;
+}
+
+[data-theme="dark"] .whatsapp-btn {
+  background: #064e3b !important;
+  color: #6ee7b7 !important;
+  border-color: #047857 !important;
+}
+
+/* View Switcher Bar */
+.view-switcher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-muted, #f1f5f9);
+  padding: 4px;
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.view-btn {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted, #64748b);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.view-btn.active {
+  background: var(--card, #ffffff);
+  color: var(--text, #0f172a);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--card, #ffffff);
+    border-top: 1px solid var(--border, #e2e8f0);
+    z-index: 25;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.95);
+  }
+
+  [data-theme="dark"] .mobile-bottom-nav {
+    background-color: rgba(15, 23, 42, 0.95);
+    border-top-color: #1e293b;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  .mobile-bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #64748b);
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 4px;
+    flex: 1;
+    min-height: 52px;
+    transition: color 0.15s ease;
+  }
+
+  .mobile-bottom-nav-item svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobile-bottom-nav-item.active {
+    color: var(--primary, #0f766e);
+  }
+
+  [data-theme="dark"] .mobile-bottom-nav-item.active {
+    color: #2dd4bf;
+  }
+
+  .content-wrap {
+    padding-bottom: 84px !important;
+  }
+}

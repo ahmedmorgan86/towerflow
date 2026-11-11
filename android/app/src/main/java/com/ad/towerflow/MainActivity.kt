@@ -226,6 +226,104 @@ class MainActivity : Activity() {
         )
     }
 
+    private fun buildBottomNav(currentHeading: String, navBarHeight: Int): View {
+        val nav = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            gravity = Gravity.CENTER_VERTICAL
+            weightSum = 5f
+            layoutDirection = if (arabic) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+            background = roundedDrawable(
+                if (dark) Color.parseColor("#0C0E14") else Color.WHITE,
+                0f,
+                if (dark) Color.parseColor("#1E2330") else Color.parseColor("#E2E8F0")
+            )
+            val bottomPad = if (navBarHeight > 0) navBarHeight + dp(4) else dp(10)
+            setPadding(dp(4), dp(8), dp(4), bottomPad)
+        }
+
+        data class NavTab(val id: String, val icon: String, val titleAr: String, val titleEn: String, val action: () -> Unit)
+
+        val isResident = role == "resident"
+        val tabs = if (isResident) {
+            listOf(
+                NavTab("home", "🏠", "الرئيسية", "Home") { home() },
+                NavTab("invoices", "⚡", "مستحقاتي", "Invoices") { listing("invoices") },
+                NavTab("tickets", "🛠️", "الصيانة", "Tickets") { listing("tickets") },
+                NavTab("announcements", "📢", "الإعلانات", "News") { listing("announcements") },
+                NavTab("profile", "👤", "حسابي", "Profile") { profile() }
+            )
+        } else {
+            listOf(
+                NavTab("collections", "⚡", "التحصيل", "Collect") { monthlyCollections() },
+                NavTab("properties", "🏢", "الأبراج", "Towers") { manageTowers() },
+                NavTab("units", "🚪", "الشقق", "Units") { listing("units") },
+                NavTab("expenses", "💸", "المصروفات", "Expenses") { listing("expenses") },
+                NavTab("tickets", "🛠️", "الصيانة", "Tickets") { listing("tickets") }
+            )
+        }
+
+        fun isTabActive(tabId: String): Boolean {
+            val h = currentHeading.lowercase()
+            return when (tabId) {
+                "collections" -> h.contains("تحصيل") || h.contains("collection")
+                "properties" -> h.contains("أبراج") || h.contains("عمارات") || h.contains("tower") || h.contains("propert")
+                "units" -> h.contains("شقق") || h.contains("وحدات") || h.contains("unit")
+                "expenses" -> h.contains("مصروف") || h.contains("expense")
+                "tickets" -> h.contains("صيان") || h.contains("تذكر") || h.contains("ticket") || h.contains("mainten")
+                "invoices" -> h.contains("مستحق") || h.contains("فواتير") || h.contains("invoice")
+                "announcements" -> h.contains("إعلان") || h.contains("announc")
+                "profile" -> h.contains("ملف") || h.contains("حساب") || h.contains("profile")
+                "home" -> h.contains("لوحة") || h.contains("dash") || h.contains("home")
+                else -> false
+            }
+        }
+
+        for (tab in tabs) {
+            val active = isTabActive(tab.id)
+            val tabView = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                setPadding(dp(2), dp(4), dp(2), dp(4))
+                isClickable = true
+                isFocusable = true
+                if (active) {
+                    background = roundedDrawable(
+                        if (dark) Color.parseColor("#1E1B4B") else Color.parseColor("#EEF2FF"),
+                        10f
+                    )
+                }
+
+                val iconTv = TextView(this@MainActivity).apply {
+                    text = tab.icon
+                    textSize = 17f
+                    gravity = Gravity.CENTER
+                }
+                addView(iconTv)
+
+                val labelTv = TextView(this@MainActivity).apply {
+                    text = text(tab.titleAr, tab.titleEn)
+                    textSize = 10f
+                    typeface = Typeface.create(cairoFont, if (active) Typeface.BOLD else Typeface.NORMAL)
+                    setTextColor(Color.parseColor(if (active) (if (dark) "#818CF8" else "#4F46E5") else (if (dark) "#64748B" else "#94A3B8")))
+                    gravity = Gravity.CENTER
+                    maxLines = 1
+                    ellipsize = TextUtils.TruncateAt.END
+                    setPadding(0, dp(2), 0, 0)
+                }
+                addView(labelTv)
+
+                setOnClickListener {
+                    tab.action()
+                }
+            }
+            nav.addView(tabView)
+        }
+
+        return nav
+    }
+
     private fun scaffold(heading: String, showBack: Boolean = false, onBack: (() -> Unit)? = null) {
         // Dynamic Status Bar & Navigation Bar Theming (Matches Executive Web Palette)
         try {
@@ -264,7 +362,20 @@ class MainActivity : Activity() {
             layoutDirection = if (arabic) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
         }
         scroll.addView(screen)
-        setContentView(scroll)
+
+        if (token.isNotEmpty()) {
+            val rootLayout = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                setBackgroundColor(Color.parseColor(if (dark) "#090A0F" else "#F8FAFC"))
+            }
+            scroll.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
+            rootLayout.addView(scroll)
+            rootLayout.addView(buildBottomNav(heading, navBarHeight))
+            setContentView(rootLayout)
+        } else {
+            setContentView(scroll)
+        }
 
         // Modern Header TopBar with absolute RTL/LTR side-switching support
         val topBar = LinearLayout(this).apply {
@@ -2033,13 +2144,42 @@ class MainActivity : Activity() {
                 }
                 topRow.addView(titleTv)
 
+                val occState = u.optString("occupancy_state", "residing")
+                val occBadgeTv = TextView(this@MainActivity).apply {
+                    text = when (occState) {
+                        "closed" -> text("🟡 مغلقة", "🟡 Closed")
+                        "finishing" -> text("🔵 تشطيب", "🔵 Finishing")
+                        else -> text("🟢 مقيمة", "🟢 Residing")
+                    }
+                    textSize = 10f
+                    typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                    setTextColor(Color.parseColor(when (occState) {
+                        "closed" -> if (dark) "#FDE047" else "#854D0E"
+                        "finishing" -> if (dark) "#93C5FD" else "#1E40AF"
+                        else -> if (dark) "#86EFAC" else "#166534"
+                    }))
+                    setPadding(dp(7), dp(3), dp(7), dp(3))
+                    background = roundedDrawable(
+                        Color.parseColor(when (occState) {
+                            "closed" -> if (dark) "#422006" else "#FEF9C3"
+                            "finishing" -> if (dark) "#172554" else "#DBEAFE"
+                            else -> if (dark) "#052E16" else "#DCFCE7"
+                        }),
+                        8f
+                    )
+                    layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                        marginEnd = dp(6)
+                    }
+                }
+                topRow.addView(occBadgeTv)
+
                 val badgeTv = TextView(this@MainActivity).apply {
                     text = if (isPaid) {
                         text("✅ تم السداد", "✅ Paid")
                     } else if (fee > 0) {
-                        text("⏳ بانتظار السداد", "⏳ Pending")
+                        text("⏳ غير مسدد", "⏳ Pending")
                     } else {
-                        if (isOwnedUnit) text("🏢 وحدة تمليك", "🏢 Owned Unit") else text("⚪ بدون اشتراك", "⚪ No Dues")
+                        if (isOwnedUnit) text("🏢 تمليك", "🏢 Owned") else text("⚪ بدون اشتراك", "⚪ No Dues")
                     }
                     textSize = 10.5f
                     typeface = Typeface.create(cairoFont, Typeface.BOLD)
