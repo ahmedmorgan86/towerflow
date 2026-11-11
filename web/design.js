@@ -38,9 +38,16 @@ export function architecture(){
         <stop offset="1" stop-color="#3730a3"/>
       </linearGradient>
       <pattern id="windows" width="25" height="28" patternUnits="userSpaceOnUse">
-        <path d="M6 0v18" stroke="#5EEAD4" stroke-width="8" opacity=".4"/>
+        <path class="arch-window" d="M6 0v18" stroke="#5EEAD4" stroke-width="8" opacity=".4"/>
       </pattern>
     </defs>
+    <!-- Ambient Stars & Micro-Lights in the Night Sky -->
+    <circle class="arch-star arch-star-1" cx="95" cy="70" r="1.5" fill="#5EEAD4"/>
+    <circle class="arch-star arch-star-2" cx="395" cy="40" r="2" fill="#5EEAD4"/>
+    <circle class="arch-star arch-star-3" cx="480" cy="95" r="1.5" fill="#5EEAD4"/>
+    <circle class="arch-star arch-star-4" cx="210" cy="35" r="1.2" fill="#99F6E4"/>
+    <circle class="arch-star arch-star-2" cx="150" cy="110" r="1.2" fill="#5EEAD4"/>
+
     <ellipse cx="293" cy="309" rx="223" ry="24" fill="#090a0f" opacity=".4"/>
     <path d="m80 293 72-34 94 25-70 34zM340 297l87-42 77 30-83 43z" fill="#1e2330"/>
     <path d="M170 302V120l110-55v237z" fill="url(#towerFront)"/>
@@ -54,11 +61,17 @@ export function architecture(){
     <path d="m420 143 43 25v139h-43z" fill="#1f223a"/>
     <path d="M364 291v-105l44-22v127z" fill="url(#windows)"/>
     <path d="M249 301v-39l18-8v47z" fill="#0f111a"/>
-    <path d="M216 108 280 76l64 36" stroke="#5EEAD4" stroke-width="2"/>
+    <ellipse class="arch-entrance-glow" cx="258" cy="301" rx="14" ry="4" fill="#5EEAD4" opacity="0.6"/>
+    <path class="arch-accent-line" d="M216 108 280 76l64 36" stroke="#5EEAD4" stroke-width="2.5"/>
     <path d="M76 315h427" stroke="#0D9488" stroke-opacity=".3"/>
     <path d="M133 311v-30m-9 10c-15-20 3-43 13-30 18-6 18 23 4 31M444 317v-33m-7 8c-19-22 3-43 13-29 17-8 20 24 4 31" stroke="#0D9488" stroke-width="7" stroke-linecap="round"/>
     <circle cx="397" cy="79" r="24" stroke="#5EEAD4" stroke-opacity=".3"/>
     <path d="m388 79 6 6 12-13" stroke="#5EEAD4" stroke-width="3" stroke-linecap="round"/>
     <path d="M83 100h40m-20-20v40" stroke="#0D9488" stroke-opacity=".3"/>
+
+    <!-- Radio Tower Beacon on Main Tower Top (280, 65) -->
+    <circle class="arch-beacon-wave" cx="280" cy="65" r="4" stroke="#5EEAD4" fill="none"/>
+    <circle class="arch-beacon-wave-2" cx="280" cy="65" r="4" stroke="#5EEAD4" fill="none"/>
+    <circle class="arch-beacon" cx="280" cy="65" r="3.5" fill="#5EEAD4"/>
   </svg>`;
 }
