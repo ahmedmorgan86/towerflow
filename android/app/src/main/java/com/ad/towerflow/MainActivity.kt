@@ -2735,6 +2735,37 @@ class MainActivity : Activity() {
                         layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
                     })
 
+                    if (entity == "units") {
+                        val occ = row.optString("occupancy_state", "residing")
+                        val occTv = TextView(this@MainActivity).apply {
+                            text = when (occ) {
+                                "closed" -> text("🟡 مغلقة", "🟡 Closed")
+                                "finishing" -> text("🔵 تشطيب", "🔵 Finishing")
+                                else -> text("🟢 مقيمة", "🟢 Residing")
+                            }
+                            textSize = 10f
+                            typeface = Typeface.create(cairoFont, Typeface.BOLD)
+                            setTextColor(Color.parseColor(when (occ) {
+                                "closed" -> if (dark) "#FDE047" else "#854D0E"
+                                "finishing" -> if (dark) "#93C5FD" else "#1E40AF"
+                                else -> if (dark) "#86EFAC" else "#166534"
+                            }))
+                            setPadding(dp(7), dp(3), dp(7), dp(3))
+                            background = roundedDrawable(
+                                Color.parseColor(when (occ) {
+                                    "closed" -> if (dark) "#422006" else "#FEF9C3"
+                                    "finishing" -> if (dark) "#172554" else "#DBEAFE"
+                                    else -> if (dark) "#052E16" else "#DCFCE7"
+                                }),
+                                8f
+                            )
+                            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+                                marginEnd = dp(6)
+                            }
+                        }
+                        topRow.addView(occTv)
+                    }
+
                     if (status.isNotEmpty()) {
                         val badge = TextView(this@MainActivity).apply {
                             text = when (status) {
@@ -2773,6 +2804,17 @@ class MainActivity : Activity() {
 
                     // Secondary Details Grid
                     val detailsList = mutableListOf<Pair<String, String>>()
+                    if (entity == "units") {
+                        val occ = row.optString("occupancy_state", "residing")
+                        val occName = when (occ) {
+                            "closed" -> text("مغلقة 🟡", "Closed 🟡")
+                            "finishing" -> text("تحت التشطيب 🔵", "Finishing 🔵")
+                            else -> text("مشغولة ومقيمة 🟢", "Residing 🟢")
+                        }
+                        detailsList.add(Pair(text("حالة الإشغال:", "Occupancy:"), occName))
+                        val phone = row.optString("resident_phone")
+                        if (phone.isNotEmpty()) detailsList.add(Pair(text("هاتف الساكن:", "Phone:"), phone))
+                    }
                     if (propName.isNotEmpty()) detailsList.add(Pair(text("العقار / البرج:", "Property:"), propName))
                     if (unitName.isNotEmpty()) detailsList.add(Pair(text("الوحدة السكنية:", "Unit:"), unitName))
                     if (partyName.isNotEmpty()) detailsList.add(Pair(text("الطرف المعني:", "Resident / Party:"), partyName))

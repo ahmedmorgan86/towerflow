@@ -448,52 +448,78 @@ async function dashboard(){
 
    <div class="dashboard-bottom" style="margin-top:1.5rem">
      <article class="card">
-       <div class="card-header">
-         <h2>${localText('موقف تحصيل شقق البرج لشهر ' + monthDisplay, 'Tower Units Collection Status')}</h2>
-         <button class="primary small" data-go="collections">${localText('فتح شاشة التحصيل الكاملة ⚡','Open Full Collections')}</button>
-       </div>
-       ${units.length ? `
-         <div class="tablewrap">
-           <table>
-             <thead>
-               <tr>
-                 <th>${t('unit')}</th>
-                 <th>${localText('الساكن / المالك','Resident')}</th>
-                 <th>${localText('الحالة','State')}</th>
-                 <th>${localText('المبلغ الشهري','Monthly Fee')}</th>
-                 <th>${localText('حالة السداد','Status')}</th>
-                 <th>${localText('التواصل والإجراء','Action')}</th>
-               </tr>
-             </thead>
-             <tbody>
-               ${units.slice(0, 8).map(u => {
-                 const stateBadge = u.occupancy_state === 'closed'
-                   ? `<span class="badge" style="background:#fef9c3;color:#854d0e">🟡 ${localText('مغلقة','Closed')}</span>`
-                   : (u.occupancy_state === 'finishing'
-                     ? `<span class="badge" style="background:#dbeafe;color:#1e40af">🔵 ${localText('تشطيب','Finishing')}</span>`
-                     : `<span class="badge" style="background:#dcfce7;color:#166534">🟢 ${localText('مشغولة مقيمة','Residing')}</span>`);
-                 return `
-                   <tr>
-                     <td><strong>${localText('شقة','Unit')} ${escape(u.unit_number||u.unit_name)}</strong><br><small class="muted">${localText('طابق','Floor')} ${u.floor||0} · ${localText('تمليك','Owned')}</small></td>
-                     <td>
-                       <strong>${escape(u.resident_name || localText('مالك الوحدة (تمليك)','Owner'))}</strong>
-                       ${u.resident_phone ? `<br><small class="muted">📞 ${escape(u.resident_phone)}</small>` : ''}
-                     </td>
-                     <td>${stateBadge}</td>
-                     <td><strong>${money(u.monthly_fee)}</strong></td>
-                     <td>${u.is_paid ? `<span class="badge ok">${localText('✅ تم السداد','Paid')}</span>` : `<span class="badge warn">${localText('⏳ غير مسدد','Unpaid')}</span>`}</td>
-                     <td>
-                       ${u.resident_phone ? `<a href="https://api.whatsapp.com/send?phone=${encodeURIComponent((u.resident_phone.startsWith('0')?'20'+u.resident_phone.substring(1):u.resident_phone).replace(/[^0-9]/g,''))}&text=${encodeURIComponent(u.is_paid ? localText('مرحباً ساكن شقة ' + (u.unit_number||u.unit_name) + '، تم استلام اشتراك صيانة شهر ' + month + ' بسند رقم ' + (u.receipt_reference||'-') + '. شكراً لتعاونكم - إدارة البرج.', 'Dues for ' + month + ' received.') : localText('مرحباً ساكن شقة ' + (u.unit_number||u.unit_name) + '، نذكركم بسداد اشتراك صيانة شهر ' + month + ' بمبلغ ' + u.monthly_fee + ' ج.م. شاكرين حسن تعاونكم - إدارة البرج.', 'Dues for ' + month + ' reminder.'))}" target="_blank" class="button small ghost" style="color:#059669;border-color:#a7f3d0" title="WhatsApp">💬 واتساب</a>` : ''}
-                       ${!u.is_paid ? `<button class="primary small btn-quick-collect" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-res="${escape(u.resident_name || localText('مالك الوحدة','Owner'))}" data-fee="${u.monthly_fee}" style="margin-inline-start:4px">${localText('⚡ تحصيل','Collect')}</button>` : ''}
-                     </td>
-                   </tr>
-                 `;
-               }).join('')}
-             </tbody>
-           </table>
-         </div>
-       ` : `<div class="empty"><p>${localText('لم يتم تسجيل شقق في هذا البرج بعد.','No units registered yet.')}</p><button class="primary" data-go="units">${localText('إضافة الشقق','Add Units')}</button></div>`}
-     </article>
+        <div class="card-header">
+          <h2>${localText('بطاقات تحصيل شقق البرج لشهر ' + monthDisplay, 'Tower Units Smart Collection Cards')}</h2>
+          <button class="primary small" data-go="collections">${localText('فتح شاشة التحصيل الكاملة ⚡','Open Full Collections')}</button>
+        </div>
+        ${units.length ? `
+          <div class="units-grid" style="margin-top:0.75rem">
+            ${units.slice(0, 6).map(u => {
+              let resDisplay = u.resident_name;
+              if (!resDisplay || resDisplay.includes('شاغرة') || resDisplay === 'vacant') {
+                resDisplay = localText('مالك الوحدة (تمليك)', 'Unit Owner (Owned)');
+              }
+              const occState = u.occupancy_state || 'residing';
+              const occBadge = occState === 'closed'
+                ? `<span class="badge" style="background:#fef9c3;color:#854d0e">🟡 ${localText('مغلقة','Closed')}</span>`
+                : (occState === 'finishing'
+                  ? `<span class="badge" style="background:#dbeafe;color:#1e40af">🔵 ${localText('تشطيب','Finishing')}</span>`
+                  : `<span class="badge" style="background:#dcfce7;color:#166534">🟢 ${localText('مشغولة','Residing')}</span>`);
+              const cleanPhone = (u.resident_phone || '').replace(/[^0-9]/g, '');
+              const waPhone = cleanPhone.startsWith('0') ? '20' + cleanPhone.substring(1) : cleanPhone;
+              const waMsg = u.is_paid
+                ? localText('مرحباً ساكن شقة ' + (u.unit_number || u.unit_name) + '، تم استلام اشتراك صيانة شهر ' + month + ' بسند رقم ' + (u.receipt_reference || '-') + '. شكراً لتعاونكم - إدارة البرج.', 'Dues received.')
+                : localText('مرحباً ساكن شقة ' + (u.unit_number || u.unit_name) + '، نذكركم بسداد اشتراك صيانة شهر ' + month + ' بمبلغ ' + u.monthly_fee + ' ج.م. شاكرين حسن تعاونكم - إدارة البرج.', 'Dues reminder.');
+
+              return `
+                <div class="unit-card ${u.is_paid ? 'paid' : 'unpaid'}">
+                  <div class="unit-card-header">
+                    <div class="unit-card-title">
+                      <span class="unit-num-badge">🏢 ${localText('شقة', 'Unit')} ${escape(u.unit_number || u.unit_name)}</span>
+                      <span class="unit-floor-badge">${localText('طابق', 'Floor')} ${u.floor || 0}</span>
+                    </div>
+                    <div class="unit-card-pills">
+                      ${occBadge}
+                      ${u.is_paid ? `<span class="badge ok">${localText('✅ مسدد', 'Paid')}</span>` : `<span class="badge warn">${localText('⏳ غير مسدد', 'Unpaid')}</span>`}
+                    </div>
+                  </div>
+                  <div class="unit-card-body">
+                    <div class="unit-owner-row">
+                      <div class="unit-owner-name">
+                        <span>👤 ${escape(resDisplay)}</span>
+                      </div>
+                      ${u.resident_phone ? `<div class="unit-owner-phone"><a href="tel:${escape(u.resident_phone)}">📞 ${escape(u.resident_phone)}</a></div>` : ''}
+                    </div>
+                    <div class="unit-fee-row">
+                      <span class="unit-fee-label">${localText('الاشتراك المطلوب:', 'Monthly Dues:')}</span>
+                      <span class="unit-fee-amount">${money(u.monthly_fee)}</span>
+                    </div>
+                    ${u.is_paid ? `
+                      <div class="unit-paid-info">
+                        <span>🧾 ${localText('سند قبض:', 'Receipt:')} <strong>${escape(u.receipt_reference || '-')}</strong></span>
+                      </div>
+                    ` : ''}
+                  </div>
+                  <div class="unit-card-actions">
+                    ${!u.is_paid ? `
+                      <button class="primary small btn-quick-collect" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-res="${escape(resDisplay)}" data-fee="${u.monthly_fee}">
+                        ⚡ ${localText('تحصيل فوري', 'Quick Collect')}
+                      </button>
+                    ` : `
+                      <span class="unit-paid-info" style="flex:1;text-align:center;justify-content:center;background:#ecfdf5;font-weight:600">✓ ${localText('تم التحصيل', 'Paid')}</span>
+                    `}
+                    ${u.resident_phone ? `
+                      <a href="https://api.whatsapp.com/send?phone=${encodeURIComponent(waPhone)}&text=${encodeURIComponent(waMsg)}" target="_blank" class="button small whatsapp-btn">
+                        💬 ${localText('واتساب', 'WhatsApp')}
+                      </a>
+                    ` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : `<div class="empty"><p>${localText('لم يتم تسجيل شقق في هذا البرج بعد.','No units registered yet.')}</p><button class="primary" data-go="units">${localText('إضافة الشقق','Add Units')}</button></div>`}
+      </article>
    </div>
  `;
 
