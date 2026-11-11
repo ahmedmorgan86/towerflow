@@ -122,17 +122,19 @@ class MainActivity : Activity() {
             "maintenance_fund" -> text("صندوق الصيانة والخدمات", "Maintenance Fund")
             "fines_fund" -> text("صندوق الغرامات والجزاءات", "Fines Fund")
 
-            "vacant" -> text("شاغرة وغير مشغولة", "Vacant")
-            "occupied" -> text("مشغولة / مؤجرة", "Occupied")
-            "owned" -> text("وحدة تمليك", "Owned")
-            "rental" -> text("وحدة إيجار", "Rental")
-            "maintenance" -> text("تحت أعمال الصيانة", "Under Maintenance")
+            "vacant" -> text("مغلقة 🟡", "Closed 🟡")
+            "occupied" -> text("مشغولة ومقيمة 🟢", "Residing 🟢")
+            "owned" -> text("تمليك", "Owned")
+            "rental" -> text("إيجار", "Rental")
+            "maintenance" -> text("تحت التشطيب 🔵", "Under Finishing 🔵")
+            "residing" -> text("مشغولة ومقيمة 🟢", "Residing 🟢")
+            "closed" -> text("مغلقة 🟡", "Closed 🟡")
+            "finishing" -> text("تحت التشطيب 🔵", "Finishing 🔵")
 
             "open" -> text("مفتوح", "Open")
             "assigned" -> text("تم إسنادها للفني", "Assigned")
             "in_progress" -> text("قيد التنفيذ والمتابعة", "In Progress")
             "resolved" -> text("تم الحل والمعالجة", "Resolved")
-            "closed" -> text("مغلق", "Closed")
             "active" -> text("نشط وسارٍ", "Active")
             "ended" -> text("منتهٍ", "Ended")
             "draft" -> text("مسودة غير معتمدة", "Draft")
@@ -3011,8 +3013,8 @@ class MainActivity : Activity() {
     }
 
     private val forms = mapOf(
-        "properties" to listOf("name", "address"),
-        "units" to listOf("property_id", "unit_number", "floor", "ownership_type", "area"),
+        "properties" to listOf("name", "address", "instapay_id", "wallet_number"),
+        "units" to listOf("property_id", "unit_number", "floor", "occupancy_state", "resident_phone", "area"),
         "parties" to listOf("name", "kind", "email", "phone"),
         "leases" to listOf("unit_id", "party_id", "start_date", "end_date", "rent", "status"),
         "ownerships" to listOf("unit_id", "party_id", "share"),
@@ -3084,7 +3086,11 @@ class MainActivity : Activity() {
         "floors_count" to Pair("عدد الطوابق", "Floors Count"),
         "units_per_floor" to Pair("عدد الوحدات بكل طابق", "Units Per Floor"),
         "prefix" to Pair("بادئة الترقيم", "Prefix"),
-        "invoice_id" to Pair("رقم الفاتورة", "Invoice ID")
+        "invoice_id" to Pair("رقم الفاتورة", "Invoice ID"),
+        "instapay_id" to Pair("معرّف إنستاباي InstaPay IPA", "InstaPay IPA"),
+        "wallet_number" to Pair("رقم المحفظة الإلكترونية", "E-Wallet Number"),
+        "occupancy_state" to Pair("حالة إشغال الوحدة", "Occupancy State"),
+        "resident_phone" to Pair("رقم هاتف الساكن (واتساب)", "Resident Phone (WhatsApp)")
     )
 
     private fun fieldTitle(k: String) = fieldNames[k]?.let { if (arabic) it.first else it.second } ?: k.replace('_', ' ')
@@ -3118,6 +3124,7 @@ class MainActivity : Activity() {
                     key == "frequency" && entity == "vendor_contracts" -> listOf("monthly", "quarterly", "yearly", "one_time")
                     key == "period" && entity == "budgets" -> listOf("monthly", "quarterly", "annual")
                     key == "status" && entity == "units" -> listOf("vacant", "occupied", "owned", "maintenance")
+                    key == "occupancy_state" && entity == "units" -> listOf("residing", "closed", "finishing")
                     key == "ownership_type" && entity == "units" -> listOf("owned", "rental")
                     key == "status" && entity == "leases" -> listOf("active", "ended")
                     key == "priority" -> listOf("normal", "low", "urgent")

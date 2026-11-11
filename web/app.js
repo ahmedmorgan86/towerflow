@@ -783,21 +783,24 @@ async function collectionsView(){
           </thead>
           <tbody>
             ${units.map(u => {
-              const isOwned = u.ownership_type === 'owned' || u.status === 'owned' || u.resident_kind === 'owner';
               let resDisplay = u.resident_name;
-              if (isOwned && (!resDisplay || resDisplay.includes('شاغرة') || resDisplay === 'vacant')) {
+              if (!resDisplay || resDisplay.includes('شاغرة') || resDisplay === 'vacant') {
                 resDisplay = localText('مالك الوحدة (تمليك)', 'Unit Owner (Owned)');
               }
-              const kindBadge = isOwned
-                ? `<span class="badge" style="background:#e0f2fe;color:#0369a1">${localText('وحدة تمليك','Owned Unit')}</span>`
-                : (u.resident_kind === 'tenant' ? `<span class="badge" style="background:#f1f5f9;color:#475569">${localText('مستأجر','Tenant')}</span>` : `<span class="badge" style="background:#fef3c7;color:#b45309">${localText('شاغرة للإيجار','Vacant Rental')}</span>`);
+              const occState = u.occupancy_state || 'residing';
+              const occBadge = occState === 'closed'
+                ? `<span class="badge" style="background:#fef9c3;color:#854d0e">🟡 ${localText('مغلقة','Closed')}</span>`
+                : (occState === 'finishing'
+                  ? `<span class="badge" style="background:#dbeafe;color:#1e40af">🔵 ${localText('تحت التشطيب','Finishing')}</span>`
+                  : `<span class="badge" style="background:#dcfce7;color:#166534">🟢 ${localText('مشغولة مقيمة','Residing')}</span>`);
+              const kindBadge = `<span class="badge" style="background:#e0f2fe;color:#0369a1">${localText('تمليك','Owned')}</span>`;
               return `
               <tr>
-                <td><strong>${localText('شقة','Unit')} ${escape(u.unit_number||u.unit_name)}</strong><br><small class="muted">${localText('طابق','Floor')} ${u.floor||0} · ${isOwned ? localText('تمليك','Owned') : localText('إيجار','Rental')}</small></td>
+                <td><strong>${localText('شقة','Unit')} ${escape(u.unit_number||u.unit_name)}</strong><br><small class="muted">${localText('طابق','Floor')} ${u.floor||0} · ${localText('تمليك','Owned')}</small></td>
                 <td>
                   <strong>${escape(resDisplay)}</strong><br>
-                  <small class="muted">${kindBadge}${u.resident_phone?' · 📞 '+escape(u.resident_phone):''}</small>
-                  ${!u.party_id ? `<br><button class="ghost small btn-assign-owner" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-kind="${isOwned?'owner':'tenant'}" style="margin-top:4px;padding:2px 6px;font-size:0.75rem">${localText('👤 تحديد المالك/الساكن','👤 Set Resident')}</button>` : ''}
+                  <small class="muted">${kindBadge} · ${occBadge}${u.resident_phone?' · 📞 '+escape(u.resident_phone):''}</small>
+                  ${!u.party_id ? `<br><button class="ghost small btn-assign-owner" data-unit="${escape(u.unit_id)}" data-name="${escape(u.unit_number||u.unit_name)}" data-kind="owner" data-occ="${escape(occState)}" style="margin-top:4px;padding:2px 6px;font-size:0.75rem">${localText('👤 تحديد المالك/الساكن والحالة','👤 Set Resident & State')}</button>` : ''}
                 </td>
                 <td><strong>${money(u.monthly_fee)}</strong></td>
                 <td>${u.is_paid?'<span class="badge ok">'+localText('✅ تم السداد','Paid')+'</span>':'<span class="badge warn">'+localText('⏳ غير مسدد','Unpaid')+'</span>'}</td>
@@ -834,19 +837,30 @@ async function collectionsView(){
     btn.onclick = () => {
       const uId = btn.dataset.unit;
       const uName = btn.dataset.name;
-      const kind = btn.dataset.kind || 'owner';
+      const currentOcc = btn.dataset.occ || 'residing';
       modal(localText('تحديد بيانات المالك / الساكن لشقة ' + uName, 'Set Resident / Owner for Unit ' + uName),
         field('name', '', { placeholder: localText('اسم المالك أو الساكن بالكامل', 'Full Name') }) +
-        field('phone', '', { placeholder: localText('رقم الهاتف للتواصل', 'Phone number') }) +
-        field('kind', kind, { choices: [['owner', localText('مالك الوحدة (تمليك)', 'Owner')], ['tenant', localText('مستأجر', 'Tenant')]] }),
+        field('phone', '', { placeholder: localText('رقم الهاتف للتواصل والواتساب', 'Phone number') }) +
+        field('occupancy_state', currentOcc, {
+          choices: [
+            ['residing', localText('مشغولة ومقيمة 🟢', 'Residing 🟢')],
+            ['closed', localText('مغلقة 🟡', 'Closed 🟡')],
+            ['finishing', localText('تحت التشطيب 🔵', 'Finishing 🔵')]
+          ]
+        }),
         async (b) => {
           if (!b.name || !b.name.trim()) return alert(localText('يرجى إدخال الاسم', 'Please enter a name'));
           try {
             await api('units/' + uId + '/assign-resident', {
               method: 'POST',
-              body: JSON.stringify({ name: b.name.trim(), phone: (b.phone || '').trim(), kind: b.kind })
+              body: JSON.stringify({
+                name: b.name.trim(),
+                phone: (b.phone || '').trim(),
+                kind: 'owner',
+                occupancy_state: b.occupancy_state || 'residing'
+              })
             });
-            toast(localText('تم حفظ وتعيين المالك بنجاح', 'Assigned successfully'));
+            toast(localText('تم حفظ وتعيين المالك وحالة الشقة بنجاح', 'Assigned successfully'));
             collectionsView();
           } catch (err) {
             alert(err.message);

@@ -13,11 +13,14 @@ http.createServer(async(req,res)=>{
  const file=path===root?resolve(root,'index.html'):path;
  if(file.endsWith('.apk')){
   res.setHeader('Content-Type','application/vnd.android.package-archive');
-  res.setHeader('Content-Disposition','attachment; filename="TowerFlow-v0.7.2.apk"');
+  res.setHeader('Content-Disposition','attachment; filename="TowerFlow-v0.8.2.apk"');
   res.setHeader('Cache-Control','public, max-age=3600');
  }else{
   res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml'})[extname(file)]||'application/octet-stream');
  }
- res.setHeader('X-Content-Type-Options','nosniff');res.end(await readFile(file));
+ res.setHeader('X-Content-Type-Options','nosniff');
+ res.setHeader('X-Frame-Options','DENY');
+ res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');
+ res.end(await readFile(file));
  }catch{res.writeHead(404);res.end('Not found');}
 }).listen(Number(process.env.PORT||3000),'127.0.0.1');

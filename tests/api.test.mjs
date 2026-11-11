@@ -62,5 +62,49 @@ test('API: monthly collections tracks units, generates dues and records quick co
   assert.equal(assignedUnit.resident_phone,'01001234567');
   assert.equal(assignedUnit.resident_kind,'owner');
 });
+test('API: properties and units support InstaPay, E-Wallets, and occupancy states',async()=>{
+  // 1. Update property with InstaPay & Wallet settings
+  const pPatch = await request('properties/'+property+'?org='+org, 'PATCH', {
+    instapay_id: 'tower.manager@instapay',
+    wallet_number: '01012345678'
+  }, alice);
+  assert.equal(pPatch.status, 200);
+  assert.equal(pPatch.data.instapay_id, 'tower.manager@instapay');
+  assert.equal(pPatch.data.wallet_number, '01012345678');
+
+  // 2. Create unit with occupancy_state and resident_phone
+  const uRes = await request('units?org='+org, 'POST', {
+    property_id: property,
+    unit_number: '101',
+    floor: 1,
+    occupancy_state: 'finishing',
+    resident_phone: '01122334455'
+  }, alice);
+  assert.equal(uRes.status, 201);
+  assert.equal(uRes.data.occupancy_state, 'finishing');
+  assert.equal(uRes.data.resident_phone, '01122334455');
+
+  // 3. Quick collect with payment_channel='instapay'
+  const qc = await request('collections/quick-collect?org='+org, 'POST', {
+    unit_id: uRes.data.id,
+    amount: '400.00',
+    payment_channel: 'instapay',
+    month: '2026-11'
+  }, alice);
+  assert.equal(qc.status, 200);
+  assert.equal(qc.data.ok, true);
+
+  // 4. Verify monthly collections reflects property settings, occupancy_state, and payment
+  const m = await request('collections/monthly?org='+org+'&month=2026-11', 'GET', null, alice);
+  assert.equal(m.status, 200);
+  assert.equal(m.data.property_settings.instapay_id, 'tower.manager@instapay');
+  assert.equal(m.data.property_settings.wallet_number, '01012345678');
+  const found = m.data.units.find(u => u.unit_id === uRes.data.id);
+  assert.ok(found);
+  assert.equal(found.occupancy_state, 'finishing');
+  assert.equal(found.resident_phone, '01122334455');
+  assert.equal(found.is_paid, true);
+  assert.equal(found.paid_amount, '400.00');
+});
 test('API: logout revokes session immediately',async()=>{assert.equal((await request('auth/logout','POST',{},alice)).status,200);assert.equal((await request('me','GET',null,alice)).status,401);});
 test('API: valid login works and wrong password is rejected',async()=>{assert.equal((await request('auth/login','POST',{email:'alice@example.test',password:'wrong-password-123'})).status,401);assert.equal((await request('auth/login','POST',{email:'alice@example.test',password:'test-password-123'})).status,200);});
