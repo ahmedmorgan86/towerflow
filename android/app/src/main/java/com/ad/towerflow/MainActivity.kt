@@ -256,7 +256,7 @@ class MainActivity : Activity() {
         } else {
             listOf(
                 NavTab("collections", "⚡", "التحصيل", "Collect") { monthlyCollections() },
-                NavTab("properties", "🏢", "الأبراج", "Towers") { manageTowers() },
+                NavTab("home", "🏠", "الرئيسية", "Home") { home() },
                 NavTab("units", "🚪", "الشقق", "Units") { listing("units") },
                 NavTab("expenses", "💸", "المصروفات", "Expenses") { listing("expenses") },
                 NavTab("tickets", "🛠️", "الصيانة", "Tickets") { listing("tickets") }

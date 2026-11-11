@@ -206,33 +206,76 @@ function head(title,action=''){
  return `<div class="pagehead"><div><h1>${escape(title)}</h1><p>${escape(desc)}</p></div><div class="actions">${action}</div></div>`;
 }
 
-function sidebar(){
- const available=allowed();
- const mainItems=[
-   ['dashboard', localText('خزينة وصندوق العمارة','Sandok & Dashboard'), 'grid'],
-   ['collections', localText('التحصيل الشهري','Monthly Collections'), 'wallet'],
-   ['properties', localText('الأبراج والعمارات','Towers & Buildings'), 'building'],
-   ['units', localText('الشقق والوحدات','Units & Apartments'), 'home'],
-   ['expenses', localText('مصروفات الصندوق','Sandok Expenses'), 'chart'],
-   ['tickets', localText('الصيانة والخدمات','Maintenance'), 'tool'],
-   ['payment_proofs', localText('إثباتات التحويل','Payment Proofs'), 'check'],
-   ['announcements', localText('إعلانات السكان','Announcements'), 'bell'],
-   ['reports', localText('التقارير المالية','Financial Reports'), 'chart']
- ];
- const item=([k,label,ic])=>`<button data-page="${k}" class="nav-item ${k===page?'active':''}" ${k===page?'aria-current="page"':''}>${icon(ic,18)}<span>${label}</span></button>`;
- return `<aside class="sidebar" id="navigation" aria-label="${localText('التنقل الرئيسي','Main navigation')}">
-   ${brand()}
-   <nav>
-     <div class="sidebar-caption">${localText('إدارة البرج وصندوق العمارة','BUILDING MANAGEMENT')}</div>
-     ${available.includes('portal')?item(['portal',t('portal'),'home']):''}
-     ${mainItems.filter(([k])=>available.includes(k)).map(item).join('')}
-   </nav>
-   <div class="sidebar-bottom">
-     <button data-page="profile" class="nav-item ${page==='profile'?'active':''}">${icon('people',18)}<span>${t('profile')}</span></button>
-     <button data-page="settings" class="nav-item ${page==='settings'?'active':''}">${icon('settings',18)}<span>${t('settings')}</span></button>
-     <p>TOWERFLOW v0.8.2</p>
-   </div>
- </aside>`;
+function appHeader(){
+  const available = allowed();
+  const isRes = role() === 'resident';
+  const mainItems = isRes ? [
+    ['portal', localText('الرئيسية والصندوق','Dashboard'), 'home'],
+    ['invoices', localText('مستحقاتي الشهري','My Invoices'), 'wallet'],
+    ['payment_proofs', localText('إثبات سداد','Submit Proof'), 'check'],
+    ['tickets', localText('طلبات الصيانة','Maintenance'), 'tool'],
+    ['announcements', localText('الإعلانات','Announcements'), 'bell'],
+    ['profile', localText('الملف الشخصي','Profile'), 'people']
+  ] : [
+    ['dashboard', localText('الرئيسية والصندوق','Sandok & Dashboard'), 'grid'],
+    ['collections', localText('التحصيل الشهري','Monthly Collections'), 'wallet'],
+    ['units', localText('الشقق والوحدات','Units & Condos'), 'home'],
+    ['properties', localText('الأبراج والعمارات','Towers'), 'building'],
+    ['expenses', localText('مصروفات الصندوق','Sandok Expenses'), 'chart'],
+    ['tickets', localText('الصيانة والخدمات','Maintenance'), 'tool'],
+    ['payment_proofs', localText('إثباتات التحويل','Payment Proofs'), 'check'],
+    ['announcements', localText('الإعلانات','Announcements'), 'bell'],
+    ['reports', localText('التقارير المالية','Financial Reports'), 'chart']
+  ];
+
+  return `
+    <header class="app-header">
+      <div class="app-bar">
+        <div class="app-bar-start">
+          <div class="app-brand" data-go="${isRes ? 'portal' : 'dashboard'}" role="button" tabindex="0">
+            <img src="/logo.svg" alt="TowerFlow" class="app-logo">
+            <div class="app-title-wrap">
+              <span class="app-title">TowerFlow</span>
+              <span class="app-subtitle">${localText('إدارة الأبراج وصندوق العمارة','Tower Management')}</span>
+            </div>
+          </div>
+
+          <div class="tower-selector-pill">
+            <span class="tower-icon">🏢</span>
+            <select id="org" aria-label="${t('organization')}">
+              ${me.organizations.map(x=>`<option value="${x.id}" ${x.id===org?'selected':''}>${escape(x.name)}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="app-bar-end">
+          <div class="actions">
+            ${toggles()}
+            <button class="icon-button" data-go="notifications" aria-label="${t('notifications')}">${icon('bell',18)}</button>
+          </div>
+          <button class="profile profile-link" data-go="profile">
+            <div class="avatar">${me.user.avatar?`<img src="${escape(me.user.avatar)}" alt="">`:escape(me.user.name.slice(0,1))}</div>
+            <div class="profile-info">
+              <b>${escape(me.user.name)}</b>
+              <small>${t(me.user.platform_owner?'platform_owner':role())}</small>
+            </div>
+          </button>
+          <button class="icon-button logout-btn" id="logout" aria-label="${t('logout')}" title="${t('logout')}">${icon('logout',17)}</button>
+        </div>
+      </div>
+
+      <nav class="app-nav-tabs" aria-label="${localText('التنقل الرئيسي','Main Navigation')}">
+        <div class="tabs-scroll-wrap">
+          ${mainItems.filter(([k])=>available.includes(k)).map(([k, label, ic]) => `
+            <button data-page="${k}" class="nav-tab ${k === page ? 'active' : ''}" ${k === page ? 'aria-current="page"' : ''}>
+              ${icon(ic, 18)}
+              <span>${label}</span>
+            </button>
+          `).join('')}
+        </div>
+      </nav>
+    </header>
+  `;
 }
 
 function bottomNav(){
@@ -245,7 +288,7 @@ function bottomNav(){
     ['profile', localText('حسابي','Profile'), 'people']
   ] : [
     ['collections', localText('التحصيل','Collect'), 'wallet'],
-    ['properties', localText('الأبراج','Towers'), 'building'],
+    ['dashboard', localText('الرئيسية','Home'), 'grid'],
     ['units', localText('الشقق','Units'), 'home'],
     ['expenses', localText('المصروفات','Expenses'), 'chart'],
     ['tickets', localText('الصيانة','Tickets'), 'tool']
@@ -261,28 +304,42 @@ function bottomNav(){
 }
 
 async function render(){
- if(busy)return;busy=true;theme();localStorage.tfOrg=org;
- if(!allowed().includes(page))page=allowed()[0];
- $('#app').innerHTML=`<div class="layout">${sidebar()}<button class="sidebar-overlay" aria-label="${localText('إغلاق القائمة','Close menu')}"></button><main class="workspace"><header class="topbar"><div class="topbar-start"><button class="mobile-toggle icon-button" id="menu" aria-label="${localText('فتح القائمة','Open navigation')}" aria-expanded="false" aria-controls="navigation">${icon('menu')}</button><div class="breadcrumb">TowerFlow <span> / </span><strong>${t(page)}</strong></div><select id="org" aria-label="${t('organization')}">${me.organizations.map(x=>`<option value="${x.id}" ${x.id===org?'selected':''}>${escape(x.name)}</option>`).join('')}</select></div><div class="topbar-end"><div class="actions">${toggles()}<button class="icon-button" data-go="notifications" aria-label="${t('notifications')}">${icon('bell',18)}</button></div><button class="profile profile-link" data-go="profile"><div class="avatar">${me.user.avatar?`<img src="${escape(me.user.avatar)}" alt="">`:escape(me.user.name.slice(0,1))}</div><div><b>${escape(me.user.name)}</b><small>${t(me.user.platform_owner?'platform_owner':role())}</small></div></button><button class="icon-button" id="logout" aria-label="${t('logout')}" title="${t('logout')}">${icon('logout',17)}</button></div></header><div class="content-wrap"><section id="content" aria-live="polite"><div class="loading">${t('loading')}</div></section><footer class="footer"><span>© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow</span><span>${localText('إدارة الأبراج وصندوق العمارة','Building Sandok & Management')}</span></footer></div></main>${bottomNav()}</div>`;
- document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>navigate(b.dataset.page));
- $('#org').onchange=e=>{org=e.target.value;cache={};render();};
- $('#logout').onclick=async()=>{await api('auth/logout',{method:'POST',body:'{}'});me=null;cache={};auth();};
- const closeMenu=()=>{document.body.classList.remove('nav-open');$('#menu')?.setAttribute('aria-expanded','false');};
- $('#menu').onclick=()=>{const opened=document.body.classList.toggle('nav-open');$('#menu').setAttribute('aria-expanded',String(opened));};
- $('.sidebar-overlay').onclick=closeMenu;document.onkeydown=e=>{if(e.key==='Escape')closeMenu();};
- try{
-   if(['dashboard','portal'].includes(page))await dashboard();
-   else if(['recurring_charges','maintenance_plans','accounting_periods'].includes(page))await mountWorkflows({api,lang,page,escape,toast,money});
-   else if(page==='collections')await collectionsView();else if(page==='reports')await mountReports({api,lang,escape,money});
-   else if(page==='resident_messages')await mountMessages({api,lang,escape,toast});
-   else if(page==='profile')await mountProfile({api,me,lang,escape,toast,onSave:async user=>{me.user=user;lang=user.locale||lang;await render();}});
-   else if(page==='settings')settings();
-   else if(page==='members')await members();
-   else await listing(page);
- }catch(e){
-   $('#content').innerHTML=head(t(page))+`<div class="notice" role="alert">${escape(e.message)}</div><button id="retry">${localText('إعادة المحاولة','Retry')}</button>`;
-   $('#retry').onclick=render;
- }finally{busy=false;}
+  if(busy)return;busy=true;theme();localStorage.tfOrg=org;
+  if(!allowed().includes(page))page=allowed()[0];
+  $('#app').innerHTML=`
+    <div class="app-shell">
+      ${appHeader()}
+      <main class="app-main">
+        <div class="content-wrap">
+          <section id="content" aria-live="polite">
+            <div class="loading">${t('loading')}</div>
+          </section>
+          <footer class="footer">
+            <span>© Ahmed Morgan ${new Date().getFullYear()} · TowerFlow</span>
+            <span>${localText('إدارة الأبراج وصندوق العمارة','Building Sandok & Management')}</span>
+          </footer>
+        </div>
+      </main>
+      ${bottomNav()}
+    </div>
+  `;
+  document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>navigate(b.dataset.page));
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>navigate(b.dataset.go));
+  $('#org').onchange=e=>{org=e.target.value;cache={};render();};
+  $('#logout').onclick=async()=>{await api('auth/logout',{method:'POST',body:'{}'});me=null;cache={};auth();};
+  try{
+    if(['dashboard','portal'].includes(page))await dashboard();
+    else if(['recurring_charges','maintenance_plans','accounting_periods'].includes(page))await mountWorkflows({api,lang,page,escape,toast,money});
+    else if(page==='collections')await collectionsView();else if(page==='reports')await mountReports({api,lang,escape,money});
+    else if(page==='resident_messages')await mountMessages({api,lang,escape,toast});
+    else if(page==='profile')await mountProfile({api,me,lang,escape,toast,onSave:async user=>{me.user=user;lang=user.locale||lang;await render();}});
+    else if(page==='settings')settings();
+    else if(page==='members')await members();
+    else await listing(page);
+  }catch(e){
+    $('#content').innerHTML=head(t(page))+`<div class="notice" role="alert">${escape(e.message)}</div><button id="retry">${localText('إعادة المحاولة','Retry')}</button>`;
+    $('#retry').onclick=render;
+  }finally{busy=false;}
 }
 
 async function dashboard(){
