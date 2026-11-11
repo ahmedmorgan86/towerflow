@@ -157,7 +157,14 @@ async function api(path,options={}){
  return data;
 }
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';setTimeout(()=>$('#toast').style.display='none',4000);}
-function theme(){document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.documentElement.classList.toggle('dark',dark);localStorage.tfLang=lang;localStorage.tfDark=dark;}
+function theme(){
+  document.documentElement.lang=lang;
+  document.documentElement.dir=lang==='ar'?'rtl':'ltr';
+  document.documentElement.classList.toggle('dark',dark);
+  if(dark){document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.removeAttribute('data-theme');}
+  localStorage.tfLang=lang;
+  localStorage.tfDark=dark;
+}
 const brand=()=>`<div class="brand"><img src="/logo.svg" alt="TowerFlow"><span>TowerFlow<span>${localText('إدارة الأبراج وصندوق العمارة','TOWER & SANDOK')}</span></span></div>`;
 const toggles=()=>`<button data-global="language" aria-label="${localText('تغيير اللغة','Change language')}">${lang==='ar'?'English':'العربية'}</button><button class="icon-button" data-global="theme" aria-label="${localText('تغيير المظهر','Toggle theme')}">${icon(dark?'sun':'moon',18)}</button>`;
 

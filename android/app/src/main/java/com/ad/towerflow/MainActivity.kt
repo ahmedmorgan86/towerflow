@@ -306,7 +306,7 @@ class MainActivity : Activity() {
                     text = text(tab.titleAr, tab.titleEn)
                     textSize = 10f
                     typeface = Typeface.create(cairoFont, if (active) Typeface.BOLD else Typeface.NORMAL)
-                    setTextColor(Color.parseColor(if (active) (if (dark) "#2DD4BF" else "#0F766E") else (if (dark) "#64748B" else "#94A3B8")))
+                    setTextColor(Color.parseColor(if (active) (if (dark) "#2DD4BF" else "#0F766E") else (if (dark) "#94A3B8" else "#64748B")))
                     gravity = Gravity.CENTER
                     maxLines = 1
                     ellipsize = TextUtils.TruncateAt.END
@@ -591,7 +591,7 @@ class MainActivity : Activity() {
         textSize = 14f
         inputType = if (password) InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD else InputType.TYPE_CLASS_TEXT
         setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
-        setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+        setHintTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
         background = roundedDrawable(
             if (dark) Color.parseColor("#0F172A") else Color.WHITE,
             12f,
@@ -758,7 +758,7 @@ class MainActivity : Activity() {
             text = if (arabic) "‹" else "›"
             textSize = 18f
             typeface = Typeface.create(cairoFont, Typeface.BOLD)
-            setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
             setPadding(dp(6), 0, dp(2), 0)
         }
         row.addView(chevron)
@@ -922,7 +922,7 @@ class MainActivity : Activity() {
                     else -> InputType.TYPE_CLASS_TEXT
                 }
                 setTextColor(Color.parseColor(if (dark) "#F8FAFC" else "#0F172A"))
-                setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+                setHintTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                 background = roundedDrawable(
                     if (dark) Color.parseColor("#0C0E14") else Color.parseColor("#F8FAFC"),
                     12f,
@@ -999,7 +999,7 @@ class MainActivity : Activity() {
                 text = text("أو", "or")
                 textSize = 11.5f
                 typeface = cairoFont
-                setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+                setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                 setPadding(dp(12), 0, dp(12), 0)
             })
             addView(View(this@MainActivity).apply {
@@ -1372,7 +1372,7 @@ class MainActivity : Activity() {
                             maxLines = 1
                             ellipsize = TextUtils.TruncateAt.END
                             typeface = cairoFont
-                            setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+                            setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                         })
                     }
                 }
@@ -1735,7 +1735,7 @@ class MainActivity : Activity() {
             textSize = 14f
             typeface = cairoFont
             setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
-            setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+            setHintTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
             background = roundedDrawable(if (dark) Color.parseColor("#1E2330") else Color.WHITE, 10f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
             setPadding(dp(12), dp(8), dp(12), dp(8))
         }
@@ -1756,7 +1756,7 @@ class MainActivity : Activity() {
             textSize = 14f
             typeface = cairoFont
             setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
-            setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+            setHintTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
             background = roundedDrawable(if (dark) Color.parseColor("#1E2330") else Color.WHITE, 10f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
             setPadding(dp(12), dp(8), dp(12), dp(8))
         }
@@ -1777,7 +1777,7 @@ class MainActivity : Activity() {
             textSize = 14f
             typeface = cairoFont
             setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
-            setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+            setHintTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
             background = roundedDrawable(if (dark) Color.parseColor("#1E2330") else Color.WHITE, 10f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
             setPadding(dp(12), dp(8), dp(12), dp(8))
         }
@@ -1799,7 +1799,7 @@ class MainActivity : Activity() {
             textSize = 14f
             typeface = cairoFont
             setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
-            setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+            setHintTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
             background = roundedDrawable(if (dark) Color.parseColor("#1E2330") else Color.WHITE, 10f, Color.parseColor(if (dark) "#334155" else "#CBD5E1"))
             setPadding(dp(12), dp(8), dp(12), dp(8))
         }
@@ -1977,7 +1977,7 @@ class MainActivity : Activity() {
                     text = subText
                     textSize = 9.5f
                     typeface = cairoFont
-                    setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+                    setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                 })
             }
         }
@@ -2236,7 +2236,7 @@ class MainActivity : Activity() {
                     text = "  (" + text("اشتراك صيانة البرج", "Tower Maintenance") + ")"
                     textSize = 10f
                     typeface = cairoFont
-                    setTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+                    setTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
                 })
                 uCard.addView(feeRow)
 
@@ -2641,7 +2641,7 @@ class MainActivity : Activity() {
             textSize = 13f
             typeface = cairoFont
             setTextColor(Color.parseColor(if (dark) "#F1F5F9" else "#0F172A"))
-            setHintTextColor(Color.parseColor(if (dark) "#64748B" else "#94A3B8"))
+            setHintTextColor(Color.parseColor(if (dark) "#94A3B8" else "#64748B"))
             background = roundedDrawable(if (dark) Color.parseColor("#11131A") else Color.WHITE, 12f, Color.parseColor(if (dark) "#1E2330" else "#E2E8F0"))
             setPadding(dp(12), dp(8), dp(12), dp(8))
             layoutParams = LinearLayout.LayoutParams(0, dp(42), 1f).apply { marginEnd = dp(6) }
